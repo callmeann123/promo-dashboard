@@ -585,34 +585,57 @@ async function loadData() {
 // Auto-load on page open
 window.addEventListener('DOMContentLoaded', loadData);
 
-function parseCSV(text) {
-  const lines = text.trim().split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+function cleanNum(s) {
+  if (s === null || s === undefined) return 0;
+  // Remove RM, spaces, quotes, handle (123) as -123
+  let str = String(s).replace(/RM/gi,'').replace(/\s/g,'').replace(/"/g,'').trim();
+  const neg = str.startsWith('(') && str.endsWith(')');
+  str = str.replace(/[()]/g,'').replace(/,/g,'');
+  const n = parseFloat(str) || 0;
+  return neg ? -n : n;
+}
 
-  // Find header row
+function parseCSV(text) {
+  // Split lines, handle quoted commas
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+
+  // Find header row — look for row with 日期 or Promo
   let hRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].some(c => c.includes('领取') || c.includes('Promo') || c.includes('日期'))) {
+    if (lines[i].some(c => c.includes('日期') || (c.includes('Promo') && lines[i].some(d => d.includes('领取'))))) {
       hRow = i; break;
     }
   }
   if (hRow < 0) {
     document.getElementById('loadingIcon').textContent = '📭';
     document.getElementById('loadingTitle').textContent = '找不到表头';
-    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 第一行有：日期、Promo类型、Promo名称等列名。';
+    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 有一行包含「日期」和「领取人数」的表头。';
     return;
   }
 
   rawData = [];
   for (let i = hRow + 1; i < lines.length; i++) {
     const r = lines[i];
-    if (!r || !r[0] || r[0] === '合计' || r[0] === '') continue;
+    if (!r || !r[0] || r[0] === '合计' || r[0].trim() === '') continue;
 
     const label    = r[0].trim();
-    const claims   = parseFloat(r[3]) || 0;
-    const depPpl   = parseFloat(r[4]) || 0;
-    const deposit  = parseFloat(r[5]) || 0;
-    const bonus    = parseFloat(r[6]) || 0;
-    const winloss  = parseFloat(r[7]) || 0;
+    const claims   = cleanNum(r[3]);
+    const depPpl   = cleanNum(r[4]);
+    const deposit  = cleanNum(r[5]);
+    const bonus    = cleanNum(r[6]);
+    const winloss  = cleanNum(r[7]);
 
     if (claims === 0 && bonus === 0 && winloss === 0) continue;
 
