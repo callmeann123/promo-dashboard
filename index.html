@@ -559,55 +559,55 @@ let rawData = [];
 let view = 'day';
 let charts = {};
 
-// GitHub raw URL — Excel 文件放在同一个 repo 根目录
-const EXCEL_URL = 'https://raw.githubusercontent.com/callmeann123/promo-dashboard/main/promo_data.xlsx';
+// Google Sheets CSV URL
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVKd-Uu3EwTyGlpvw0QKMUIxA471JuuI5An7U3DrsepUpCdY09CsjNIqh8tr-xNg/pub?output=csv';
 
-async function loadFromGitHub() {
+async function loadData() {
   try {
     document.getElementById('loadingIcon').textContent = '⏳';
     document.getElementById('loadingTitle').textContent = '正在读取数据...';
+    document.getElementById('loadingDesc').textContent = '从 Google Sheets 加载最新数据';
     document.getElementById('statusText').textContent = '加载中...';
 
-    const res = await fetch(EXCEL_URL + '?t=' + Date.now()); // cache-bust
+    const res = await fetch(CSV_URL + '&t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const buffer = await res.arrayBuffer();
-    parseExcel(buffer, 'promo_data.xlsx');
+    const text = await res.text();
+    parseCSV(text);
   } catch (err) {
     document.getElementById('loadingIcon').textContent = '❌';
     document.getElementById('loadingTitle').textContent = '读取失败';
-    document.getElementById('loadingDesc').textContent = '请确认 promo_data.xlsx 已上传到 GitHub，或检查网络连接。';
+    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 已发布成 CSV，或检查网络连接。';
     document.getElementById('statusText').textContent = '读取失败';
     console.error(err);
   }
 }
 
 // Auto-load on page open
-window.addEventListener('DOMContentLoaded', loadFromGitHub);
+window.addEventListener('DOMContentLoaded', loadData);
 
-function parseExcel(buffer, filename) {
-  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const ws = wb.Sheets['日报'];
-  if (!ws) { alert('找不到「日报」Sheet，请检查 Excel 文件。'); return; }
-
-  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
 
   // Find header row
   let hRow = -1;
-  for (let i = 0; i < raw.length; i++) {
-    const r = raw[i];
-    if (r && r.some(c => String(c).includes('领取') || String(c).includes('Promo'))) {
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.includes('领取') || c.includes('Promo') || c.includes('日期'))) {
       hRow = i; break;
     }
   }
-  if (hRow < 0) { alert('找不到表头，请检查 Excel。'); return; }
+  if (hRow < 0) {
+    document.getElementById('loadingIcon').textContent = '📭';
+    document.getElementById('loadingTitle').textContent = '找不到表头';
+    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 第一行有：日期、Promo类型、Promo名称等列名。';
+    return;
+  }
 
   rawData = [];
-  for (let i = hRow + 1; i < raw.length; i++) {
-    const r = raw[i];
-    if (!r || !r[0]) continue;
-    const label = r[0] instanceof Date ? r[0].toISOString().slice(0,10) : String(r[0]).trim();
-    if (!label || label === '合计') continue;
+  for (let i = hRow + 1; i < lines.length; i++) {
+    const r = lines[i];
+    if (!r || !r[0] || r[0] === '合计' || r[0] === '') continue;
 
+    const label    = r[0].trim();
     const claims   = parseFloat(r[3]) || 0;
     const depPpl   = parseFloat(r[4]) || 0;
     const deposit  = parseFloat(r[5]) || 0;
@@ -621,9 +621,9 @@ function parseExcel(buffer, filename) {
     const ppa    = claims !== 0 ? profit / claims : 0;
 
     rawData.push({
-      date:    label,
-      type:    String(r[1] || '').trim(),
-      name:    String(r[2] || '').trim(),
+      date:  label,
+      type:  String(r[1] || '').trim(),
+      name:  String(r[2] || '').trim(),
       claims, depPpl, deposit, bonus, winloss, profit, roi, ppa
     });
   }
@@ -631,7 +631,7 @@ function parseExcel(buffer, filename) {
   if (!rawData.length) {
     document.getElementById('loadingIcon').textContent = '📭';
     document.getElementById('loadingTitle').textContent = '暂无数据';
-    document.getElementById('loadingDesc').textContent = '请先在 Excel 填入数据，然后重新上传到 GitHub。';
+    document.getElementById('loadingDesc').textContent = '请先在 Google Sheets 填入数据。';
     return;
   }
 
