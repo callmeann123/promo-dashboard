@@ -469,7 +469,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class="val" id="mROI">—</div>
         <div class="sub" id="mROISub">—</div>
       </div>
-      <div class="metric">
+      <div class="metric" id="mCardPPA" style="display:none;">
         <div class="lbl">人均净利润</div>
         <div class="val" id="mPPA">—</div>
         <div class="sub" id="mPPASub">—</div>
@@ -747,10 +747,19 @@ function render() {
 
   setMetric('mProfit', tProfit, fmtRM(tProfit), tProfit > 0 ? '整体盈利 ▲' : tProfit < 0 ? '整体亏损 ▼' : '打平', 'mCardProfit');
   setMetric('mROI',    tROI,    fmtPct(tROI),   tROI > 0 ? '正向回报' : tROI < 0 ? '负向回报' : '—', 'mCardROI');
-  setMetricNeutral('mPPA',    fmtRM(tPPA),    tPPA > 0 ? '每人赚' : tPPA < 0 ? '每人亏' : '—', tPPA);
   setMetricNeutral('mClaims', fmtN(tClaims),  filtered.length + ' 条记录', null);
   setMetricNeutral('mBonus',  fmtRM(tBonus),  '实际成本', null);
   setMetricNeutral('mWL',     fmtRM(-tWL),    tWL < 0 ? '平台赢 ▲' : tWL > 0 ? '平台输 ▼' : '—', -tWL);
+
+  // 人均净利润只在单个 promo 筛选时显示
+  const isSinglePromo = document.getElementById('promoFilter').value !== 'all';
+  const ppaCard = document.getElementById('mCardPPA');
+  if (isSinglePromo) {
+    ppaCard.style.display = '';
+    setMetricNeutral('mPPA', fmtRM(tPPA), tPPA > 0 ? '每人赚' : tPPA < 0 ? '每人亏' : '—', tPPA);
+  } else {
+    ppaCard.style.display = 'none';
+  }
 
   // Table title
   const titles = { day:'日报明细', week:'周报明细', month:'月报明细' };
