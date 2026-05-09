@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PROMO Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -23,400 +22,99 @@
   --red: #FF3D5A;
   --red-dim: rgba(255,61,90,0.12);
   --amber: #FFB020;
+  --amber-dim: rgba(255,176,32,0.12);
   --blue: #4D9FFF;
   --blue-dim: rgba(77,159,255,0.12);
+  --purple: #A78BFA;
+  --purple-dim: rgba(167,139,250,0.12);
   --font: 'Syne', sans-serif;
   --mono: 'JetBrains Mono', monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; overflow-x: hidden; }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Background grid */
 body::before {
   content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(77,159,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(77,159,255,0.03) 1px, transparent 1px);
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(77,159,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(77,159,255,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+  pointer-events: none; z-index: 0;
 }
 
-.app {
-  position: relative;
-  z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
-}
+.app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
 
-/* Header */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.logo-mark {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #4D9FFF, #00E5A0);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 800;
-  color: #080B0F;
-  flex-shrink: 0;
-}
-
-.logo h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.logo { display: flex; align-items: center; gap: 14px; }
+.logo-mark { width: 40px; height: 40px; background: linear-gradient(135deg, #4D9FFF, #00E5A0); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #080B0F; flex-shrink: 0; }
+.logo h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .logo h1 span { color: var(--blue); }
 .logo p { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.status-chip {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-family: var(--mono);
-  color: var(--muted2);
-}
-
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--muted);
-}
+.status-chip { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; font-size: 0.75rem; font-family: var(--mono); color: var(--muted2); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
 .status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-/* Upload */
-.upload-zone {
-  border: 1.5px dashed var(--border2);
-  border-radius: 16px;
-  padding: 3rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 2rem;
-  background: var(--surface);
-  position: relative;
-  overflow: hidden;
-}
+.loading-zone { border: 1.5px dashed var(--border2); border-radius: 16px; padding: 3rem 2rem; text-align: center; margin-bottom: 2rem; background: var(--surface); }
+.loading-zone .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.loading-zone h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.loading-zone p { font-size: 0.82rem; color: var(--muted2); font-family: var(--mono); }
 
-.upload-zone::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(77,159,255,0.06) 0%, transparent 70%);
-}
+.controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
+.tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
+.tab { padding: 7px 20px; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted2); transition: all 0.15s; }
+.tab.active { background: var(--blue); color: #080B0F; }
 
-.upload-zone:hover { border-color: var(--blue); }
-.upload-zone:hover::before { background: radial-gradient(ellipse at 50% 0%, rgba(77,159,255,0.1) 0%, transparent 70%); }
-.upload-zone.drag { border-color: var(--green); }
+.filter-wrap { display: flex; gap: 8px; }
+.promo-filter { font-size: 0.8rem; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: var(--mono); cursor: pointer; min-width: 160px; }
 
-.upload-zone .upload-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.upload-zone h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-.upload-zone p { font-size: 0.82rem; color: var(--muted2); font-family: var(--mono); }
-.upload-zone input { display: none; }
-
-/* Tabs */
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tabs {
-  display: flex;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 2px;
-}
-
-.tab {
-  padding: 7px 20px;
-  border-radius: 7px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  font-family: var(--font);
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  color: var(--muted2);
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
-}
-
-.tab.active {
-  background: var(--blue);
-  color: #080B0F;
-}
-
-.promo-filter {
-  font-size: 0.8rem;
-  padding: 7px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border2);
-  background: var(--surface2);
-  color: var(--text);
-  font-family: var(--mono);
-  cursor: pointer;
-  min-width: 180px;
-}
-
-/* Metrics */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  margin-bottom: 1.5rem;
-}
-
-.metric {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem 1.1rem;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.metric::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--blue);
-  opacity: 0.4;
-}
-
-.metric.pos::after { background: var(--green); opacity: 1; }
-.metric.neg::after { background: var(--red); opacity: 1; }
-
-.metric .lbl {
-  font-size: 0.68rem;
-  color: var(--muted);
-  font-family: var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
-}
-
-.metric .val {
-  font-size: 1.4rem;
-  font-weight: 700;
-  font-family: var(--mono);
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--text);
-}
-
-.metric .val.pos { color: var(--green); }
-.metric .val.neg { color: var(--red); }
+.metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; position: relative; overflow: hidden; }
+.metric::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--blue); opacity: 0.4; }
+.metric.hi::after { background: var(--green); opacity: 1; }
+.metric.lo::after { background: var(--red); opacity: 1; }
+.metric .lbl { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.metric .val { font-size: 1.4rem; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em; line-height: 1; }
+.metric .val.hi { color: var(--green); }
+.metric .val.lo { color: var(--red); }
+.metric .val.amber { color: var(--amber); }
 .metric .sub { font-size: 0.68rem; color: var(--muted); margin-top: 5px; font-family: var(--mono); }
-.metric .sub.pos { color: var(--green); }
-.metric .sub.neg { color: var(--red); }
+.metric .sub.hi { color: var(--green); }
+.metric .sub.lo { color: var(--red); }
 
-/* Charts */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.chart-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.25rem;
-}
-
-.chart-card.full { grid-column: 1 / -1; }
-
-.chart-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.chart-title {
-  font-size: 0.72rem;
-  font-family: var(--mono);
-  color: var(--muted2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.legend {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.legend span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.7rem;
-  color: var(--muted2);
-  font-family: var(--mono);
-}
-
-.leg {
-  width: 8px; height: 8px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
+.chart-card.wide { grid-column: 1 / -1; }
+.chart-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.chart-title { font-size: 0.72rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; }
+.legend span { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: var(--muted2); font-family: var(--mono); }
+.leg { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .chart-wrap { position: relative; width: 100%; height: 200px; }
-.chart-wrap.tall { height: 240px; }
+.chart-wrap.tall { height: 230px; }
 
-/* Table */
-.table-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.table-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.table-title {
-  font-size: 0.72rem;
-  font-family: var(--mono);
-  color: var(--muted2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.table-hd { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+.table-title { font-size: 0.72rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
 .table-wrap { overflow-x: auto; }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  font-size: 0.68rem;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-weight: 400;
-  text-align: right;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); font-weight: 400; text-align: right; padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
 th:first-child, th:nth-child(2), th:nth-child(3) { text-align: left; }
-
-td {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  text-align: right;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  white-space: nowrap;
-  color: var(--muted2);
-}
-
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--mono); font-size: 0.8rem; white-space: nowrap; color: var(--muted2); }
 td:first-child { text-align: left; color: var(--muted); font-size: 0.75rem; }
-td:nth-child(2) { text-align: left; }
-td:nth-child(3) { text-align: left; }
-
+td:nth-child(2), td:nth-child(3) { text-align: left; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
 
-.pos { color: var(--green) !important; }
-.neg { color: var(--red) !important; }
-.neutral { color: var(--muted2); }
+.pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; font-family: var(--mono); }
+.pill.hi { background: var(--green-dim); color: var(--green); }
+.pill.lo { background: var(--red-dim); color: var(--red); }
+.pill.mid { background: var(--amber-dim); color: var(--amber); }
+.pill.neu { background: var(--surface3); color: var(--muted); }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  font-family: var(--mono);
-}
-
-.pill.p { background: var(--green-dim); color: var(--green); }
-.pill.n { background: var(--red-dim); color: var(--red); }
-.pill.z { background: var(--surface3); color: var(--muted); }
-
-.type-tag {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-family: var(--mono);
-  background: var(--blue-dim);
-  color: var(--blue);
-}
-
-/* Empty */
-.empty {
-  text-align: center;
-  padding: 5rem 2rem;
-  color: var(--muted);
-}
-.empty .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
-.empty p { font-size: 0.85rem; font-family: var(--mono); }
+.type-tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.68rem; font-family: var(--mono); background: var(--blue-dim); color: var(--blue); }
 
 .hidden { display: none !important; }
 </style>
@@ -429,21 +127,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class="logo-mark">P</div>
       <div>
         <h1>PROMO <span>Dashboard</span></h1>
-        <p>净利润 = −Win/Loss − 派发Bonus  |  MYR</p>
+        <p>存款行为分析  |  MYR</p>
       </div>
     </div>
-    <div class="header-right">
-      <div class="status-chip">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">加载中...</span>
-      </div>
+    <div class="status-chip">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">加载中...</span>
     </div>
   </div>
 
-  <div class="upload-zone" id="uploadZone">
-    <div class="upload-icon" id="loadingIcon">⏳</div>
+  <div class="loading-zone" id="loadingZone">
+    <div class="icon" id="loadingIcon">⏳</div>
     <h3 id="loadingTitle">正在读取数据...</h3>
-    <p id="loadingDesc">从 GitHub 加载最新 Excel 数据</p>
+    <p id="loadingDesc">从 Google Sheets 加载最新数据</p>
   </div>
 
   <div id="dashboard" class="hidden">
@@ -453,75 +149,69 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <button class="tab" onclick="setView('week',this)">周</button>
         <button class="tab" onclick="setView('month',this)">月</button>
       </div>
-      <select class="promo-filter" id="promoFilter" onchange="render()">
-        <option value="all">全部 Promo</option>
-      </select>
+      <div class="filter-wrap">
+        <select class="promo-filter" id="typeFilter" onchange="render()">
+          <option value="all">全部类型</option>
+        </select>
+        <select class="promo-filter" id="nameFilter" onchange="render()">
+          <option value="all">全部 Promo</option>
+        </select>
+      </div>
     </div>
 
     <div class="metrics">
-      <div class="metric" id="mCardProfit">
-        <div class="lbl">净利润</div>
-        <div class="val" id="mProfit">—</div>
-        <div class="sub" id="mProfitSub">—</div>
-      </div>
-      <div class="metric" id="mCardROI">
-        <div class="lbl">ROI</div>
-        <div class="val" id="mROI">—</div>
-        <div class="sub" id="mROISub">—</div>
-      </div>
-      <div class="metric" id="mCardPPA" style="display:none;">
-        <div class="lbl">人均净利润</div>
-        <div class="val" id="mPPA">—</div>
-        <div class="sub" id="mPPASub">—</div>
-      </div>
       <div class="metric">
         <div class="lbl">领取人数</div>
         <div class="val" id="mClaims">—</div>
         <div class="sub" id="mClaimsSub">—</div>
       </div>
       <div class="metric">
-        <div class="lbl">派发 Bonus</div>
-        <div class="val" id="mBonus">—</div>
-        <div class="sub">总成本</div>
+        <div class="lbl">存款人数</div>
+        <div class="val" id="mDepPpl">—</div>
+        <div class="sub" id="mDepPplSub">—</div>
       </div>
       <div class="metric">
-        <div class="lbl">Win/Loss</div>
-        <div class="val" id="mWL">—</div>
-        <div class="sub">平台角度</div>
+        <div class="lbl">存款转化率</div>
+        <div class="val" id="mConv">—</div>
+        <div class="sub" id="mConvSub">—</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">总存款金额</div>
+        <div class="val" id="mDeposit">—</div>
+        <div class="sub" id="mDepositSub">—</div>
+      </div>
+      <div class="metric">
+        <div class="lbl">派发 Bonus</div>
+        <div class="val" id="mBonus">—</div>
+        <div class="sub" id="mBonusSub">—</div>
       </div>
     </div>
 
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd">
-          <div class="chart-title">净利润趋势</div>
-          <div class="legend">
-            <span><span class="leg" style="background:var(--green)"></span>赚</span>
-            <span><span class="leg" style="background:var(--red)"></span>亏</span>
-          </div>
-        </div>
-        <div class="chart-wrap tall"><canvas id="profitChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">ROI 分布</div></div>
-        <div class="chart-wrap tall"><canvas id="roiChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd">
-          <div class="chart-title">Bonus vs Win/Loss</div>
-          <div class="legend">
-            <span><span class="leg" style="background:var(--blue)"></span>派发Bonus</span>
-            <span><span class="leg" style="background:var(--amber)"></span>Win/Loss</span>
-          </div>
-        </div>
-        <div class="chart-wrap"><canvas id="bvwChart"></canvas></div>
-      </div>
       <div class="chart-card">
         <div class="chart-hd"><div class="chart-title">领取人数趋势</div></div>
-        <div class="chart-wrap"><canvas id="claimChart"></canvas></div>
+        <div class="chart-wrap tall"><canvas id="claimChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">存款转化率趋势</div></div>
+        <div class="chart-wrap tall"><canvas id="convChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-hd">
+          <div class="chart-title">存款金额 vs 派发 Bonus</div>
+          <div class="legend">
+            <span><span class="leg" style="background:var(--blue)"></span>存款金额</span>
+            <span><span class="leg" style="background:var(--amber)"></span>派发Bonus</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="depBonusChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">人均存款趋势</div></div>
+        <div class="chart-wrap"><canvas id="ppaChart"></canvas></div>
       </div>
     </div>
 
@@ -538,12 +228,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <th>Promo 名称</th>
               <th>领取人数</th>
               <th>存款人数</th>
+              <th>存款转化率</th>
               <th>存款金额</th>
               <th>派发 Bonus</th>
-              <th>Win/Loss</th>
-              <th>净利润</th>
-              <th>ROI</th>
-              <th>人均净利润</th>
+              <th>人均存款</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -559,16 +247,10 @@ let rawData = [];
 let view = 'day';
 let charts = {};
 
-// Google Sheets CSV URL
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVKd-Uu3EwTyGlpvw0QKMUIxA471JuuI5An7U3DrsepUpCdY09CsjNIqh8tr-xNg/pub?output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTWoz9XBMdoHrV6B4QKVAoGX58F_1YJx2Bzb6xbWNkWBveGpgk3Gi_Vb6nVYhLnrw/pub?output=csv';
 
 async function loadData() {
   try {
-    document.getElementById('loadingIcon').textContent = '⏳';
-    document.getElementById('loadingTitle').textContent = '正在读取数据...';
-    document.getElementById('loadingDesc').textContent = '从 Google Sheets 加载最新数据';
-    document.getElementById('statusText').textContent = '加载中...';
-
     const res = await fetch(CSV_URL + '&t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
@@ -582,12 +264,10 @@ async function loadData() {
   }
 }
 
-// Auto-load on page open
 window.addEventListener('DOMContentLoaded', loadData);
 
 function cleanNum(s) {
-  if (s === null || s === undefined) return 0;
-  // Remove RM, spaces, quotes, handle (123) as -123
+  if (!s && s !== 0) return 0;
   let str = String(s).replace(/RM/gi,'').replace(/\s/g,'').replace(/"/g,'').trim();
   const neg = str.startsWith('(') && str.endsWith(')');
   str = str.replace(/[()]/g,'').replace(/,/g,'');
@@ -596,11 +276,9 @@ function cleanNum(s) {
 }
 
 function parseCSV(text) {
-  // Split lines, handle quoted commas
   const lines = [];
   text.trim().split('\n').forEach(line => {
-    const cols = [];
-    let cur = '', inQ = false;
+    const cols = []; let cur = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') { inQ = !inQ; }
@@ -611,17 +289,17 @@ function parseCSV(text) {
     lines.push(cols);
   });
 
-  // Find header row — look for row with 日期 or Promo
   let hRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].some(c => c.includes('日期') || (c.includes('Promo') && lines[i].some(d => d.includes('领取'))))) {
+    if (lines[i].some(c => c.includes('日期')) && lines[i].some(c => c.includes('领取'))) {
       hRow = i; break;
     }
   }
+
   if (hRow < 0) {
     document.getElementById('loadingIcon').textContent = '📭';
     document.getElementById('loadingTitle').textContent = '找不到表头';
-    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 有一行包含「日期」和「领取人数」的表头。';
+    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 有包含「日期」和「领取人数」的表头行。';
     return;
   }
 
@@ -630,24 +308,21 @@ function parseCSV(text) {
     const r = lines[i];
     if (!r || !r[0] || r[0] === '合计' || r[0].trim() === '') continue;
 
-    const label    = r[0].trim();
-    const claims   = cleanNum(r[3]);
-    const depPpl   = cleanNum(r[4]);
-    const deposit  = cleanNum(r[5]);
-    const bonus    = cleanNum(r[6]);
-    const winloss  = cleanNum(r[7]);
+    const claims  = cleanNum(r[3]);
+    const depPpl  = cleanNum(r[4]);
+    const deposit = cleanNum(r[5]);
+    const bonus   = cleanNum(r[6]);
 
-    if (claims === 0 && bonus === 0 && winloss === 0) continue;
+    if (claims === 0 && depPpl === 0 && deposit === 0 && bonus === 0) continue;
 
-    const profit = -winloss - bonus;
-    const roi    = bonus !== 0 ? profit / bonus : 0;
-    const ppa    = claims !== 0 ? profit / claims : 0;
+    const conv = claims > 0 ? depPpl / claims : 0;
+    const ppa  = depPpl > 0 ? deposit / depPpl : 0;
 
     rawData.push({
-      date:  label,
-      type:  String(r[1] || '').trim(),
-      name:  String(r[2] || '').trim(),
-      claims, depPpl, deposit, bonus, winloss, profit, roi, ppa
+      date:    r[0].trim(),
+      type:    String(r[1] || '').trim(),
+      name:    String(r[2] || '').trim(),
+      claims, depPpl, deposit, bonus, conv, ppa
     });
   }
 
@@ -658,17 +333,20 @@ function parseCSV(text) {
     return;
   }
 
-  // Update status
   document.getElementById('statusDot').classList.add('live');
   document.getElementById('statusText').textContent = '已同步 · ' + new Date().toLocaleTimeString('zh-MY');
-  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('loadingZone').style.display = 'none';
   document.getElementById('dashboard').classList.remove('hidden');
 
-  // Populate filter
-  const types = [...new Set(rawData.map(r => r.name).filter(Boolean))];
-  const sel = document.getElementById('promoFilter');
-  sel.innerHTML = '<option value="all">全部 Promo</option>' +
-    types.map(t => `<option value="${t}">${t}</option>`).join('');
+  // Populate filters
+  const types = [...new Set(rawData.map(r => r.type).filter(Boolean))];
+  const names = [...new Set(rawData.map(r => r.name).filter(Boolean))];
+
+  const tf = document.getElementById('typeFilter');
+  tf.innerHTML = '<option value="all">全部类型</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  const nf = document.getElementById('nameFilter');
+  nf.innerHTML = '<option value="all">全部 Promo</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
 
   render();
 }
@@ -681,17 +359,20 @@ function setView(v, btn) {
 }
 
 function getFiltered() {
-  const sel = document.getElementById('promoFilter').value;
-  return sel === 'all' ? rawData : rawData.filter(r => r.name === sel);
+  const type = document.getElementById('typeFilter').value;
+  const name = document.getElementById('nameFilter').value;
+  return rawData.filter(r =>
+    (type === 'all' || r.type === type) &&
+    (name === 'all' || r.name === name)
+  );
 }
 
-function groupBy(data, view) {
+function groupBy(data) {
   const map = {};
   data.forEach(r => {
     let key;
-    if (view === 'day') {
-      key = r.date;
-    } else if (view === 'week') {
+    if (view === 'day') { key = r.date; }
+    else if (view === 'week') {
       const d = new Date(r.date);
       if (isNaN(d)) { key = r.date; }
       else {
@@ -699,69 +380,58 @@ function groupBy(data, view) {
         const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
         key = `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
       }
-    } else {
-      key = r.date.slice(0, 7);
-    }
-    if (!map[key]) map[key] = { label: key, claims:0, depPpl:0, deposit:0, bonus:0, winloss:0, profit:0, count:0 };
-    map[key].claims   += r.claims;
-    map[key].depPpl   += r.depPpl;
-    map[key].deposit  += r.deposit;
-    map[key].bonus    += r.bonus;
-    map[key].winloss  += r.winloss;
-    map[key].profit   += r.profit;
-    map[key].count    += 1;
+    } else { key = r.date.slice(0, 7); }
+
+    if (!map[key]) map[key] = { label:key, claims:0, depPpl:0, deposit:0, bonus:0 };
+    map[key].claims  += r.claims;
+    map[key].depPpl  += r.depPpl;
+    map[key].deposit += r.deposit;
+    map[key].bonus   += r.bonus;
   });
-  return Object.values(map).sort((a,b) => a.label.localeCompare(b.label));
+
+  return Object.values(map).sort((a,b) => a.label.localeCompare(b.label)).map(r => ({
+    ...r,
+    conv: r.claims > 0 ? r.depPpl / r.claims : 0,
+    ppa:  r.depPpl > 0 ? r.deposit / r.depPpl : 0,
+  }));
 }
 
 function fmtRM(n) {
-  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (n === null || isNaN(n)) return '—';
   const abs = Math.abs(n);
-  const s = abs >= 1000000 ? 'RM'+(abs/1000000).toFixed(2)+'M'
-           : abs >= 1000   ? 'RM'+(abs/1000).toFixed(1)+'k'
-           : 'RM'+abs.toFixed(2);
+  const s = abs >= 1000000 ? 'RM'+(abs/1000000).toFixed(2)+'M' : abs >= 1000 ? 'RM'+(abs/1000).toFixed(1)+'k' : 'RM'+abs.toFixed(2);
   return n < 0 ? '('+s+')' : s;
 }
+function fmtN(n) { if (!n) return '—'; return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(Math.round(n)); }
+function fmtPct(n) { return (n*100).toFixed(1)+'%'; }
 
-function fmtN(n) {
-  if (!n) return '—';
-  return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(Math.round(n));
-}
-
-function fmtPct(n) {
-  if (isNaN(n)) return '—';
-  return (n >= 0 ? '+' : '') + (n * 100).toFixed(1) + '%';
-}
+function convClass(n) { return n >= 0.5 ? 'hi' : n >= 0.3 ? 'mid' : n > 0 ? 'lo' : 'neu'; }
+function convPill(n) { const cls = convClass(n); return `<span class="pill ${cls}">${fmtPct(n)}</span>`; }
 
 function render() {
   const filtered = getFiltered();
-  const grouped  = groupBy(filtered, view);
+  const grouped  = groupBy(filtered);
 
-  // Totals
-  const tBonus  = filtered.reduce((s,r) => s + r.bonus,   0);
-  const tWL     = filtered.reduce((s,r) => s + r.winloss, 0);
-  const tProfit = filtered.reduce((s,r) => s + r.profit,  0);
-  const tClaims = filtered.reduce((s,r) => s + r.claims,  0);
-  const tROI    = tBonus !== 0 ? tProfit / tBonus : 0;
-  const tPPA    = tClaims !== 0 ? tProfit / tClaims : 0;
+  const tClaims  = filtered.reduce((s,r) => s + r.claims,  0);
+  const tDepPpl  = filtered.reduce((s,r) => s + r.depPpl,  0);
+  const tDeposit = filtered.reduce((s,r) => s + r.deposit, 0);
+  const tBonus   = filtered.reduce((s,r) => s + r.bonus,   0);
+  const tConv    = tClaims > 0 ? tDepPpl / tClaims : 0;
+  const tPPA     = tDepPpl > 0 ? tDeposit / tDepPpl : 0;
 
-  setMetric('mProfit', tProfit, fmtRM(tProfit), tProfit > 0 ? '整体盈利 ▲' : tProfit < 0 ? '整体亏损 ▼' : '打平', 'mCardProfit');
-  setMetric('mROI',    tROI,    fmtPct(tROI),   tROI > 0 ? '正向回报' : tROI < 0 ? '负向回报' : '—', 'mCardROI');
-  setMetricNeutral('mClaims', fmtN(tClaims),  filtered.length + ' 条记录', null);
-  setMetricNeutral('mBonus',  fmtRM(tBonus),  '实际成本', null);
-  setMetricNeutral('mWL',     fmtRM(-tWL),    tWL < 0 ? '平台赢 ▲' : tWL > 0 ? '平台输 ▼' : '—', -tWL);
+  // Metrics
+  setVal('mClaims',  fmtN(tClaims),   filtered.length + ' 条记录', null);
+  setVal('mDepPpl',  fmtN(tDepPpl),   tClaims > 0 ? '领取中有存款' : '—', null);
+  setVal('mDeposit', fmtRM(tDeposit), '人均 ' + fmtRM(tPPA), null);
+  setVal('mBonus',   fmtRM(tBonus),   '总成本', null);
 
-  // 人均净利润只在单个 promo 筛选时显示
-  const isSinglePromo = document.getElementById('promoFilter').value !== 'all';
-  const ppaCard = document.getElementById('mCardPPA');
-  if (isSinglePromo) {
-    ppaCard.style.display = '';
-    setMetricNeutral('mPPA', fmtRM(tPPA), tPPA > 0 ? '每人赚' : tPPA < 0 ? '每人亏' : '—', tPPA);
-  } else {
-    ppaCard.style.display = 'none';
-  }
+  const convEl = document.getElementById('mConv');
+  const convSub = document.getElementById('mConvSub');
+  convEl.textContent = fmtPct(tConv);
+  convEl.className = 'val ' + (tConv >= 0.5 ? 'hi' : tConv >= 0.3 ? 'amber' : 'lo');
+  convSub.textContent = tConv >= 0.5 ? '转化率高 ▲' : tConv >= 0.3 ? '转化率中等' : '转化率低 ▼';
+  convSub.className = 'sub ' + (tConv >= 0.5 ? 'hi' : tConv >= 0.3 ? '' : 'lo');
 
-  // Table title
   const titles = { day:'日报明细', week:'周报明细', month:'月报明细' };
   document.getElementById('tableTitle').textContent = titles[view];
 
@@ -769,149 +439,96 @@ function render() {
   renderTable(filtered);
 }
 
-function setMetric(id, val, display, sub, cardId) {
+function setVal(id, display, sub, cls) {
   const el = document.getElementById(id);
   const subEl = document.getElementById(id+'Sub');
-  const card = document.getElementById(cardId);
-  el.textContent = display;
-  el.className = 'val ' + (val > 0 ? 'pos' : val < 0 ? 'neg' : '');
-  if (subEl) {
-    subEl.textContent = sub;
-    subEl.className = 'sub ' + (val > 0 ? 'pos' : val < 0 ? 'neg' : '');
-  }
-  if (card) {
-    card.className = 'metric ' + (val > 0 ? 'pos' : val < 0 ? 'neg' : '');
-  }
+  if (el) { el.textContent = display; if (cls) el.className = 'val ' + cls; }
+  if (subEl) subEl.textContent = sub || '';
 }
 
-function setMetricNeutral(id, display, sub, val) {
-  const el = document.getElementById(id);
-  const subEl = document.getElementById(id+'Sub');
-  if (el) {
-    el.textContent = display;
-    el.className = 'val' + (val !== null ? (val > 0 ? ' pos' : val < 0 ? ' neg' : '') : '');
-  }
-  if (subEl) {
-    subEl.textContent = sub;
-    subEl.className = 'sub' + (val !== null ? (val > 0 ? ' pos' : val < 0 ? ' neg' : '') : '');
-  }
-}
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function renderCharts(grouped) {
   const labels  = grouped.map(r => r.label.length > 7 ? r.label.slice(5) : r.label);
-  const profits = grouped.map(r => r.profit);
-  const bonuses = grouped.map(r => r.bonus);
-  const wls     = grouped.map(r => -r.winloss);
   const claims  = grouped.map(r => r.claims);
-  const rois    = grouped.map(r => r.bonus !== 0 ? (r.profit / r.bonus * 100) : 0);
+  const convs   = grouped.map(r => r.conv * 100);
+  const deps    = grouped.map(r => r.deposit);
+  const bons    = grouped.map(r => r.bonus);
+  const ppas    = grouped.map(r => r.ppa);
 
   const gridC = 'rgba(255,255,255,0.04)';
   const xTick = { font:{size:10,family:'JetBrains Mono'}, color:'#5A6A78', autoSkip:true, maxRotation:45 };
-  const yTick = (cb) => ({ font:{size:10,family:'JetBrains Mono'}, color:'#5A6A78', callback: cb });
 
-  // Profit chart
-  destroyChart('profitChart');
-  charts['profitChart'] = new Chart(document.getElementById('profitChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      label: '净利润',
-      data: profits,
-      backgroundColor: profits.map(p => p >= 0 ? 'rgba(0,229,160,0.7)' : 'rgba(255,61,90,0.7)'),
-      borderRadius: 4,
-      borderSkipped: false,
-    }]},
-    options: chartOpts(gridC, xTick, yTick(v => fmtRM(v)), '净利润: ')
-  });
-
-  // ROI chart
-  destroyChart('roiChart');
-  charts['roiChart'] = new Chart(document.getElementById('roiChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{
-      label: 'ROI %',
-      data: rois,
-      backgroundColor: rois.map(r => r >= 0 ? 'rgba(0,229,160,0.7)' : 'rgba(255,61,90,0.7)'),
-      borderRadius: 4,
-      borderSkipped: false,
-    }]},
-    options: chartOpts(gridC, xTick, yTick(v => v.toFixed(0)+'%'), 'ROI: ', '%')
-  });
-
-  // Bonus vs WL
-  destroyChart('bvwChart');
-  charts['bvwChart'] = new Chart(document.getElementById('bvwChart'), {
-    type: 'bar',
-    data: { labels, datasets: [
-      { label:'派发Bonus', data: bonuses, backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
-      { label:'Win/Loss',  data: wls,     backgroundColor:'rgba(255,176,32,0.7)',  borderRadius:3 },
-    ]},
-    options: { ...chartOpts(gridC, xTick, yTick(v => fmtRM(v))),
-      plugins: { legend:{display:false}, tooltip:{mode:'index',intersect:false,
-        callbacks:{label: ctx => ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}
-    }
-  });
-
-  // Claims
   destroyChart('claimChart');
   charts['claimChart'] = new Chart(document.getElementById('claimChart'), {
-    type: 'line',
-    data: { labels, datasets: [{
-      label:'领取人数', data: claims,
-      borderColor:'rgba(77,159,255,0.9)',
-      backgroundColor:'rgba(77,159,255,0.08)',
-      borderWidth:2, tension:0.35, fill:true, pointRadius:3,
-      pointBackgroundColor:'rgba(77,159,255,0.9)',
+    type:'bar',
+    data:{ labels, datasets:[{ label:'领取人数', data:claims, backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
+    options: mkOpts(gridC, xTick, v => fmtN(v))
+  });
+
+  destroyChart('convChart');
+  charts['convChart'] = new Chart(document.getElementById('convChart'), {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'转化率', data:convs,
+      borderColor:'#00E5A0', backgroundColor:'rgba(0,229,160,0.08)',
+      borderWidth:2, tension:0.35, fill:true, pointRadius:3, pointBackgroundColor:'#00E5A0'
     }]},
-    options: chartOpts(gridC, xTick, yTick(v => fmtN(v)), '领取: ')
+    options: mkOpts(gridC, xTick, v => v.toFixed(0)+'%', '%')
+  });
+
+  destroyChart('depBonusChart');
+  charts['depBonusChart'] = new Chart(document.getElementById('depBonusChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'存款金额', data:deps, backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
+      { label:'派发Bonus', data:bons, backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    ]},
+    options:{ ...mkOpts(gridC, xTick, v => fmtRM(v)),
+      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
+  });
+
+  destroyChart('ppaChart');
+  charts['ppaChart'] = new Chart(document.getElementById('ppaChart'), {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'人均存款', data:ppas,
+      borderColor:'#A78BFA', backgroundColor:'rgba(167,139,250,0.08)',
+      borderWidth:2, tension:0.35, fill:true, pointRadius:3, pointBackgroundColor:'#A78BFA'
+    }]},
+    options: mkOpts(gridC, xTick, v => fmtRM(v))
   });
 }
 
-function chartOpts(gridC, xTick, yTick, tooltipPrefix='', tooltipSuffix='') {
+function mkOpts(gridC, xTick, yCb, suffix='') {
   return {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => tooltipPrefix + (tooltipSuffix ? ctx.parsed.y.toFixed(1)+tooltipSuffix : fmtRM(ctx.parsed.y)) }}
-    },
-    scales: {
-      x: { ticks: xTick, grid: { display:false }, border:{color:'transparent'} },
-      y: { ticks: yTick, grid: { color:gridC }, border:{color:'transparent'} }
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+(suffix ? ctx.parsed.y.toFixed(1)+suffix : fmtRM(ctx.parsed.y)) }}},
+    scales:{
+      x:{ ticks:xTick, grid:{display:false}, border:{color:'transparent'} },
+      y:{ ticks:{ font:{size:10,family:'JetBrains Mono'}, color:'#5A6A78', callback:yCb }, grid:{color:gridC}, border:{color:'transparent'} }
     }
   };
-}
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
 
 function renderTable(data) {
   const tbody = document.getElementById('tableBody');
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
     return;
   }
-
-  // Sort by date desc
   const sorted = [...data].sort((a,b) => b.date.localeCompare(a.date));
-
-  tbody.innerHTML = sorted.map(r => {
-    const pc = r.profit > 0 ? 'pos' : r.profit < 0 ? 'neg' : 'neutral';
-    const roiCls = r.roi > 0 ? 'p' : r.roi < 0 ? 'n' : 'z';
-    const roiLabel = (r.roi >= 0 ? '+' : '') + (r.roi * 100).toFixed(1) + '%';
-    return `<tr>
-      <td>${r.date}</td>
-      <td><span class="type-tag">${r.type || '—'}</span></td>
-      <td>${r.name || '—'}</td>
-      <td>${fmtN(r.claims)}</td>
-      <td>${fmtN(r.depPpl)}</td>
-      <td>${fmtRM(r.deposit)}</td>
-      <td>${fmtRM(r.bonus)}</td>
-      <td class="${r.winloss < 0 ? 'neg' : r.winloss > 0 ? 'pos' : ''}">${fmtRM(r.winloss)}</td>
-      <td class="${pc}">${r.profit >= 0 ? '+' : ''}${fmtRM(r.profit)}</td>
-      <td><span class="pill ${roiCls}">${roiLabel}</span></td>
-      <td class="${pc}">${fmtRM(r.ppa)}</td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML = sorted.map(r => `<tr>
+    <td>${r.date}</td>
+    <td><span class="type-tag">${r.type || '—'}</span></td>
+    <td>${r.name || '—'}</td>
+    <td>${fmtN(r.claims)}</td>
+    <td>${fmtN(r.depPpl)}</td>
+    <td>${convPill(r.conv)}</td>
+    <td>${fmtRM(r.deposit)}</td>
+    <td>${fmtRM(r.bonus)}</td>
+    <td>${fmtRM(r.ppa)}</td>
+  </tr>`).join('');
 }
 </script>
 </body>
