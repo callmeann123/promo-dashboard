@@ -43,80 +43,78 @@ body::before {
   pointer-events: none; z-index: 0;
 }
 
-.app { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 2.5rem 2.5rem; }
+.app { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 2.5rem; }
 
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-.logo { display: flex; align-items: center; gap: 14px; }
-.logo-mark { width: 52px; height: 52px; background: linear-gradient(135deg, #4D9FFF, #00E5A0); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #080B0F; flex-shrink: 0; }
+.logo { display: flex; align-items: center; gap: 16px; }
+.logo-mark { width: 52px; height: 52px; background: linear-gradient(135deg, #4D9FFF, #00E5A0); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #080B0F; flex-shrink: 0; }
 .logo h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .logo h1 span { color: var(--blue); }
-.logo p { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+.logo p { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); margin-top: 4px; }
 
-.status-chip { display: flex; align-items: center; gap: 7px; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; font-size: 0.75rem; font-family: var(--mono); color: var(--muted2); }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.status-chip { display: flex; align-items: center; gap: 7px; padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; font-size: 0.78rem; font-family: var(--mono); color: var(--muted2); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 .loading-zone { border: 1.5px dashed var(--border2); border-radius: 16px; padding: 3rem 2rem; text-align: center; margin-bottom: 2rem; background: var(--surface); }
 .loading-zone .icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.loading-zone h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.loading-zone h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
 .loading-zone p { font-size: 0.82rem; color: var(--muted2); font-family: var(--mono); }
 
 .controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
 .tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
-.tab { padding: 7px 20px; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted2); transition: all 0.15s; }
+.tab { padding: 8px 22px; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted2); transition: all 0.15s; }
 .tab.active { background: var(--blue); color: #080B0F; }
 
-.filter-wrap { display: flex; gap: 8px; }
-.promo-filter { font-size: 0.8rem; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: var(--mono); cursor: pointer; min-width: 160px; }
+.filter-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+.promo-filter { font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: var(--mono); cursor: pointer; min-width: 160px; }
 
-.metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.5rem; }
-.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1.4rem; position: relative; overflow: hidden; }
+/* Currency sections */
+.currency-section { margin-bottom: 1.5rem; }
+.currency-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding: 10px 16px; border-radius: 10px; }
+.currency-header.myr { background: rgba(77,159,255,0.08); border: 1px solid rgba(77,159,255,0.2); }
+.currency-header.sgd { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); }
+.currency-label { font-size: 1rem; font-weight: 700; font-family: var(--mono); }
+.currency-label.myr { color: var(--blue); }
+.currency-label.sgd { color: var(--green); }
+
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; position: relative; overflow: hidden; }
 .metric::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--blue); opacity: 0.4; }
-.metric.hi::after { background: var(--green); opacity: 1; }
-.metric.lo::after { background: var(--red); opacity: 1; }
-.metric .lbl { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.metric.myr-card::after { background: var(--blue); opacity: 0.7; }
+.metric.sgd-card::after { background: var(--green); opacity: 0.7; }
+.metric .lbl { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
 .metric .val { font-size: 1.8rem; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em; line-height: 1; }
-.metric .val.hi { color: var(--green); }
-.metric .val.lo { color: var(--red); }
-.metric .val.amber { color: var(--amber); }
-.metric .sub { font-size: 0.68rem; color: var(--muted); margin-top: 5px; font-family: var(--mono); }
-.metric .sub.hi { color: var(--green); }
-.metric .sub.lo { color: var(--red); }
+.metric .sub { font-size: 0.7rem; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
 
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; }
 .chart-card.wide { grid-column: 1 / -1; }
 .chart-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.chart-title { font-size: 0.72rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
+.chart-title { font-size: 0.75rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; }
-.legend span { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: var(--muted2); font-family: var(--mono); }
-.leg { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-.chart-wrap { position: relative; width: 100%; height: 260px; }
-.chart-wrap.tall { height: 280px; }
+.legend span { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--muted2); font-family: var(--mono); }
+.leg { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.chart-wrap { position: relative; width: 100%; height: 240px; }
 
-.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
-.table-hd { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
-.table-title { font-size: 0.72rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+.table-hd { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-family: var(--mono); color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
 .table-wrap { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
-th { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); font-weight: 400; text-align: right; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
+th { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); font-weight: 400; text-align: right; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
 th:first-child, th:nth-child(2), th:nth-child(3) { text-align: left; }
-td { padding: 13px 16px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--mono); font-size: 0.95rem; white-space: nowrap; color: var(--muted2); }
-td:first-child { text-align: left; color: var(--muted); font-size: 0.75rem; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--mono); font-size: 0.85rem; white-space: nowrap; color: var(--muted2); }
+td:first-child { text-align: left; color: var(--muted); font-size: 0.78rem; }
 td:nth-child(2), td:nth-child(3) { text-align: left; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
 
-.pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; font-family: var(--mono); }
-.pill.hi { background: var(--green-dim); color: var(--green); }
-.pill.lo { background: var(--red-dim); color: var(--red); }
-.pill.mid { background: var(--amber-dim); color: var(--amber); }
-.pill.neu { background: var(--surface3); color: var(--muted); }
-
-.type-tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.68rem; font-family: var(--mono); background: var(--blue-dim); color: var(--blue); }
-
+.type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-family: var(--mono); background: var(--blue-dim); color: var(--blue); }
+.myr-val { color: var(--blue); }
+.sgd-val { color: var(--green); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .hidden { display: none !important; }
 </style>
 </head>
@@ -128,7 +126,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class="logo-mark">P</div>
       <div>
         <h1>PROMO <span>Dashboard</span></h1>
-        <p>存款行为分析  |  MYR</p>
+        <p>存款行为分析  |  MYR & SGD</p>
       </div>
     </div>
     <div class="status-chip">
@@ -160,66 +158,103 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
     </div>
 
-    <div class="metrics">
-      <div class="metric">
-        <div class="lbl">领取人数</div>
-        <div class="val" id="mClaims">—</div>
-        <div class="sub" id="mClaimsSub">—</div>
+    <!-- MYR Section -->
+    <div class="currency-section">
+      <div class="currency-header myr">
+        <span class="currency-label myr">🇲🇾 MYR</span>
       </div>
-      <div class="metric">
-        <div class="lbl">存款人数</div>
-        <div class="val" id="mDepPpl">—</div>
-        <div class="sub" id="mDepPplSub">—</div>
-      </div>
-      <div class="metric">
-        <div class="lbl">存款转化率</div>
-        <div class="val" id="mConv">—</div>
-        <div class="sub" id="mConvSub">—</div>
-      </div>
-      <div class="metric">
-        <div class="lbl">总存款金额</div>
-        <div class="val" id="mDeposit">—</div>
-        <div class="sub" id="mDepositSub">—</div>
-      </div>
-      <div class="metric">
-        <div class="lbl">派发 Bonus</div>
-        <div class="val" id="mBonus">—</div>
-        <div class="sub" id="mBonusSub">—</div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">领取人数趋势</div></div>
-        <div class="chart-wrap tall"><canvas id="claimChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">存款转化率趋势</div></div>
-        <div class="chart-wrap tall"><canvas id="convChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd">
-          <div class="chart-title">存款金额 vs 派发 Bonus</div>
-          <div class="legend">
-            <span><span class="leg" style="background:var(--blue)"></span>存款金额</span>
-            <span><span class="leg" style="background:var(--amber)"></span>派发Bonus</span>
-          </div>
+      <div class="metrics">
+        <div class="metric myr-card">
+          <div class="lbl">Active Player</div>
+          <div class="val myr-val" id="mMyrActive">—</div>
+          <div class="sub" id="mMyrActiveSub">—</div>
         </div>
-        <div class="chart-wrap"><canvas id="depBonusChart"></canvas></div>
+        <div class="metric myr-card">
+          <div class="lbl">领取人数</div>
+          <div class="val myr-val" id="mMyrClaims">—</div>
+          <div class="sub" id="mMyrClaimsSub">—</div>
+        </div>
+        <div class="metric myr-card">
+          <div class="lbl">存款金额</div>
+          <div class="val myr-val" id="mMyrDeposit">—</div>
+          <div class="sub" id="mMyrDepositSub">—</div>
+        </div>
+        <div class="metric myr-card">
+          <div class="lbl">派发 Bonus</div>
+          <div class="val myr-val" id="mMyrBonus">—</div>
+          <div class="sub">总成本</div>
+        </div>
       </div>
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">人均存款趋势</div></div>
-        <div class="chart-wrap"><canvas id="ppaChart"></canvas></div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-hd"><div class="chart-title">领取人数趋势 (MYR)</div></div>
+          <div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-hd">
+            <div class="chart-title">存款 vs Bonus (MYR)</div>
+            <div class="legend">
+              <span><span class="leg" style="background:var(--blue)"></span>存款</span>
+              <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="myrDepBonusChart"></canvas></div>
+        </div>
       </div>
     </div>
 
-    <div class="table-card">
-      <div class="table-hd">
-        <div class="table-title" id="tableTitle">明细数据</div>
+    <hr class="divider">
+
+    <!-- SGD Section -->
+    <div class="currency-section">
+      <div class="currency-header sgd">
+        <span class="currency-label sgd">🇸🇬 SGD</span>
       </div>
+      <div class="metrics">
+        <div class="metric sgd-card">
+          <div class="lbl">Active Player</div>
+          <div class="val sgd-val" id="mSgdActive">—</div>
+          <div class="sub" id="mSgdActiveSub">—</div>
+        </div>
+        <div class="metric sgd-card">
+          <div class="lbl">领取人数</div>
+          <div class="val sgd-val" id="mSgdClaims">—</div>
+          <div class="sub" id="mSgdClaimsSub">—</div>
+        </div>
+        <div class="metric sgd-card">
+          <div class="lbl">存款金额</div>
+          <div class="val sgd-val" id="mSgdDeposit">—</div>
+          <div class="sub" id="mSgdDepositSub">—</div>
+        </div>
+        <div class="metric sgd-card">
+          <div class="lbl">派发 Bonus</div>
+          <div class="val sgd-val" id="mSgdBonus">—</div>
+          <div class="sub">总成本</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-hd"><div class="chart-title">领取人数趋势 (SGD)</div></div>
+          <div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-hd">
+            <div class="chart-title">存款 vs Bonus (SGD)</div>
+            <div class="legend">
+              <span><span class="leg" style="background:var(--green)"></span>存款</span>
+              <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="table-card">
+      <div class="table-hd" id="tableTitle">明细数据</div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -227,12 +262,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <th>日期</th>
               <th>Promo 类型</th>
               <th>Promo 名称</th>
-              <th>领取人数</th>
-              <th>存款人数</th>
-              <th>存款转化率</th>
-              <th>存款金额</th>
-              <th>派发 Bonus</th>
-              <th>人均存款</th>
+              <th>🇲🇾 Active</th>
+              <th>🇲🇾 领取</th>
+              <th>🇲🇾 存款人数</th>
+              <th>🇲🇾 存款金额</th>
+              <th>🇲🇾 Bonus</th>
+              <th>🇸🇬 Active</th>
+              <th>🇸🇬 领取</th>
+              <th>🇸🇬 存款人数</th>
+              <th>🇸🇬 存款金额</th>
+              <th>🇸🇬 Bonus</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -248,7 +287,7 @@ let rawData = [];
 let view = 'day';
 let charts = {};
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTWoz9XBMdoHrV6B4QKVAoGX58F_1YJx2Bzb6xbWNkWBveGpgk3Gi_Vb6nVYhLnrw/pub?output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9sXve06rBcPz7aFDzUPTWH3jUmEkQD_4g9UWbNDlkuGu8iEcMVkQsgdtzZ2J8Lg/pub?output=csv';
 
 async function loadData() {
   try {
@@ -269,7 +308,7 @@ window.addEventListener('DOMContentLoaded', loadData);
 
 function cleanNum(s) {
   if (!s && s !== 0) return 0;
-  let str = String(s).replace(/RM/gi,'').replace(/\s/g,'').replace(/"/g,'').trim();
+  let str = String(s).replace(/RM|S\$|\$/gi,'').replace(/\s/g,'').replace(/"/g,'').trim();
   const neg = str.startsWith('(') && str.endsWith(')');
   str = str.replace(/[()]/g,'').replace(/,/g,'');
   const n = parseFloat(str) || 0;
@@ -290,9 +329,10 @@ function parseCSV(text) {
     lines.push(cols);
   });
 
+  // Find header row with 日期 and Active
   let hRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].some(c => c.includes('日期')) && lines[i].some(c => c.includes('领取'))) {
+    if (lines[i].some(c => c.includes('日期')) && lines[i].some(c => c.includes('Active') || c.includes('领取'))) {
       hRow = i; break;
     }
   }
@@ -309,21 +349,26 @@ function parseCSV(text) {
     const r = lines[i];
     if (!r || !r[0] || r[0] === '合计' || r[0].trim() === '') continue;
 
-    const claims  = cleanNum(r[3]);
-    const depPpl  = cleanNum(r[4]);
-    const deposit = cleanNum(r[5]);
-    const bonus   = cleanNum(r[6]);
+    // Col index: A=0,B=1,C=2,D=3,E=4,F=5,G=6,H=7,I=8,J=9,K=10,L=11,M=12
+    const myrActive  = cleanNum(r[3]);
+    const myrClaims  = cleanNum(r[4]);
+    const myrDepPpl  = cleanNum(r[5]);
+    const myrDeposit = cleanNum(r[6]);
+    const myrBonus   = cleanNum(r[7]);
+    const sgdActive  = cleanNum(r[8]);
+    const sgdClaims  = cleanNum(r[9]);
+    const sgdDepPpl  = cleanNum(r[10]);
+    const sgdDeposit = cleanNum(r[11]);
+    const sgdBonus   = cleanNum(r[12]);
 
-    if (claims === 0 && depPpl === 0 && deposit === 0 && bonus === 0) continue;
-
-    const conv = claims > 0 ? depPpl / claims : 0;
-    const ppa  = depPpl > 0 ? deposit / depPpl : 0;
+    if (myrActive === 0 && sgdActive === 0 && myrClaims === 0 && sgdClaims === 0) continue;
 
     rawData.push({
-      date:    r[0].trim(),
-      type:    String(r[1] || '').trim(),
-      name:    String(r[2] || '').trim(),
-      claims, depPpl, deposit, bonus, conv, ppa
+      date:  r[0].trim(),
+      type:  String(r[1] || '').trim(),
+      name:  String(r[2] || '').trim(),
+      myrActive, myrClaims, myrDepPpl, myrDeposit, myrBonus,
+      sgdActive, sgdClaims, sgdDepPpl, sgdDeposit, sgdBonus,
     });
   }
 
@@ -339,15 +384,11 @@ function parseCSV(text) {
   document.getElementById('loadingZone').style.display = 'none';
   document.getElementById('dashboard').classList.remove('hidden');
 
-  // Populate filters
   const types = [...new Set(rawData.map(r => r.type).filter(Boolean))];
   const names = [...new Set(rawData.map(r => r.name).filter(Boolean))];
 
-  const tf = document.getElementById('typeFilter');
-  tf.innerHTML = '<option value="all">全部类型</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
-
-  const nf = document.getElementById('nameFilter');
-  nf.innerHTML = '<option value="all">全部 Promo</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+  document.getElementById('typeFilter').innerHTML = '<option value="all">全部类型</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
+  document.getElementById('nameFilter').innerHTML = '<option value="all">全部 Promo</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
 
   render();
 }
@@ -362,10 +403,7 @@ function setView(v, btn) {
 function getFiltered() {
   const type = document.getElementById('typeFilter').value;
   const name = document.getElementById('nameFilter').value;
-  return rawData.filter(r =>
-    (type === 'all' || r.type === type) &&
-    (name === 'all' || r.name === name)
-  );
+  return rawData.filter(r => (type === 'all' || r.type === type) && (name === 'all' || r.name === name));
 }
 
 function groupBy(data) {
@@ -383,55 +421,72 @@ function groupBy(data) {
       }
     } else { key = r.date.slice(0, 7); }
 
-    if (!map[key]) map[key] = { label:key, claims:0, depPpl:0, deposit:0, bonus:0 };
-    map[key].claims  += r.claims;
-    map[key].depPpl  += r.depPpl;
-    map[key].deposit += r.deposit;
-    map[key].bonus   += r.bonus;
+    if (!map[key]) map[key] = { label:key, myrActive:0, myrClaims:0, myrDepPpl:0, myrDeposit:0, myrBonus:0, sgdActive:0, sgdClaims:0, sgdDepPpl:0, sgdDeposit:0, sgdBonus:0 };
+    map[key].myrActive  += r.myrActive;
+    map[key].myrClaims  += r.myrClaims;
+    map[key].myrDepPpl  += r.myrDepPpl;
+    map[key].myrDeposit += r.myrDeposit;
+    map[key].myrBonus   += r.myrBonus;
+    map[key].sgdActive  += r.sgdActive;
+    map[key].sgdClaims  += r.sgdClaims;
+    map[key].sgdDepPpl  += r.sgdDepPpl;
+    map[key].sgdDeposit += r.sgdDeposit;
+    map[key].sgdBonus   += r.sgdBonus;
   });
-
-  return Object.values(map).sort((a,b) => a.label.localeCompare(b.label)).map(r => ({
-    ...r,
-    conv: r.claims > 0 ? r.depPpl / r.claims : 0,
-    ppa:  r.depPpl > 0 ? r.deposit / r.depPpl : 0,
-  }));
+  return Object.values(map).sort((a,b) => a.label.localeCompare(b.label));
 }
 
 function fmtRM(n) {
-  if (n === null || isNaN(n)) return '—';
+  if (!n && n !== 0) return '—';
   const abs = Math.abs(n);
   const s = abs >= 1000000 ? 'RM'+(abs/1000000).toFixed(2)+'M' : abs >= 1000 ? 'RM'+(abs/1000).toFixed(1)+'k' : 'RM'+abs.toFixed(2);
   return n < 0 ? '('+s+')' : s;
 }
+function fmtSGD(n) {
+  if (!n && n !== 0) return '—';
+  const abs = Math.abs(n);
+  const s = abs >= 1000000 ? 'S$'+(abs/1000000).toFixed(2)+'M' : abs >= 1000 ? 'S$'+(abs/1000).toFixed(1)+'k' : 'S$'+abs.toFixed(2);
+  return n < 0 ? '('+s+')' : s;
+}
 function fmtN(n) { if (!n) return '—'; return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(Math.round(n)); }
-function fmtPct(n) { return (n*100).toFixed(1)+'%'; }
-
-function convClass(n) { return n >= 0.5 ? 'hi' : n >= 0.3 ? 'mid' : n > 0 ? 'lo' : 'neu'; }
-function convPill(n) { const cls = convClass(n); return `<span class="pill ${cls}">${fmtPct(n)}</span>`; }
 
 function render() {
   const filtered = getFiltered();
   const grouped  = groupBy(filtered);
 
-  const tClaims  = filtered.reduce((s,r) => s + r.claims,  0);
-  const tDepPpl  = filtered.reduce((s,r) => s + r.depPpl,  0);
-  const tDeposit = filtered.reduce((s,r) => s + r.deposit, 0);
-  const tBonus   = filtered.reduce((s,r) => s + r.bonus,   0);
-  const tConv    = tClaims > 0 ? tDepPpl / tClaims : 0;
-  const tPPA     = tDepPpl > 0 ? tDeposit / tDepPpl : 0;
+  // MYR totals
+  const tMyrActive  = filtered.reduce((s,r) => s + r.myrActive,  0);
+  const tMyrClaims  = filtered.reduce((s,r) => s + r.myrClaims,  0);
+  const tMyrDepPpl  = filtered.reduce((s,r) => s + r.myrDepPpl,  0);
+  const tMyrDeposit = filtered.reduce((s,r) => s + r.myrDeposit, 0);
+  const tMyrBonus   = filtered.reduce((s,r) => s + r.myrBonus,   0);
+  const tMyrPPA     = tMyrDepPpl > 0 ? tMyrDeposit / tMyrDepPpl : 0;
 
-  // Metrics
-  setVal('mClaims',  fmtN(tClaims),   filtered.length + ' 条记录', null);
-  setVal('mDepPpl',  fmtN(tDepPpl),   tClaims > 0 ? '领取中有存款' : '—', null);
-  setVal('mDeposit', fmtRM(tDeposit), '人均 ' + fmtRM(tPPA), null);
-  setVal('mBonus',   fmtRM(tBonus),   '总成本', null);
+  // SGD totals
+  const tSgdActive  = filtered.reduce((s,r) => s + r.sgdActive,  0);
+  const tSgdClaims  = filtered.reduce((s,r) => s + r.sgdClaims,  0);
+  const tSgdDepPpl  = filtered.reduce((s,r) => s + r.sgdDepPpl,  0);
+  const tSgdDeposit = filtered.reduce((s,r) => s + r.sgdDeposit, 0);
+  const tSgdBonus   = filtered.reduce((s,r) => s + r.sgdBonus,   0);
+  const tSgdPPA     = tSgdDepPpl > 0 ? tSgdDeposit / tSgdDepPpl : 0;
 
-  const convEl = document.getElementById('mConv');
-  const convSub = document.getElementById('mConvSub');
-  convEl.textContent = fmtPct(tConv);
-  convEl.className = 'val ' + (tConv >= 0.5 ? 'hi' : tConv >= 0.3 ? 'amber' : 'lo');
-  convSub.textContent = tConv >= 0.5 ? '转化率高 ▲' : tConv >= 0.3 ? '转化率中等' : '转化率低 ▼';
-  convSub.className = 'sub ' + (tConv >= 0.5 ? 'hi' : tConv >= 0.3 ? '' : 'lo');
+  // Set MYR metrics
+  document.getElementById('mMyrActive').textContent  = fmtN(tMyrActive);
+  document.getElementById('mMyrActiveSub').textContent = filtered.length + ' 条记录';
+  document.getElementById('mMyrClaims').textContent  = fmtN(tMyrClaims);
+  document.getElementById('mMyrClaimsSub').textContent = '存款人数: ' + fmtN(tMyrDepPpl);
+  document.getElementById('mMyrDeposit').textContent = fmtRM(tMyrDeposit);
+  document.getElementById('mMyrDepositSub').textContent = '人均: ' + fmtRM(tMyrPPA);
+  document.getElementById('mMyrBonus').textContent   = fmtRM(tMyrBonus);
+
+  // Set SGD metrics
+  document.getElementById('mSgdActive').textContent  = fmtN(tSgdActive);
+  document.getElementById('mSgdActiveSub').textContent = filtered.length + ' 条记录';
+  document.getElementById('mSgdClaims').textContent  = fmtN(tSgdClaims);
+  document.getElementById('mSgdClaimsSub').textContent = '存款人数: ' + fmtN(tSgdDepPpl);
+  document.getElementById('mSgdDeposit').textContent = fmtSGD(tSgdDeposit);
+  document.getElementById('mSgdDepositSub').textContent = '人均: ' + fmtSGD(tSgdPPA);
+  document.getElementById('mSgdBonus').textContent   = fmtSGD(tSgdBonus);
 
   const titles = { day:'日报明细', week:'周报明细', month:'月报明细' };
   document.getElementById('tableTitle').textContent = titles[view];
@@ -440,71 +495,13 @@ function render() {
   renderTable(filtered);
 }
 
-function setVal(id, display, sub, cls) {
-  const el = document.getElementById(id);
-  const subEl = document.getElementById(id+'Sub');
-  if (el) { el.textContent = display; if (cls) el.className = 'val ' + cls; }
-  if (subEl) subEl.textContent = sub || '';
-}
-
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function renderCharts(grouped) {
-  const labels  = grouped.map(r => r.label.length > 7 ? r.label.slice(5) : r.label);
-  const claims  = grouped.map(r => r.claims);
-  const convs   = grouped.map(r => r.conv * 100);
-  const deps    = grouped.map(r => r.deposit);
-  const bons    = grouped.map(r => r.bonus);
-  const ppas    = grouped.map(r => r.ppa);
-
-  const gridC = 'rgba(255,255,255,0.04)';
+function mkOpts(gridC, yCb) {
   const xTick = { font:{size:10,family:'JetBrains Mono'}, color:'#5A6A78', autoSkip:true, maxRotation:45 };
-
-  destroyChart('claimChart');
-  charts['claimChart'] = new Chart(document.getElementById('claimChart'), {
-    type:'bar',
-    data:{ labels, datasets:[{ label:'领取人数', data:claims, backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
-    options: mkOpts(gridC, xTick, v => fmtN(v))
-  });
-
-  destroyChart('convChart');
-  charts['convChart'] = new Chart(document.getElementById('convChart'), {
-    type:'line',
-    data:{ labels, datasets:[{
-      label:'转化率', data:convs,
-      borderColor:'#00E5A0', backgroundColor:'rgba(0,229,160,0.08)',
-      borderWidth:2, tension:0.35, fill:true, pointRadius:3, pointBackgroundColor:'#00E5A0'
-    }]},
-    options: mkOpts(gridC, xTick, v => v.toFixed(0)+'%', '%')
-  });
-
-  destroyChart('depBonusChart');
-  charts['depBonusChart'] = new Chart(document.getElementById('depBonusChart'), {
-    type:'bar',
-    data:{ labels, datasets:[
-      { label:'存款金额', data:deps, backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
-      { label:'派发Bonus', data:bons, backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
-    ]},
-    options:{ ...mkOpts(gridC, xTick, v => fmtRM(v)),
-      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
-  });
-
-  destroyChart('ppaChart');
-  charts['ppaChart'] = new Chart(document.getElementById('ppaChart'), {
-    type:'line',
-    data:{ labels, datasets:[{
-      label:'人均存款', data:ppas,
-      borderColor:'#A78BFA', backgroundColor:'rgba(167,139,250,0.08)',
-      borderWidth:2, tension:0.35, fill:true, pointRadius:3, pointBackgroundColor:'#A78BFA'
-    }]},
-    options: mkOpts(gridC, xTick, v => fmtRM(v))
-  });
-}
-
-function mkOpts(gridC, xTick, yCb, suffix='') {
   return {
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+(suffix ? ctx.parsed.y.toFixed(1)+suffix : fmtRM(ctx.parsed.y)) }}},
+    plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
     scales:{
       x:{ ticks:xTick, grid:{display:false}, border:{color:'transparent'} },
       y:{ ticks:{ font:{size:10,family:'JetBrains Mono'}, color:'#5A6A78', callback:yCb }, grid:{color:gridC}, border:{color:'transparent'} }
@@ -512,23 +509,72 @@ function mkOpts(gridC, xTick, yCb, suffix='') {
   };
 }
 
+function renderCharts(grouped) {
+  const labels = grouped.map(r => r.label.length > 7 ? r.label.slice(5) : r.label);
+  const gridC  = 'rgba(255,255,255,0.04)';
+
+  // MYR Claims
+  destroyChart('myrClaimChart');
+  charts['myrClaimChart'] = new Chart(document.getElementById('myrClaimChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'领取人数', data:grouped.map(r=>r.myrClaims), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
+    options: mkOpts(gridC, v => fmtN(v))
+  });
+
+  // MYR Deposit vs Bonus
+  destroyChart('myrDepBonusChart');
+  charts['myrDepBonusChart'] = new Chart(document.getElementById('myrDepBonusChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'存款', data:grouped.map(r=>r.myrDeposit), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
+      { label:'Bonus', data:grouped.map(r=>r.myrBonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    ]},
+    options:{ ...mkOpts(gridC, v => fmtRM(v)),
+      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
+  });
+
+  // SGD Claims
+  destroyChart('sgdClaimChart');
+  charts['sgdClaimChart'] = new Chart(document.getElementById('sgdClaimChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'领取人数', data:grouped.map(r=>r.sgdClaims), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:4 }]},
+    options: mkOpts(gridC, v => fmtN(v))
+  });
+
+  // SGD Deposit vs Bonus
+  destroyChart('sgdDepBonusChart');
+  charts['sgdDepBonusChart'] = new Chart(document.getElementById('sgdDepBonusChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'存款', data:grouped.map(r=>r.sgdDeposit), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:3 },
+      { label:'Bonus', data:grouped.map(r=>r.sgdBonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    ]},
+    options:{ ...mkOpts(gridC, v => fmtSGD(v)),
+      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}}
+  });
+}
+
 function renderTable(data) {
   const tbody = document.getElementById('tableBody');
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
     return;
   }
   const sorted = [...data].sort((a,b) => b.date.localeCompare(a.date));
   tbody.innerHTML = sorted.map(r => `<tr>
     <td>${r.date}</td>
-    <td><span class="type-tag">${r.type || '—'}</span></td>
-    <td>${r.name || '—'}</td>
-    <td>${fmtN(r.claims)}</td>
-    <td>${fmtN(r.depPpl)}</td>
-    <td>${convPill(r.conv)}</td>
-    <td>${fmtRM(r.deposit)}</td>
-    <td>${fmtRM(r.bonus)}</td>
-    <td>${fmtRM(r.ppa)}</td>
+    <td><span class="type-tag">${r.type||'—'}</span></td>
+    <td>${r.name||'—'}</td>
+    <td class="myr-val">${fmtN(r.myrActive)}</td>
+    <td class="myr-val">${fmtN(r.myrClaims)}</td>
+    <td class="myr-val">${fmtN(r.myrDepPpl)}</td>
+    <td class="myr-val">${fmtRM(r.myrDeposit)}</td>
+    <td class="myr-val">${fmtRM(r.myrBonus)}</td>
+    <td class="sgd-val">${fmtN(r.sgdActive)}</td>
+    <td class="sgd-val">${fmtN(r.sgdClaims)}</td>
+    <td class="sgd-val">${fmtN(r.sgdDepPpl)}</td>
+    <td class="sgd-val">${fmtSGD(r.sgdDeposit)}</td>
+    <td class="sgd-val">${fmtSGD(r.sgdBonus)}</td>
   </tr>`).join('');
 }
 </script>
