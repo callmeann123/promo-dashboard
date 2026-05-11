@@ -332,7 +332,7 @@ function parseCSV(text) {
   // Find header row with 日期 and Active
   let hRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].some(c => c.includes('日期')) && lines[i].some(c => c.includes('Active') || c.includes('领取'))) {
+    if (lines[i][0] && lines[i][0].toString().trim() === '日期') {
       hRow = i; break;
     }
   }
