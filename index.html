@@ -410,11 +410,10 @@ function parseCSV(text) {
   const maxDate = dates[dates.length - 1];
   const fromEl = document.getElementById('dateFrom');
   const toEl   = document.getElementById('dateTo');
-  fromEl.min = minDate; fromEl.max = maxDate;
-  toEl.min   = minDate; toEl.max   = maxDate;
-  // Auto-set to full range
-  if (!fromEl.value) fromEl.value = minDate;
-  if (!toEl.value)   toEl.value   = maxDate;
+  // Auto-set: from = earliest data date, to = today
+  const today = new Date().toISOString().slice(0,10);
+  if (!fromEl.value) fromEl.value = toISO(minDate);
+  if (!toEl.value)   toEl.value   = today;
 
   render();
 }
