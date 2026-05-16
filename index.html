@@ -116,6 +116,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .sgd-val { color: var(--green); }
 .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 .hidden { display: none !important; }
+
+.date-range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.date-input { font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: Arial, sans-serif; cursor: pointer; }
+.date-input::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+.date-sep { color: var(--muted); font-size: 0.8rem; font-family: Arial, sans-serif; }
+.date-reset { font-size: 0.78rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--muted2); cursor: pointer; font-family: Arial, sans-serif; }
+.date-reset:hover { background: var(--surface2); color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -149,6 +157,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <button class="tab" onclick="setView('month',this)">月</button>
       </div>
       <div class="filter-wrap">
+        <div class="date-range">
+          <input type="date" class="date-input" id="dateFrom" onchange="render()" />
+          <span class="date-sep">至</span>
+          <input type="date" class="date-input" id="dateTo" onchange="render()" />
+          <button class="date-reset" onclick="resetDates()">重置</button>
+        </div>
         <select class="promo-filter" id="typeFilter" onchange="render()">
           <option value="all">全部类型</option>
         </select>
@@ -390,6 +404,15 @@ function parseCSV(text) {
   document.getElementById('typeFilter').innerHTML = '<option value="all">全部类型</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
   document.getElementById('nameFilter').innerHTML = '<option value="all">全部 Promo</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
 
+  // Set date input min/max based on data range
+  const dates = rawData.map(r => r.date).sort();
+  const minDate = dates[0];
+  const maxDate = dates[dates.length - 1];
+  const fromEl = document.getElementById('dateFrom');
+  const toEl   = document.getElementById('dateTo');
+  fromEl.min = minDate; fromEl.max = maxDate;
+  toEl.min   = minDate; toEl.max   = maxDate;
+
   render();
 }
 
@@ -400,10 +423,26 @@ function setView(v, btn) {
   render();
 }
 
+function resetDates() {
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  render();
+}
+
 function getFiltered() {
   const type = document.getElementById('typeFilter').value;
   const name = document.getElementById('nameFilter').value;
-  return rawData.filter(r => (type === 'all' || r.type === type) && (name === 'all' || r.name === name));
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  return rawData.filter(r => {
+    if (type !== 'all' && r.type !== type) return false;
+    if (name !== 'all' && r.name !== name) return false;
+    // Normalize date for comparison
+    const d = r.date;
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
 }
 
 function groupBy(data) {
