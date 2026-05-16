@@ -629,7 +629,7 @@ function renderTable(data) {
     tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
     return;
   }
-  const sorted = [...data].sort((a,b) => b.date.localeCompare(a.date));
+  const sorted = [...data].sort((a,b) => toISO(b.date).localeCompare(toISO(a.date)));
   tbody.innerHTML = sorted.map(r => `<tr>
     <td>${r.date}</td>
     <td><span class="type-tag">${r.type||'—'}</span></td>
