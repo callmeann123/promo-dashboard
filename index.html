@@ -412,6 +412,9 @@ function parseCSV(text) {
   const toEl   = document.getElementById('dateTo');
   fromEl.min = minDate; fromEl.max = maxDate;
   toEl.min   = minDate; toEl.max   = maxDate;
+  // Auto-set to full range
+  if (!fromEl.value) fromEl.value = minDate;
+  if (!toEl.value)   toEl.value   = maxDate;
 
   render();
 }
@@ -429,6 +432,14 @@ function resetDates() {
   render();
 }
 
+function toISO(dateStr) {
+  // Convert any date format to YYYY-MM-DD for comparison
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  return d.toISOString().slice(0, 10);
+}
+
 function getFiltered() {
   const type = document.getElementById('typeFilter').value;
   const name = document.getElementById('nameFilter').value;
@@ -437,8 +448,7 @@ function getFiltered() {
   return rawData.filter(r => {
     if (type !== 'all' && r.type !== type) return false;
     if (name !== 'all' && r.name !== name) return false;
-    // Normalize date for comparison
-    const d = r.date;
+    const d = toISO(r.date);
     if (from && d < from) return false;
     if (to   && d > to)   return false;
     return true;
@@ -549,7 +559,15 @@ function mkOpts(gridC, yCb) {
 }
 
 function renderCharts(grouped) {
-  const labels = grouped.map(r => r.label.length > 7 ? r.label.slice(5) : r.label);
+  const labels = grouped.map(r => {
+    // Format label nicely
+    const d = new Date(r.label);
+    if (!isNaN(d)) {
+      if (view === 'day')   return d.toLocaleDateString('en-MY', {day:'2-digit', month:'short'});
+      if (view === 'month') return d.toLocaleDateString('en-MY', {month:'short', year:'numeric'});
+    }
+    return r.label;
+  });
   const gridC  = 'rgba(255,255,255,0.04)';
 
   // MYR Claims
