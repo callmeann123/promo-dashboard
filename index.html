@@ -433,18 +433,22 @@ function resetDates() {
 
 function toISO(dateStr) {
   if (!dateStr) return '';
-  // Handle D/M/YYYY or DD/MM/YYYY format
-  const parts = dateStr.split('/');
-  if (parts.length === 3) {
-    const day   = parts[0].padStart(2, '0');
-    const month = parts[1].padStart(2, '0');
-    const year  = parts[2];
+  // Handle D/M/YYYY or DD/MM/YYYY (day first, then month)
+  const slashParts = dateStr.split('/');
+  if (slashParts.length === 3) {
+    const day   = slashParts[0].padStart(2, '0');
+    const month = slashParts[1].padStart(2, '0');
+    const year  = slashParts[2].length === 2 ? '20' + slashParts[2] : slashParts[2];
     return year + '-' + month + '-' + day;
   }
-  // Fallback for other formats
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
-  return d.toISOString().slice(0, 10);
+  // Handle D-M-YYYY
+  const dashParts = dateStr.split('-');
+  if (dashParts.length === 3 && dashParts[2].length === 4) {
+    const day   = dashParts[0].padStart(2, '0');
+    const month = dashParts[1].padStart(2, '0');
+    return dashParts[2] + '-' + month + '-' + day;
+  }
+  return dateStr;
 }
 
 function getFiltered() {
