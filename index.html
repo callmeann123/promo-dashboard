@@ -12,8 +12,7 @@
   --text:#E2EAF0; --muted:#5A6A78; --muted2:#8A9BAA;
   --green:#00E5A0; --green-dim:rgba(0,229,160,0.12);
   --red:#FF3D5A; --blue:#4D9FFF; --blue-dim:rgba(77,159,255,0.12);
-  --amber:#FFB020; --amber-dim:rgba(255,176,32,0.12);
-  --purple:#A78BFA; --purple-dim:rgba(167,139,250,0.12);
+  --amber:#FFB020; --purple:#A78BFA;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:18px;}
@@ -28,13 +27,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .logo h1{font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;}
 .logo h1 span{color:var(--blue);}
 .logo p{font-size:0.75rem;color:var(--muted);margin-top:3px;}
-.header-right{display:flex;align-items:center;gap:10px;}
 .status-chip{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;font-size:0.78rem;color:var(--muted2);}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
 .dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
-.detail-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;transition:all 0.15s;}
-.detail-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+/* Nav tabs */
+.nav{display:flex;gap:4px;margin-bottom:2rem;background:var(--surface2);border-radius:12px;padding:4px;width:fit-content;}
+.nav-tab{padding:10px 24px;border-radius:9px;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.nav-tab.active{background:var(--blue);color:#080B0F;}
 
 /* Upload */
 .upload-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem;}
@@ -48,25 +49,23 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .upload-icon{font-size:2rem;margin-bottom:0.75rem;}
 .upload-zone h3{font-size:1rem;font-weight:700;margin-bottom:0.4rem;}
 .upload-zone p{font-size:0.78rem;color:var(--muted2);}
-.upload-zone .file-name{font-size:0.72rem;color:var(--muted2);margin-top:6px;font-style:italic;}
+.file-name{font-size:0.72rem;color:var(--muted2);margin-top:6px;font-style:italic;}
 .currency-badge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:0.72rem;font-weight:700;margin-bottom:0.75rem;}
 .currency-badge.myr{background:var(--blue-dim);color:var(--blue);}
 .currency-badge.sgd{background:var(--green-dim);color:var(--green);}
 
-/* Controls */
+/* ── OVERVIEW PAGE ── */
 .controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;}
 .tabs{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;}
 .tab{padding:8px 22px;border-radius:7px;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
 .tab.active{background:var(--blue);color:#080B0F;}
 .filter-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.date-range{display:flex;align-items:center;gap:8px;}
 .date-input{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;}
 .date-sep{color:var(--muted);font-size:0.8rem;}
 .date-reset{font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:Arial,sans-serif;}
 .date-reset:hover{background:var(--surface2);color:var(--text);}
-.promo-filter{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;min-width:160px;}
+.sel{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;min-width:140px;}
 
-/* Currency sections */
 .currency-section{margin-bottom:1.5rem;}
 .currency-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:10px 16px;border-radius:10px;}
 .currency-header.myr{background:rgba(77,159,255,0.08);border:1px solid rgba(77,159,255,0.2);}
@@ -74,13 +73,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .currency-label{font-size:1rem;font-weight:700;}
 .currency-label.myr{color:var(--blue);}
 .currency-label.sgd{color:var(--green);}
-.section-detail-btn{font-size:0.75rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:Arial,sans-serif;}
-.section-detail-btn:hover{border-color:var(--blue);color:var(--blue);}
-
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
-.metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;cursor:pointer;transition:border-color 0.2s;}
-.metric:hover{border-color:var(--blue-dim);}
-.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:0.4;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.4;}
 .metric.myr-card::after{background:var(--blue);opacity:0.8;}
 .metric.sgd-card::after{background:var(--green);opacity:0.8;}
 .metric .lbl{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
@@ -88,23 +83,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .metric .val.myr-val{color:var(--blue);}
 .metric .val.sgd-val{color:var(--green);}
 .metric .sub{font-size:0.7rem;color:var(--muted);margin-top:6px;}
-.metric .click-hint{font-size:0.65rem;color:var(--muted);margin-top:8px;opacity:0.6;}
-
-/* Charts */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;cursor:pointer;transition:border-color 0.2s;}
-.chart-card:hover{border-color:rgba(77,159,255,0.3);}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
 .chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
 .chart-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
-.chart-hint{font-size:0.65rem;color:var(--muted);opacity:0.7;}
 .legend{display:flex;gap:14px;flex-wrap:wrap;}
 .legend span{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--muted2);}
 .leg{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
 .chart-wrap{position:relative;width:100%;height:240px;}
-
-/* Table */
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
-.table-hd{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;justify-content:space-between;}
+.table-hd{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
 .table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;}
 table{width:100%;border-collapse:collapse;}
 th{font-size:0.72rem;color:var(--muted);font-weight:400;text-align:right;padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;position:sticky;top:0;background:var(--surface);}
@@ -117,10 +106,41 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;background:var(--blue-dim);color:var(--blue);}
 .myr-v{color:var(--blue);}
 .sgd-v{color:var(--green);}
-.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
-.hidden{display:none!important;}
 
-/* ── MODAL (click bar) ── */
+/* ── CHART BUILDER ── */
+.builder-layout{display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start;}
+.builder-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:sticky;top:1rem;}
+.builder-panel h3{font-size:0.85rem;font-weight:700;margin-bottom:1.25rem;color:var(--text);}
+.field-group{margin-bottom:1.25rem;}
+.field-group label{display:block;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.field-group select,.field-group input[type=date]{width:100%;font-size:0.82rem;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;}
+.field-group .multi-select{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+.field-group .multi-select label{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;padding:5px 8px;border-radius:6px;transition:background 0.1s;}
+.field-group .multi-select label:hover{background:var(--surface2);}
+.field-group .multi-select input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;cursor:pointer;}
+
+/* Chart type picker */
+.chart-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.ct-btn{padding:10px 6px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:0.7rem;font-family:Arial,sans-serif;text-align:center;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ct-btn:hover{border-color:var(--blue);color:var(--blue);}
+.ct-btn.active{border-color:var(--blue);background:var(--blue-dim);color:var(--blue);font-weight:700;}
+.ct-btn .ct-icon{font-size:1.2rem;}
+
+.build-btn{width:100%;padding:12px;border-radius:10px;border:none;background:var(--blue);color:#080B0F;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;margin-top:0.5rem;transition:opacity 0.15s;}
+.build-btn:hover{opacity:0.85;}
+
+/* Builder output */
+.builder-output{display:flex;flex-direction:column;gap:14px;}
+.built-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
+.built-chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.built-chart-title{font-size:0.9rem;font-weight:700;}
+.remove-btn{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0 4px;}
+.remove-btn:hover{color:var(--red);}
+.built-chart-wrap{position:relative;width:100%;height:320px;}
+.empty-builder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:400px;color:var(--muted);font-size:0.85rem;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+.empty-builder .empty-icon{font-size:3rem;opacity:0.3;}
+
+/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:2rem;}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:800px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
 .modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);}
@@ -134,37 +154,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .modal-metric .val{font-size:1.3rem;font-weight:700;}
 .modal-metric .val.myr-val{color:var(--blue);}
 .modal-metric .val.sgd-val{color:var(--green);}
-.modal-table-wrap{overflow-x:auto;}
-.modal table th{background:var(--surface2);}
 
-/* ── DETAIL PAGE ── */
-.detail-page{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;}
-.detail-page .app{padding:2rem 2.5rem;}
-.detail-header{display:flex;align-items:center;gap:14px;margin-bottom:2rem;}
-.back-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:0.85rem;font-family:Arial,sans-serif;}
-.back-btn:hover{border-color:var(--blue);color:var(--blue);}
-.detail-title{font-size:1.4rem;font-weight:800;}
-.detail-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;padding:1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
-.detail-controls label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
-.detail-controls select,.detail-controls input[type=date]{font-size:0.8rem;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;}
-.detail-section{margin-bottom:1.5rem;}
-.detail-section-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;}
-.metrics-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem;}
-.chart-card-detail{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:14px;}
-.ranking-list{display:flex;flex-direction:column;gap:8px;}
-.ranking-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;}
-.ranking-num{font-size:0.72rem;color:var(--muted);width:20px;text-align:right;flex-shrink:0;}
-.ranking-name{flex:1;font-size:0.85rem;color:var(--text);}
-.ranking-bar-wrap{width:180px;flex-shrink:0;}
-.ranking-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
-.ranking-fill{height:100%;border-radius:3px;}
-.ranking-val{font-size:0.82rem;color:var(--muted2);min-width:100px;text-align:right;}
+.hidden{display:none!important;}
 </style>
 </head>
 <body>
-
-<!-- ── MAIN DASHBOARD ── -->
-<div id="mainDash">
 <div class="app">
 
 <div class="header">
@@ -175,15 +169,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <p>上传后台 CSV，自动分析  |  MYR & SGD</p>
     </div>
   </div>
-  <div class="header-right">
-    <button class="detail-btn" onclick="openDetail()">📊 详细分析 →</button>
-    <div class="status-chip">
-      <div class="dot" id="statusDot"></div>
-      <span id="statusText">等待上传</span>
-    </div>
+  <div class="status-chip">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">等待上传</span>
   </div>
 </div>
 
+<!-- Upload -->
 <div class="upload-section">
   <div class="upload-zone myr" id="zoneMYR" onclick="document.getElementById('fileMYR').click()">
     <input type="file" id="fileMYR" accept=".csv" onchange="handleFile('MYR',this)" />
@@ -203,7 +195,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
-<div id="dashboard" class="hidden">
+<!-- Nav -->
+<div class="nav" id="mainNav" style="display:none;">
+  <button class="nav-tab active" onclick="switchPage('overview',this)">📊 总览</button>
+  <button class="nav-tab" onclick="switchPage('builder',this)">🎨 图表构建器</button>
+</div>
+
+<!-- ── OVERVIEW PAGE ── -->
+<div id="overviewPage" class="hidden">
   <div class="controls">
     <div class="tabs">
       <button class="tab active" onclick="setView('day',this)">日</button>
@@ -211,13 +210,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <button class="tab" onclick="setView('month',this)">月</button>
     </div>
     <div class="filter-wrap">
-      <div class="date-range">
-        <input type="date" class="date-input" id="dateFrom" onchange="render()" />
-        <span class="date-sep">至</span>
-        <input type="date" class="date-input" id="dateTo" onchange="render()" />
-        <button class="date-reset" onclick="resetDates()">重置</button>
-      </div>
-      <select class="promo-filter" id="promoFilter" onchange="render()">
+      <input type="date" class="date-input" id="dateFrom" onchange="renderOverview()" />
+      <span class="date-sep">至</span>
+      <input type="date" class="date-input" id="dateTo" onchange="renderOverview()" />
+      <button class="date-reset" onclick="resetDates()">重置</button>
+      <select class="sel" id="promoFilter" onchange="renderOverview()">
         <option value="all">全部 Promo</option>
       </select>
     </div>
@@ -225,37 +222,19 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
   <!-- MYR -->
   <div class="currency-section">
-    <div class="currency-header myr">
-      <span class="currency-label myr">🇲🇾 MYR</span>
-      <button class="section-detail-btn" onclick="openDetail('MYR')">详细分析 →</button>
-    </div>
+    <div class="currency-header myr"><span class="currency-label myr">🇲🇾 MYR</span></div>
     <div class="metrics">
-      <div class="metric myr-card" onclick="openDetail('MYR','claims')">
-        <div class="lbl">领取人次</div><div class="val myr-val" id="mMyrClaims">—</div>
-        <div class="sub" id="mMyrClaimsSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric myr-card" onclick="openDetail('MYR','deposit_ppl')">
-        <div class="lbl">存款人数</div><div class="val myr-val" id="mMyrDepPpl">—</div>
-        <div class="sub" id="mMyrDepPplSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric myr-card" onclick="openDetail('MYR','deposit')">
-        <div class="lbl">总存款金额</div><div class="val myr-val" id="mMyrDeposit">—</div>
-        <div class="sub" id="mMyrDepositSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric myr-card" onclick="openDetail('MYR','bonus')">
-        <div class="lbl">派发 Bonus</div><div class="val myr-val" id="mMyrBonus">—</div>
-        <div class="sub">总成本</div><div class="click-hint">点击查看详情 →</div>
-      </div>
+      <div class="metric myr-card"><div class="lbl">领取人次</div><div class="val myr-val" id="mMyrClaims">—</div><div class="sub" id="mMyrClaimsSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">存款人数</div><div class="val myr-val" id="mMyrDepPpl">—</div><div class="sub" id="mMyrDepPplSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">总存款金额</div><div class="val myr-val" id="mMyrDeposit">—</div><div class="sub" id="mMyrDepositSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">派发 Bonus</div><div class="val myr-val" id="mMyrBonus">—</div><div class="sub">总成本</div></div>
     </div>
     <div class="charts-grid">
-      <div class="chart-card" onclick="openDetail('MYR','claims')">
-        <div class="chart-hd">
-          <div class="chart-title">领取人次趋势 (MYR)</div>
-          <div class="chart-hint">点击柱子看明细 · 点标题看详情</div>
-        </div>
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">领取人次趋势 (MYR)</div></div>
         <div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div>
       </div>
-      <div class="chart-card" onclick="openDetail('MYR','deposit')">
+      <div class="chart-card">
         <div class="chart-hd">
           <div class="chart-title">存款 vs Bonus (MYR)</div>
           <div class="legend">
@@ -272,37 +251,19 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
   <!-- SGD -->
   <div class="currency-section">
-    <div class="currency-header sgd">
-      <span class="currency-label sgd">🇸🇬 SGD</span>
-      <button class="section-detail-btn" onclick="openDetail('SGD')">详细分析 →</button>
-    </div>
+    <div class="currency-header sgd"><span class="currency-label sgd">🇸🇬 SGD</span></div>
     <div class="metrics">
-      <div class="metric sgd-card" onclick="openDetail('SGD','claims')">
-        <div class="lbl">领取人次</div><div class="val sgd-val" id="mSgdClaims">—</div>
-        <div class="sub" id="mSgdClaimsSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric sgd-card" onclick="openDetail('SGD','deposit_ppl')">
-        <div class="lbl">存款人数</div><div class="val sgd-val" id="mSgdDepPpl">—</div>
-        <div class="sub" id="mSgdDepPplSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric sgd-card" onclick="openDetail('SGD','deposit')">
-        <div class="lbl">总存款金额</div><div class="val sgd-val" id="mSgdDeposit">—</div>
-        <div class="sub" id="mSgdDepositSub">—</div><div class="click-hint">点击查看详情 →</div>
-      </div>
-      <div class="metric sgd-card" onclick="openDetail('SGD','bonus')">
-        <div class="lbl">派发 Bonus</div><div class="val sgd-val" id="mSgdBonus">—</div>
-        <div class="sub">总成本</div><div class="click-hint">点击查看详情 →</div>
-      </div>
+      <div class="metric sgd-card"><div class="lbl">领取人次</div><div class="val sgd-val" id="mSgdClaims">—</div><div class="sub" id="mSgdClaimsSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">存款人数</div><div class="val sgd-val" id="mSgdDepPpl">—</div><div class="sub" id="mSgdDepPplSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">总存款金额</div><div class="val sgd-val" id="mSgdDeposit">—</div><div class="sub" id="mSgdDepositSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">派发 Bonus</div><div class="val sgd-val" id="mSgdBonus">—</div><div class="sub">总成本</div></div>
     </div>
     <div class="charts-grid">
-      <div class="chart-card" onclick="openDetail('SGD','claims')">
-        <div class="chart-hd">
-          <div class="chart-title">领取人次趋势 (SGD)</div>
-          <div class="chart-hint">点击柱子看明细 · 点标题看详情</div>
-        </div>
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">领取人次趋势 (SGD)</div></div>
         <div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div>
       </div>
-      <div class="chart-card" onclick="openDetail('SGD','deposit')">
+      <div class="chart-card">
         <div class="chart-hd">
           <div class="chart-title">存款 vs Bonus (SGD)</div>
           <div class="legend">
@@ -316,7 +277,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="table-card">
-    <div class="table-hd"><span id="tableTitle">明细数据</span></div>
+    <div class="table-hd" id="tableTitle">明细数据</div>
     <div class="table-wrap">
       <table>
         <thead><tr>
@@ -328,10 +289,97 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
   </div>
 </div>
-</div>
+
+<!-- ── CHART BUILDER PAGE ── -->
+<div id="builderPage" class="hidden">
+  <div class="builder-layout">
+
+    <!-- Left panel -->
+    <div class="builder-panel">
+      <h3>🎨 图表构建器</h3>
+
+      <div class="field-group">
+        <label>货币</label>
+        <select id="bCurrency">
+          <option value="MYR">🇲🇾 MYR</option>
+          <option value="SGD">🇸🇬 SGD</option>
+          <option value="ALL">全部</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>X 轴 / 分组方式</label>
+        <select id="bXAxis">
+          <option value="date_day">按日期（日）</option>
+          <option value="date_week">按日期（周）</option>
+          <option value="date_month">按日期（月）</option>
+          <option value="promo">按 Promo 名称</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>Y 轴 / 数据维度（可多选）</label>
+        <div class="multi-select" id="bYAxis">
+          <label><input type="checkbox" value="claims" checked /> 领取人次</label>
+          <label><input type="checkbox" value="deposit_ppl" /> 存款人数</label>
+          <label><input type="checkbox" value="deposit" /> 存款金额</label>
+          <label><input type="checkbox" value="bonus" /> 派发 Bonus</label>
+          <label><input type="checkbox" value="ppa" /> 人均存款</label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>图表类型</label>
+        <div class="chart-type-grid">
+          <button class="ct-btn active" data-type="bar" onclick="selectChartType(this)">
+            <span class="ct-icon">📊</span>柱状图
+          </button>
+          <button class="ct-btn" data-type="line" onclick="selectChartType(this)">
+            <span class="ct-icon">📈</span>折线图
+          </button>
+          <button class="ct-btn" data-type="bar_h" onclick="selectChartType(this)">
+            <span class="ct-icon">📉</span>横向柱
+          </button>
+          <button class="ct-btn" data-type="pie" onclick="selectChartType(this)">
+            <span class="ct-icon">🥧</span>饼图
+          </button>
+          <button class="ct-btn" data-type="doughnut" onclick="selectChartType(this)">
+            <span class="ct-icon">🍩</span>环形图
+          </button>
+          <button class="ct-btn" data-type="area" onclick="selectChartType(this)">
+            <span class="ct-icon">🏔️</span>面积图
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>日期范围</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" id="bFrom" style="flex:1;font-size:0.78rem;padding:7px 8px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;" />
+          <span style="color:var(--muted);font-size:0.8rem;">至</span>
+          <input type="date" id="bTo" style="flex:1;font-size:0.78rem;padding:7px 8px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>筛选 Promo（可多选）</label>
+        <div class="multi-select" id="bPromoList" style="max-height:150px;"></div>
+      </div>
+
+      <button class="build-btn" onclick="buildChart()">生成图表 →</button>
+    </div>
+
+    <!-- Right output -->
+    <div class="builder-output" id="builderOutput">
+      <div class="empty-builder">
+        <div class="empty-icon">🎨</div>
+        <div>选择数据和图表类型，点击「生成图表」</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- ── BAR CLICK MODAL ── -->
+<!-- Modal -->
 <div class="modal-overlay hidden" id="barModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
@@ -340,7 +388,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
     <div class="modal-body">
       <div class="modal-summary" id="modalSummary"></div>
-      <div class="modal-table-wrap">
+      <div style="overflow-x:auto;">
         <table>
           <thead><tr>
             <th style="text-align:left">Promo 名称</th>
@@ -353,115 +401,27 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
-<!-- ── DETAIL PAGE ── -->
-<div class="detail-page hidden" id="detailPage">
-  <div class="app">
-    <div class="detail-header">
-      <button class="back-btn" onclick="closeDetail()">← 返回</button>
-      <div class="detail-title" id="detailTitle">详细分析</div>
-    </div>
-
-    <div class="detail-controls">
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>货币</label>
-        <select id="dCurrency" onchange="renderDetail()">
-          <option value="MYR">🇲🇾 MYR</option>
-          <option value="SGD">🇸🇬 SGD</option>
-          <option value="ALL">全部</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>Promo</label>
-        <select id="dPromo" onchange="renderDetail()">
-          <option value="all">全部</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>从</label>
-        <input type="date" id="dFrom" onchange="renderDetail()" />
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>至</label>
-        <input type="date" id="dTo" onchange="renderDetail()" />
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>显示维度</label>
-        <select id="dMetric" onchange="renderDetail()">
-          <option value="claims">领取人次</option>
-          <option value="deposit_ppl">存款人数</option>
-          <option value="deposit">存款金额</option>
-          <option value="bonus">派发 Bonus</option>
-          <option value="ppa">人均存款</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>时间分组</label>
-        <select id="dView" onchange="renderDetail()">
-          <option value="day">日</option>
-          <option value="week">周</option>
-          <option value="month">月</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="metrics-5" id="dMetrics"></div>
-
-    <div class="chart-card-detail">
-      <div class="chart-hd"><div class="chart-title" id="dChartTitle">趋势</div></div>
-      <div style="position:relative;width:100%;height:300px;"><canvas id="dTrendChart"></canvas></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-      <div class="chart-card-detail">
-        <div class="chart-title" style="margin-bottom:1rem;">Promo 排名</div>
-        <div class="ranking-list" id="dRanking"></div>
-      </div>
-      <div class="chart-card-detail">
-        <div class="chart-hd"><div class="chart-title">存款 vs Bonus 对比</div></div>
-        <div style="position:relative;width:100%;height:260px;"><canvas id="dCompareChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="table-card">
-      <div class="table-hd"><span>明细数据</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th style="text-align:left">日期</th>
-            <th style="text-align:left">Promo</th>
-            <th style="text-align:left">货币</th>
-            <th>领取人次</th><th>存款人数</th><th>存款金额</th><th>派发 Bonus</th><th>人均存款</th>
-          </tr></thead>
-          <tbody id="dTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 </div>
-
 <script>
 // ── Data ──
-let myrData=[], sgdData=[], view='day', charts={}, dChart=null, dChart2=null;
+let myrData=[], sgdData=[], view='day', ovCharts={}, builtCharts=[], chartCounter=0;
+const COLORS=['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
+const METRIC_LABELS={claims:'领取人次',deposit_ppl:'存款人数',deposit:'存款金额',bonus:'派发 Bonus',ppa:'人均存款'};
 
-// ── File handling ──
-function handleFile(currency, input){
+// ── File ──
+function handleFile(currency,input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
-    const rows=parseCSV(e.target.result, currency);
-    if(currency==='MYR'){
-      myrData=rows;
-      setUpload('MYR', file.name, rows.length);
-    } else {
-      sgdData=rows;
-      setUpload('SGD', file.name, rows.length);
-    }
+    const rows=parseCSV(e.target.result,currency);
+    if(currency==='MYR'){myrData=rows;setUpload('MYR',file.name,rows.length);}
+    else{sgdData=rows;setUpload('SGD',file.name,rows.length);}
     afterLoad();
   };
   reader.readAsText(file,'UTF-8');
 }
 
-function setUpload(cur, fname, count){
+function setUpload(cur,fname,count){
   const low=cur.toLowerCase();
   document.getElementById('zone'+cur).classList.add('loaded',low);
   document.getElementById('icon'+cur).textContent='✅';
@@ -484,7 +444,7 @@ function setUpload(cur, fname, count){
 });
 
 // ── CSV parser ──
-function parseCSV(text, currency){
+function parseCSV(text,currency){
   text=text.replace(/^\uFEFF/,'');
   const lines=[];
   text.trim().split('\n').forEach(line=>{
@@ -508,8 +468,7 @@ function parseCSV(text, currency){
   const iLogin=idx('Login'),iCode=idx('Code'),iStart=idx('Start Time'),iTransfer=idx('Transfer'),iBonus=idx('Bonus');
   const rows=[];
   for(let i=hRow+1;i<lines.length;i++){
-    const r=lines[i];
-    if(!r||r.length<5) continue;
+    const r=lines[i]; if(!r||r.length<5) continue;
     const login=(r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
     const code=(r[iCode]||'').trim();
     const startRaw=(r[iStart]||'').trim();
@@ -524,37 +483,48 @@ function parseCSV(text, currency){
 
 // ── After load ──
 function afterLoad(){
-  const all=[...myrData,...sgdData];
-  if(!all.length) return;
+  const all=[...myrData,...sgdData]; if(!all.length) return;
   document.getElementById('statusDot').classList.add('live');
   document.getElementById('statusText').textContent='已加载 · '+all.length+' 条记录';
-  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('mainNav').style.display='flex';
+
   const promos=[...new Set(all.map(r=>r.code).filter(Boolean))].sort();
   document.getElementById('promoFilter').innerHTML='<option value="all">全部 Promo</option>'+promos.map(p=>`<option value="${p}">${p}</option>`).join('');
-  document.getElementById('dPromo').innerHTML='<option value="all">全部</option>'+promos.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('bPromoList').innerHTML=promos.map(p=>`<label><input type="checkbox" value="${p}" checked /> ${p}</label>`).join('');
+
   const dates=all.map(r=>r.date).sort();
   const from=dates[0], to=dates[dates.length-1];
-  ['dateFrom','dFrom'].forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=from; });
-  ['dateTo','dTo'].forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=to; });
-  render();
+  ['dateFrom','bFrom'].forEach(id=>{if(!document.getElementById(id).value) document.getElementById(id).value=from;});
+  ['dateTo','bTo'].forEach(id=>{if(!document.getElementById(id).value) document.getElementById(id).value=to;});
+
+  switchPage('overview', document.querySelector('.nav-tab'));
 }
 
+// ── Page switching ──
+function switchPage(page, btn){
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('overviewPage').classList.toggle('hidden', page!=='overview');
+  document.getElementById('builderPage').classList.toggle('hidden', page!=='builder');
+  if(page==='overview') renderOverview();
+}
+
+// ── Filters ──
 function resetDates(){
   const all=[...myrData,...sgdData];
   const dates=all.map(r=>r.date).sort();
   document.getElementById('dateFrom').value=dates[0]||'';
   document.getElementById('dateTo').value=dates[dates.length-1]||'';
-  render();
+  renderOverview();
 }
 
 function setView(v,btn){
   view=v;
-  document.querySelectorAll('#mainDash .tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#overviewPage .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  render();
+  renderOverview();
 }
 
-// ── Filter ──
 function getFiltered(currency){
   const promo=document.getElementById('promoFilter').value;
   const from=document.getElementById('dateFrom').value;
@@ -568,8 +538,7 @@ function getFiltered(currency){
   });
 }
 
-// ── Group ──
-function groupData(rows, v){
+function groupData(rows,v){
   v=v||view;
   const map={};
   rows.forEach(r=>{
@@ -582,10 +551,8 @@ function groupData(rows, v){
       key=`${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
     } else {key=r.date.slice(0,7);}
     if(!map[key]) map[key]={label:key,claims:0,depPpl:0,deposit:0,bonus:0};
-    map[key].claims+=1;
-    map[key].depPpl+=r.hasDeposit;
-    map[key].deposit+=r.transfer;
-    map[key].bonus+=r.bonus;
+    map[key].claims+=1; map[key].depPpl+=r.hasDeposit;
+    map[key].deposit+=r.transfer; map[key].bonus+=r.bonus;
   });
   return Object.values(map).sort((a,b)=>a.label.localeCompare(b.label));
 }
@@ -593,11 +560,9 @@ function groupData(rows, v){
 function groupByPromo(rows){
   const map={};
   rows.forEach(r=>{
-    if(!map[r.code]) map[r.code]={code:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
-    map[r.code].claims+=1;
-    map[r.code].depPpl+=r.hasDeposit;
-    map[r.code].deposit+=r.transfer;
-    map[r.code].bonus+=r.bonus;
+    if(!map[r.code]) map[r.code]={label:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
+    map[r.code].claims+=1; map[r.code].depPpl+=r.hasDeposit;
+    map[r.code].deposit+=r.transfer; map[r.code].bonus+=r.bonus;
   });
   return Object.values(map).sort((a,b)=>b.claims-a.claims);
 }
@@ -605,19 +570,25 @@ function groupByPromo(rows){
 // ── Format ──
 function fmtRM(n){if(!n&&n!==0)return'—';const abs=Math.abs(n);const s='RM'+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;}
 function fmtSGD(n){if(!n&&n!==0)return'—';const abs=Math.abs(n);const s='S$'+abs.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;}
-function fmtAuto(n,cur){return cur==='SGD'?fmtSGD(n):fmtRM(n);}
 function fmtN(n){return n?n.toLocaleString('en-MY'):'—';}
 function fmtLabel(label,v){
   v=v||view;
-  const d=new Date(label);
-  if(isNaN(d)) return label;
+  const d=new Date(label); if(isNaN(d)) return label;
   if(v==='day') return d.toLocaleDateString('en-MY',{day:'2-digit',month:'short'});
   if(v==='month') return d.toLocaleDateString('en-MY',{month:'short',year:'numeric'});
   return label;
 }
+function getMetricVal(r,metric){
+  if(metric==='claims') return r.claims;
+  if(metric==='deposit_ppl') return r.depPpl;
+  if(metric==='deposit') return r.deposit;
+  if(metric==='bonus') return r.bonus;
+  if(metric==='ppa') return r.depPpl>0?r.deposit/r.depPpl:0;
+  return 0;
+}
 
-// ── Main render ──
-function render(){
+// ── Overview render ──
+function renderOverview(){
   const myrRows=getFiltered('MYR'), sgdRows=getFiltered('SGD');
   const myrClaims=myrRows.length, myrDepPpl=myrRows.filter(r=>r.hasDeposit).length;
   const myrDeposit=myrRows.reduce((s,r)=>s+r.transfer,0), myrBonus=myrRows.reduce((s,r)=>s+r.bonus,0);
@@ -644,74 +615,44 @@ function render(){
   const titles={day:'日报明细',week:'周报明细',month:'月报明细'};
   document.getElementById('tableTitle').textContent=titles[view];
 
-  renderCharts(myrRows,sgdRows);
-  renderTable(myrRows,sgdRows);
-}
-
-function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-
-function mkOpts(gridC,yCb,onClickFn){
-  return {
-    responsive:true,maintainAspectRatio:false,
-    onClick:onClickFn||null,
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
-    scales:{
-      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
-      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:yCb},grid:{color:gridC},border:{color:'transparent'}}
-    }
-  };
-}
-
-function renderCharts(myrRows,sgdRows){
+  const gc='rgba(255,255,255,0.04)';
   const myrG=groupData(myrRows), sgdG=groupData(sgdRows);
   const myrL=myrG.map(r=>fmtLabel(r.label)), sgdL=sgdG.map(r=>fmtLabel(r.label));
-  const gc='rgba(255,255,255,0.04)';
 
   const makeClickHandler=(grouped,currency)=>(evt,elems)=>{
     if(!elems||!elems.length) return;
-    const idx=elems[0].index;
-    const grp=grouped[idx];
-    if(!grp) return;
-    showBarModal(grp, currency);
+    showBarModal(grouped[elems[0].index],currency);
   };
 
-  destroyChart('myrClaimChart');
-  charts['myrClaimChart']=new Chart(document.getElementById('myrClaimChart'),{
-    type:'bar',
-    data:{labels:myrL,datasets:[{data:myrG.map(r=>r.claims),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:4}]},
-    options:{...mkOpts(gc,v=>v.toLocaleString(),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}}
-  });
+  function mkOv(yCb,clickFn){
+    return {responsive:true,maintainAspectRatio:false,onClick:clickFn||null,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+        y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:yCb},grid:{color:gc},border:{color:'transparent'}}}};
+  }
 
-  destroyChart('myrDepBonusChart');
-  charts['myrDepBonusChart']=new Chart(document.getElementById('myrDepBonusChart'),{
-    type:'bar',
-    data:{labels:myrL,datasets:[
-      {label:'存款',data:myrG.map(r=>r.deposit),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:3},
-      {label:'Bonus',data:myrG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3},
-    ]},
-    options:{...mkOpts(gc,v=>fmtRM(v),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
-  });
+  function mkChart(id,type,labels,datasets,opts){
+    if(ovCharts[id]){ovCharts[id].destroy();delete ovCharts[id];}
+    ovCharts[id]=new Chart(document.getElementById(id),{type,data:{labels,datasets},options:opts});
+  }
 
-  destroyChart('sgdClaimChart');
-  charts['sgdClaimChart']=new Chart(document.getElementById('sgdClaimChart'),{
-    type:'bar',
-    data:{labels:sgdL,datasets:[{data:sgdG.map(r=>r.claims),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:4}]},
-    options:{...mkOpts(gc,v=>v.toLocaleString(),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}}
-  });
+  mkChart('myrClaimChart','bar',myrL,[{data:myrG.map(r=>r.claims),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:4}],
+    {...mkOv(v=>fmtN(v),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}});
 
-  destroyChart('sgdDepBonusChart');
-  charts['sgdDepBonusChart']=new Chart(document.getElementById('sgdDepBonusChart'),{
-    type:'bar',
-    data:{labels:sgdL,datasets:[
-      {label:'存款',data:sgdG.map(r=>r.deposit),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:3},
-      {label:'Bonus',data:sgdG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3},
-    ]},
-    options:{...mkOpts(gc,v=>fmtSGD(v),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}}
-  });
-}
+  mkChart('myrDepBonusChart','bar',myrL,[
+    {label:'存款',data:myrG.map(r=>r.deposit),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:3},
+    {label:'Bonus',data:myrG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3}],
+    {...mkOv(v=>fmtRM(v),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}});
 
-function renderTable(myrRows,sgdRows){
-  const tbody=document.getElementById('tableBody');
+  mkChart('sgdClaimChart','bar',sgdL,[{data:sgdG.map(r=>r.claims),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:4}],
+    {...mkOv(v=>fmtN(v),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}});
+
+  mkChart('sgdDepBonusChart','bar',sgdL,[
+    {label:'存款',data:sgdG.map(r=>r.deposit),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:3},
+    {label:'Bonus',data:sgdG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3}],
+    {...mkOv(v=>fmtSGD(v),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}});
+
+  // Table
   const map={};
   [...myrRows.map(r=>({...r,cur:'MYR'})),...sgdRows.map(r=>({...r,cur:'SGD'}))].forEach(r=>{
     const key=r.date+'||'+r.code+'||'+r.cur;
@@ -720,10 +661,8 @@ function renderTable(myrRows,sgdRows){
     map[key].deposit+=r.transfer; map[key].bonus+=r.bonus;
   });
   const rows=Object.values(map).sort((a,b)=>b.date.localeCompare(a.date)||a.code.localeCompare(b.code));
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>';return;}
-  tbody.innerHTML=rows.map(r=>{
-    const isMYR=r.cur==='MYR';
-    const fmt=isMYR?fmtRM:fmtSGD;
+  document.getElementById('tableBody').innerHTML=rows.map(r=>{
+    const isMYR=r.cur==='MYR'; const fmt=isMYR?fmtRM:fmtSGD;
     const ppa=r.depPpl>0?fmt(r.deposit/r.depPpl):'—';
     const cls=isMYR?'myr-v':'sgd-v';
     const tagStyle=isMYR?'':'background:var(--green-dim);color:var(--green)';
@@ -732,12 +671,10 @@ function renderTable(myrRows,sgdRows){
 }
 
 // ── Bar click modal ──
-function showBarModal(grp, currency){
+function showBarModal(grp,currency){
   const isMYR=currency==='MYR';
   const fmt=isMYR?fmtRM:fmtSGD;
   const src=isMYR?myrData:sgdData;
-
-  // Get rows for this period
   const periodRows=src.filter(r=>{
     let key;
     const d=new Date(r.date);
@@ -749,16 +686,12 @@ function showBarModal(grp, currency){
     } else {key=r.date.slice(0,7);}
     return key===grp.label;
   });
-
   const ppa=grp.depPpl>0?fmt(grp.deposit/grp.depPpl):'—';
   document.getElementById('modalTitle').textContent=`${currency} · ${fmtLabel(grp.label)} 明细`;
   document.getElementById('modalSummary').innerHTML=`
     <div class="modal-metric"><div class="lbl">领取人次</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmtN(grp.claims)}</div></div>
     <div class="modal-metric"><div class="lbl">总存款</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmt(grp.deposit)}</div></div>
-    <div class="modal-metric"><div class="lbl">派发 Bonus</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmt(grp.bonus)}</div></div>
-  `;
-
-  // Group by promo
+    <div class="modal-metric"><div class="lbl">派发 Bonus</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmt(grp.bonus)}</div></div>`;
   const promoMap={};
   periodRows.forEach(r=>{
     if(!promoMap[r.code]) promoMap[r.code]={code:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
@@ -766,138 +699,149 @@ function showBarModal(grp, currency){
     promoMap[r.code].deposit+=r.transfer; promoMap[r.code].bonus+=r.bonus;
   });
   const promoRows=Object.values(promoMap).sort((a,b)=>b.claims-a.claims);
-
   document.getElementById('modalTableBody').innerHTML=promoRows.map(r=>{
     const ppa2=r.depPpl>0?fmt(r.deposit/r.depPpl):'—';
     return `<tr><td style="text-align:left">${r.code}</td><td>${fmtN(r.claims)}</td><td>${fmtN(r.depPpl)}</td><td>${fmt(r.deposit)}</td><td>${fmt(r.bonus)}</td><td>${ppa2}</td></tr>`;
   }).join('');
-
   document.getElementById('barModal').classList.remove('hidden');
 }
+function closeModal(){document.getElementById('barModal').classList.add('hidden');}
 
-function closeModal(){ document.getElementById('barModal').classList.add('hidden'); }
-
-// ── Detail page ──
-function openDetail(currency, metric){
-  if(currency) document.getElementById('dCurrency').value=currency;
-  if(metric)   document.getElementById('dMetric').value=metric;
-  document.getElementById('detailPage').classList.remove('hidden');
-  document.getElementById('detailTitle').textContent='详细分析 · '+(currency||'全部');
-  renderDetail();
+// ── Chart Builder ──
+let selectedChartType='bar';
+function selectChartType(btn){
+  document.querySelectorAll('.ct-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedChartType=btn.dataset.type;
 }
 
-function closeDetail(){ document.getElementById('detailPage').classList.add('hidden'); }
+function buildChart(){
+  const currency=document.getElementById('bCurrency').value;
+  const xAxis=document.getElementById('bXAxis').value;
+  const from=document.getElementById('bFrom').value;
+  const to=document.getElementById('bTo').value;
+  const metrics=[...document.querySelectorAll('#bYAxis input:checked')].map(i=>i.value);
+  const selectedPromos=[...document.querySelectorAll('#bPromoList input:checked')].map(i=>i.value);
 
-function getDetailRows(){
-  const cur=document.getElementById('dCurrency').value;
-  const promo=document.getElementById('dPromo').value;
-  const from=document.getElementById('dFrom').value;
-  const to=document.getElementById('dTo').value;
+  if(!metrics.length){alert('请至少选择一个数据维度');return;}
+
+  // Get data
   let src=[];
-  if(cur==='MYR') src=myrData;
-  else if(cur==='SGD') src=sgdData;
+  if(currency==='MYR') src=myrData;
+  else if(currency==='SGD') src=sgdData;
   else src=[...myrData,...sgdData];
-  return src.filter(r=>{
-    if(promo!=='all'&&r.code!==promo) return false;
+
+  const filtered=src.filter(r=>{
     if(from&&r.date<from) return false;
     if(to&&r.date>to) return false;
+    if(!selectedPromos.includes(r.code)) return false;
     return true;
   });
+
+  // Group
+  let grouped;
+  const dview=xAxis==='date_day'?'day':xAxis==='date_week'?'week':xAxis==='date_month'?'month':null;
+
+  if(dview){
+    grouped=groupData(filtered,dview);
+  } else {
+    grouped=groupByPromo(filtered);
+  }
+
+  const labels=grouped.map(r=>dview?fmtLabel(r.label,dview):r.label.length>20?r.label.slice(0,20)+'…':r.label);
+  const fmt=currency==='SGD'?fmtSGD:fmtRM;
+
+  // Build datasets
+  const isPie=selectedChartType==='pie'||selectedChartType==='doughnut';
+  const isHorizontal=selectedChartType==='bar_h';
+  const isArea=selectedChartType==='area';
+
+  let datasets;
+  if(isPie&&metrics.length===1){
+    const metric=metrics[0];
+    datasets=[{
+      data:grouped.map(r=>getMetricVal(r,metric)),
+      backgroundColor:grouped.map((_,i)=>COLORS[i%COLORS.length]),
+      borderWidth:0,
+    }];
+  } else {
+    datasets=metrics.map((metric,i)=>({
+      label:METRIC_LABELS[metric],
+      data:grouped.map(r=>getMetricVal(r,metric)),
+      backgroundColor:COLORS[i%COLORS.length]+'BB',
+      borderColor:COLORS[i%COLORS.length],
+      borderWidth:isArea?2:0,
+      borderRadius:isHorizontal||isArea?0:4,
+      fill:isArea,
+      tension:isArea?0.35:0,
+      pointRadius:isArea?3:0,
+    }));
+  }
+
+  const chartType=isPie?selectedChartType:isHorizontal?'bar':isArea?'line':'bar';
+  const gc='rgba(255,255,255,0.04)';
+  const isMoneyMetric=metrics.some(m=>['deposit','bonus','ppa'].includes(m));
+
+  const opts={
+    responsive:true,maintainAspectRatio:false,
+    indexAxis:isHorizontal?'y':'x',
+    plugins:{
+      legend:{display:datasets.length>1,labels:{color:'#8A9BAA',font:{size:11,family:'Arial'}}},
+      tooltip:{callbacks:{label:ctx=>{
+        const val=ctx.parsed[isHorizontal?'x':'y']??ctx.parsed;
+        const m=metrics[ctx.datasetIndex]||metrics[0];
+        const isM=['deposit','bonus','ppa'].includes(m);
+        return (ctx.dataset.label||METRIC_LABELS[m])+': '+(isM?fmt(val):fmtN(val));
+      }}}
+    },
+  };
+
+  if(!isPie){
+    opts.scales={
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>isMoneyMetric?fmt(v):fmtN(v)},grid:{color:gc},border:{color:'transparent'}}
+    };
+    if(isHorizontal){
+      opts.scales.x.ticks.callback=v=>isMoneyMetric?fmt(v):fmtN(v);
+      opts.scales.y.ticks.callback=undefined;
+    }
+  }
+
+  // Title
+  const xLabel=xAxis==='date_day'?'按日':xAxis==='date_week'?'按周':xAxis==='date_month'?'按月':'按Promo';
+  const chartTitle=`${currency} · ${metrics.map(m=>METRIC_LABELS[m]).join(' & ')} · ${xLabel}`;
+
+  // Remove empty state
+  const output=document.getElementById('builderOutput');
+  const empty=output.querySelector('.empty-builder');
+  if(empty) empty.remove();
+
+  // Create card
+  const id='chart_'+chartCounter++;
+  const card=document.createElement('div');
+  card.className='built-chart-card';
+  card.id='card_'+id;
+  card.innerHTML=`
+    <div class="built-chart-hd">
+      <div class="built-chart-title">${chartTitle}</div>
+      <button class="remove-btn" onclick="removeChart('${id}')">×</button>
+    </div>
+    <div class="built-chart-wrap"><canvas id="${id}"></canvas></div>
+  `;
+  output.insertBefore(card,output.firstChild);
+
+  const c=new Chart(document.getElementById(id),{type:chartType,data:{labels,datasets},options:opts});
+  builtCharts.push({id,chart:c});
 }
 
-function renderDetail(){
-  const rows=getDetailRows();
-  const cur=document.getElementById('dCurrency').value;
-  const metric=document.getElementById('dMetric').value;
-  const dview=document.getElementById('dView').value;
-  const isSGD=cur==='SGD';
-  const fmt=isSGD?fmtSGD:fmtRM;
-
-  const claims=rows.length;
-  const depPpl=rows.filter(r=>r.hasDeposit).length;
-  const deposit=rows.reduce((s,r)=>s+r.transfer,0);
-  const bonus=rows.reduce((s,r)=>s+r.bonus,0);
-  const ppa=depPpl>0?deposit/depPpl:0;
-
-  const metricLabels={claims:'领取人次',deposit_ppl:'存款人数',deposit:'总存款金额',bonus:'派发 Bonus',ppa:'人均存款'};
-  document.getElementById('dChartTitle').textContent=metricLabels[metric]+' 趋势';
-
-  const valCls=isSGD?'sgd-val':'myr-val';
-  document.getElementById('dMetrics').innerHTML=`
-    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">领取人次</div><div class="val ${valCls}">${fmtN(claims)}</div></div>
-    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">存款人数</div><div class="val ${valCls}">${fmtN(depPpl)}</div><div class="sub">${claims>0?Math.round(depPpl/claims*100)+'% 有存款':''}</div></div>
-    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">总存款</div><div class="val ${valCls}">${fmt(deposit)}</div></div>
-    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">派发 Bonus</div><div class="val ${valCls}">${fmt(bonus)}</div></div>
-    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">人均存款</div><div class="val ${valCls}">${fmt(ppa)}</div></div>
-  `;
-
-  const grouped=groupData(rows,dview);
-  const labels=grouped.map(r=>fmtLabel(r.label,dview));
-  const getVal=r=>{
-    if(metric==='claims') return r.claims;
-    if(metric==='deposit_ppl') return r.depPpl;
-    if(metric==='deposit') return r.deposit;
-    if(metric==='bonus') return r.bonus;
-    return r.depPpl>0?r.deposit/r.depPpl:0;
-  };
-  const data=grouped.map(getVal);
-  const color=isSGD?'rgba(0,229,160,0.7)':'rgba(77,159,255,0.7)';
-  const gc='rgba(255,255,255,0.04)';
-
-  if(dChart){dChart.destroy();dChart=null;}
-  dChart=new Chart(document.getElementById('dTrendChart'),{
-    type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:color,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>metricLabels[metric]+': '+(metric==='claims'||metric==='deposit_ppl'?fmtN(ctx.parsed.y):fmt(ctx.parsed.y))}}},
-      scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
-        y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>metric==='claims'||metric==='deposit_ppl'?fmtN(v):fmt(v)},grid:{color:gc},border:{color:'transparent'}}}}
-  });
-
-  // Promo ranking
-  const byPromo=groupByPromo(rows).sort((a,b)=>getVal(b)-getVal(a));
-  const maxVal=byPromo[0]?getVal(byPromo[0]):1;
-  document.getElementById('dRanking').innerHTML=byPromo.slice(0,10).map((r,i)=>{
-    const val=getVal(r);
-    const pct=maxVal>0?val/maxVal*100:0;
-    const display=metric==='claims'||metric==='deposit_ppl'?fmtN(val):fmt(val);
-    return `<div class="ranking-row">
-      <div class="ranking-num">${i+1}</div>
-      <div class="ranking-name">${r.code}</div>
-      <div class="ranking-bar-wrap"><div class="ranking-bar"><div class="ranking-fill" style="width:${pct}%;background:${isSGD?'var(--green)':'var(--blue)'}"></div></div></div>
-      <div class="ranking-val">${display}</div>
-    </div>`;
-  }).join('');
-
-  // Compare chart
-  if(dChart2){dChart2.destroy();dChart2=null;}
-  const topPromos=byPromo.slice(0,8);
-  dChart2=new Chart(document.getElementById('dCompareChart'),{
-    type:'bar',
-    data:{labels:topPromos.map(r=>r.code.length>15?r.code.slice(0,15)+'…':r.code),datasets:[
-      {label:'存款',data:topPromos.map(r=>r.deposit),backgroundColor:isSGD?'rgba(0,229,160,0.7)':'rgba(77,159,255,0.7)',borderRadius:3},
-      {label:'Bonus',data:topPromos.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',borderRadius:3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.x)}}},
-      scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:gc},border:{color:'transparent'}},
-        y:{ticks:{font:{size:9,family:'Arial'},color:'#5A6A78'},grid:{display:false},border:{color:'transparent'}}}}
-  });
-
-  // Detail table
-  const tmap={};
-  rows.forEach(r=>{
-    const key=r.date+'||'+r.code+'||'+r.currency;
-    if(!tmap[key]) tmap[key]={date:r.date,code:r.code,cur:r.currency,claims:0,depPpl:0,deposit:0,bonus:0};
-    tmap[key].claims+=1; tmap[key].depPpl+=r.hasDeposit;
-    tmap[key].deposit+=r.transfer; tmap[key].bonus+=r.bonus;
-  });
-  const trows=Object.values(tmap).sort((a,b)=>b.date.localeCompare(a.date)||a.code.localeCompare(b.code));
-  document.getElementById('dTableBody').innerHTML=trows.map(r=>{
-    const f=r.cur==='SGD'?fmtSGD:fmtRM;
-    const ppa2=r.depPpl>0?f(r.deposit/r.depPpl):'—';
-    const cls=r.cur==='SGD'?'sgd-v':'myr-v';
-    const tagStyle=r.cur==='SGD'?'background:var(--green-dim);color:var(--green)':'';
-    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${f(r.deposit)}</td><td class="${cls}">${f(r.bonus)}</td><td class="${cls}">${ppa2}</td></tr>`;
-  }).join('');
+function removeChart(id){
+  const idx=builtCharts.findIndex(c=>c.id===id);
+  if(idx>=0){builtCharts[idx].chart.destroy();builtCharts.splice(idx,1);}
+  const card=document.getElementById('card_'+id);
+  if(card) card.remove();
+  if(document.getElementById('builderOutput').children.length===0){
+    document.getElementById('builderOutput').innerHTML='<div class="empty-builder"><div class="empty-icon">🎨</div><div>选择数据和图表类型，点击「生成图表」</div></div>';
+  }
 }
 </script>
 </body>
