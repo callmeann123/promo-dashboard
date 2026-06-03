@@ -7,120 +7,164 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root {
-  --bg: #080B0F;
-  --surface: #0E1318;
-  --surface2: #141B22;
-  --surface3: #1A2330;
-  --border: rgba(255,255,255,0.06);
-  --border2: rgba(255,255,255,0.1);
-  --text: #E2EAF0;
-  --muted: #5A6A78;
-  --muted2: #8A9BAA;
-  --green: #00E5A0;
-  --green-dim: rgba(0,229,160,0.12);
-  --red: #FF3D5A;
-  --blue: #4D9FFF;
-  --blue-dim: rgba(77,159,255,0.12);
-  --amber: #FFB020;
+  --bg:#080B0F; --surface:#0E1318; --surface2:#141B22; --surface3:#1A2330;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.1);
+  --text:#E2EAF0; --muted:#5A6A78; --muted2:#8A9BAA;
+  --green:#00E5A0; --green-dim:rgba(0,229,160,0.12);
+  --red:#FF3D5A; --blue:#4D9FFF; --blue-dim:rgba(77,159,255,0.12);
+  --amber:#FFB020; --amber-dim:rgba(255,176,32,0.12);
+  --purple:#A78BFA; --purple-dim:rgba(167,139,250,0.12);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 18px; }
-body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; }
-body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(77,159,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,159,255,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
-.app { position:relative; z-index:1; max-width:1600px; margin:0 auto; padding:2.5rem; }
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:18px;}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(77,159,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,159,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:2.5rem;}
 
 /* Header */
-.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
-.logo { display:flex; align-items:center; gap:16px; }
-.logo-mark { width:52px; height:52px; background:linear-gradient(135deg,#4D9FFF,#00E5A0); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#080B0F; }
-.logo h1 { font-size:1.8rem; font-weight:800; letter-spacing:-0.02em; }
-.logo h1 span { color:var(--blue); }
-.logo p { font-size:0.75rem; color:var(--muted); margin-top:3px; }
-.status-chip { display:flex; align-items:center; gap:7px; padding:8px 16px; background:var(--surface2); border:1px solid var(--border2); border-radius:20px; font-size:0.78rem; color:var(--muted2); }
-.dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
-.dot.live { background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.logo{display:flex;align-items:center;gap:16px;}
+.logo-mark{width:52px;height:52px;background:linear-gradient(135deg,#4D9FFF,#00E5A0);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#080B0F;}
+.logo h1{font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;}
+.logo h1 span{color:var(--blue);}
+.logo p{font-size:0.75rem;color:var(--muted);margin-top:3px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.status-chip{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;font-size:0.78rem;color:var(--muted2);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+.detail-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;transition:all 0.15s;}
+.detail-btn:hover{border-color:var(--blue);color:var(--blue);}
 
 /* Upload */
-.upload-section { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:2rem; }
-.upload-zone { border:1.5px dashed var(--border2); border-radius:14px; padding:2rem; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--surface); position:relative; }
-.upload-zone:hover { border-color:var(--blue); }
-.upload-zone.sgd:hover { border-color:var(--green); }
-.upload-zone.drag { border-color:var(--amber); background:rgba(255,176,32,0.04); }
-.upload-zone.loaded.myr { border-color:var(--blue); background:rgba(77,159,255,0.05); }
-.upload-zone.loaded.sgd { border-color:var(--green); background:rgba(0,229,160,0.05); }
-.upload-zone input { display:none; }
-.upload-icon { font-size:2rem; margin-bottom:0.75rem; }
-.upload-zone h3 { font-size:1rem; font-weight:700; margin-bottom:0.4rem; }
-.upload-zone p { font-size:0.78rem; color:var(--muted2); }
-.upload-zone .file-name { font-size:0.72rem; color:var(--muted2); margin-top:6px; font-style:italic; }
-.currency-badge { display:inline-block; padding:3px 10px; border-radius:5px; font-size:0.72rem; font-weight:700; margin-bottom:0.75rem; }
-.currency-badge.myr { background:var(--blue-dim); color:var(--blue); }
-.currency-badge.sgd { background:var(--green-dim); color:var(--green); }
+.upload-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem;}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);}
+.upload-zone:hover{border-color:var(--blue);}
+.upload-zone.sgd:hover{border-color:var(--green);}
+.upload-zone.drag{border-color:var(--amber);}
+.upload-zone.loaded.myr{border-color:var(--blue);background:rgba(77,159,255,0.05);}
+.upload-zone.loaded.sgd{border-color:var(--green);background:rgba(0,229,160,0.05);}
+.upload-zone input{display:none;}
+.upload-icon{font-size:2rem;margin-bottom:0.75rem;}
+.upload-zone h3{font-size:1rem;font-weight:700;margin-bottom:0.4rem;}
+.upload-zone p{font-size:0.78rem;color:var(--muted2);}
+.upload-zone .file-name{font-size:0.72rem;color:var(--muted2);margin-top:6px;font-style:italic;}
+.currency-badge{display:inline-block;padding:3px 10px;border-radius:5px;font-size:0.72rem;font-weight:700;margin-bottom:0.75rem;}
+.currency-badge.myr{background:var(--blue-dim);color:var(--blue);}
+.currency-badge.sgd{background:var(--green-dim);color:var(--green);}
 
 /* Controls */
-.controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:10px; }
-.tabs { display:flex; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
-.tab { padding:8px 22px; border-radius:7px; font-size:0.85rem; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--muted2); transition:all 0.15s; font-family:Arial,sans-serif; }
-.tab.active { background:var(--blue); color:#080B0F; }
-.filter-wrap { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-.date-range { display:flex; align-items:center; gap:8px; }
-.date-input { font-size:0.8rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--text); font-family:Arial,sans-serif; cursor:pointer; }
-.date-sep { color:var(--muted); font-size:0.8rem; }
-.date-reset { font-size:0.78rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:transparent; color:var(--muted2); cursor:pointer; font-family:Arial,sans-serif; }
-.date-reset:hover { background:var(--surface2); color:var(--text); }
-.promo-filter { font-size:0.8rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--text); font-family:Arial,sans-serif; cursor:pointer; min-width:160px; }
+.controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;}
+.tabs{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;}
+.tab{padding:8px 22px;border-radius:7px;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.tab.active{background:var(--blue);color:#080B0F;}
+.filter-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.date-range{display:flex;align-items:center;gap:8px;}
+.date-input{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;}
+.date-sep{color:var(--muted);font-size:0.8rem;}
+.date-reset{font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:Arial,sans-serif;}
+.date-reset:hover{background:var(--surface2);color:var(--text);}
+.promo-filter{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;cursor:pointer;min-width:160px;}
 
 /* Currency sections */
-.currency-section { margin-bottom:1.5rem; }
-.currency-header { display:flex; align-items:center; gap:10px; margin-bottom:1rem; padding:10px 16px; border-radius:10px; }
-.currency-header.myr { background:rgba(77,159,255,0.08); border:1px solid rgba(77,159,255,0.2); }
-.currency-header.sgd { background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); }
-.currency-label { font-size:1rem; font-weight:700; }
-.currency-label.myr { color:var(--blue); }
-.currency-label.sgd { color:var(--green); }
-.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:1.5rem; }
-.metric { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.4rem; position:relative; overflow:hidden; }
-.metric::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--blue); opacity:0.4; }
-.metric.myr-card::after { background:var(--blue); opacity:0.8; }
-.metric.sgd-card::after { background:var(--green); opacity:0.8; }
-.metric .lbl { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
-.metric .val { font-size:1.8rem; font-weight:700; letter-spacing:-0.02em; line-height:1; }
-.metric .val.myr-val { color:var(--blue); }
-.metric .val.sgd-val { color:var(--green); }
-.metric .sub { font-size:0.7rem; color:var(--muted); margin-top:6px; }
+.currency-section{margin-bottom:1.5rem;}
+.currency-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:10px 16px;border-radius:10px;}
+.currency-header.myr{background:rgba(77,159,255,0.08);border:1px solid rgba(77,159,255,0.2);}
+.currency-header.sgd{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);}
+.currency-label{font-size:1rem;font-weight:700;}
+.currency-label.myr{color:var(--blue);}
+.currency-label.sgd{color:var(--green);}
+.section-detail-btn{font-size:0.75rem;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:Arial,sans-serif;}
+.section-detail-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;cursor:pointer;transition:border-color 0.2s;}
+.metric:hover{border-color:var(--blue-dim);}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:0.4;}
+.metric.myr-card::after{background:var(--blue);opacity:0.8;}
+.metric.sgd-card::after{background:var(--green);opacity:0.8;}
+.metric .lbl{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.metric .val{font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;line-height:1;}
+.metric .val.myr-val{color:var(--blue);}
+.metric .val.sgd-val{color:var(--green);}
+.metric .sub{font-size:0.7rem;color:var(--muted);margin-top:6px;}
+.metric .click-hint{font-size:0.65rem;color:var(--muted);margin-top:8px;opacity:0.6;}
 
 /* Charts */
-.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
-.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.4rem; }
-.chart-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-.chart-title { font-size:0.75rem; color:var(--muted2); text-transform:uppercase; letter-spacing:0.08em; }
-.legend { display:flex; gap:14px; flex-wrap:wrap; }
-.legend span { display:flex; align-items:center; gap:5px; font-size:0.72rem; color:var(--muted2); }
-.leg { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
-.chart-wrap { position:relative; width:100%; height:240px; }
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;cursor:pointer;transition:border-color 0.2s;}
+.chart-card:hover{border-color:rgba(77,159,255,0.3);}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.chart-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
+.chart-hint{font-size:0.65rem;color:var(--muted);opacity:0.7;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;}
+.legend span{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--muted2);}
+.leg{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.chart-wrap{position:relative;width:100%;height:240px;}
 
 /* Table */
-.table-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; }
-.table-hd { padding:1.1rem 1.4rem; border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--muted2); text-transform:uppercase; letter-spacing:0.08em; display:flex; align-items:center; justify-content:space-between; }
-.table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
-table { width:100%; border-collapse:collapse; }
-th { font-size:0.72rem; color:var(--muted); font-weight:400; text-align:right; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; text-transform:uppercase; position:sticky; top:0; background:var(--surface); }
-th:first-child, th:nth-child(2), th:nth-child(3) { text-align:left; }
-td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:right; font-size:0.82rem; white-space:nowrap; color:var(--muted2); }
-td:first-child { text-align:left; color:var(--muted); font-size:0.78rem; }
-td:nth-child(2), td:nth-child(3) { text-align:left; }
-tr:last-child td { border-bottom:none; }
-tr:hover td { background:rgba(255,255,255,0.02); }
-.type-tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.7rem; background:var(--blue-dim); color:var(--blue); }
-.myr-v { color:var(--blue); }
-.sgd-v { color:var(--green); }
-.divider { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
-.hidden { display:none !important; }
-.empty-state { text-align:center; padding:3rem; color:var(--muted); font-size:0.85rem; }
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.table-hd{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;justify-content:space-between;}
+.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.72rem;color:var(--muted);font-weight:400;text-align:right;padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;position:sticky;top:0;background:var(--surface);}
+th:first-child,th:nth-child(2),th:nth-child(3){text-align:left;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;white-space:nowrap;color:var(--muted2);}
+td:first-child{text-align:left;color:var(--muted);font-size:0.78rem;}
+td:nth-child(2),td:nth-child(3){text-align:left;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;background:var(--blue-dim);color:var(--blue);}
+.myr-v{color:var(--blue);}
+.sgd-v{color:var(--green);}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
+.hidden{display:none!important;}
+
+/* ── MODAL (click bar) ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:800px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);}
+.modal-title{font-size:1rem;font-weight:700;}
+.modal-close{border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:1.4rem;line-height:1;padding:0 4px;}
+.modal-close:hover{color:var(--text);}
+.modal-body{overflow-y:auto;padding:1.5rem;}
+.modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;}
+.modal-metric{background:var(--surface2);border-radius:10px;padding:1rem;}
+.modal-metric .lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.modal-metric .val{font-size:1.3rem;font-weight:700;}
+.modal-metric .val.myr-val{color:var(--blue);}
+.modal-metric .val.sgd-val{color:var(--green);}
+.modal-table-wrap{overflow-x:auto;}
+.modal table th{background:var(--surface2);}
+
+/* ── DETAIL PAGE ── */
+.detail-page{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;}
+.detail-page .app{padding:2rem 2.5rem;}
+.detail-header{display:flex;align-items:center;gap:14px;margin-bottom:2rem;}
+.back-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:0.85rem;font-family:Arial,sans-serif;}
+.back-btn:hover{border-color:var(--blue);color:var(--blue);}
+.detail-title{font-size:1.4rem;font-weight:800;}
+.detail-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;padding:1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+.detail-controls label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.detail-controls select,.detail-controls input[type=date]{font-size:0.8rem;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;}
+.detail-section{margin-bottom:1.5rem;}
+.detail-section-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;}
+.metrics-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem;}
+.chart-card-detail{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:14px;}
+.ranking-list{display:flex;flex-direction:column;gap:8px;}
+.ranking-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;}
+.ranking-num{font-size:0.72rem;color:var(--muted);width:20px;text-align:right;flex-shrink:0;}
+.ranking-name{flex:1;font-size:0.85rem;color:var(--text);}
+.ranking-bar-wrap{width:180px;flex-shrink:0;}
+.ranking-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.ranking-fill{height:100%;border-radius:3px;}
+.ranking-val{font-size:0.82rem;color:var(--muted2);min-width:100px;text-align:right;}
 </style>
 </head>
 <body>
+
+<!-- ── MAIN DASHBOARD ── -->
+<div id="mainDash">
 <div class="app">
 
 <div class="header">
@@ -131,16 +175,18 @@ tr:hover td { background:rgba(255,255,255,0.02); }
       <p>上传后台 CSV，自动分析  |  MYR & SGD</p>
     </div>
   </div>
-  <div class="status-chip">
-    <div class="dot" id="statusDot"></div>
-    <span id="statusText">等待上传</span>
+  <div class="header-right">
+    <button class="detail-btn" onclick="openDetail()">📊 详细分析 →</button>
+    <div class="status-chip">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">等待上传</span>
+    </div>
   </div>
 </div>
 
-<!-- Upload zones -->
 <div class="upload-section">
   <div class="upload-zone myr" id="zoneMYR" onclick="document.getElementById('fileMYR').click()">
-    <input type="file" id="fileMYR" accept=".csv" onchange="handleFile('MYR', this)" />
+    <input type="file" id="fileMYR" accept=".csv" onchange="handleFile('MYR',this)" />
     <div class="currency-badge myr">🇲🇾 MYR</div>
     <div class="upload-icon" id="iconMYR">📂</div>
     <h3 id="titleMYR">上传 MYR CSV</h3>
@@ -148,7 +194,7 @@ tr:hover td { background:rgba(255,255,255,0.02); }
     <div class="file-name" id="nameMYR"></div>
   </div>
   <div class="upload-zone sgd" id="zoneSGD" onclick="document.getElementById('fileSGD').click()">
-    <input type="file" id="fileSGD" accept=".csv" onchange="handleFile('SGD', this)" />
+    <input type="file" id="fileSGD" accept=".csv" onchange="handleFile('SGD',this)" />
     <div class="currency-badge sgd">🇸🇬 SGD</div>
     <div class="upload-icon" id="iconSGD">📂</div>
     <h3 id="titleSGD">上传 SGD CSV</h3>
@@ -181,19 +227,35 @@ tr:hover td { background:rgba(255,255,255,0.02); }
   <div class="currency-section">
     <div class="currency-header myr">
       <span class="currency-label myr">🇲🇾 MYR</span>
+      <button class="section-detail-btn" onclick="openDetail('MYR')">详细分析 →</button>
     </div>
     <div class="metrics">
-      <div class="metric myr-card"><div class="lbl">领取人次</div><div class="val myr-val" id="mMyrClaims">—</div><div class="sub" id="mMyrClaimsSub">—</div></div>
-      <div class="metric myr-card"><div class="lbl">存款人数</div><div class="val myr-val" id="mMyrDepPpl">—</div><div class="sub" id="mMyrDepPplSub">—</div></div>
-      <div class="metric myr-card"><div class="lbl">总存款金额</div><div class="val myr-val" id="mMyrDeposit">—</div><div class="sub" id="mMyrDepositSub">—</div></div>
-      <div class="metric myr-card"><div class="lbl">派发 Bonus</div><div class="val myr-val" id="mMyrBonus">—</div><div class="sub">总成本</div></div>
+      <div class="metric myr-card" onclick="openDetail('MYR','claims')">
+        <div class="lbl">领取人次</div><div class="val myr-val" id="mMyrClaims">—</div>
+        <div class="sub" id="mMyrClaimsSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric myr-card" onclick="openDetail('MYR','deposit_ppl')">
+        <div class="lbl">存款人数</div><div class="val myr-val" id="mMyrDepPpl">—</div>
+        <div class="sub" id="mMyrDepPplSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric myr-card" onclick="openDetail('MYR','deposit')">
+        <div class="lbl">总存款金额</div><div class="val myr-val" id="mMyrDeposit">—</div>
+        <div class="sub" id="mMyrDepositSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric myr-card" onclick="openDetail('MYR','bonus')">
+        <div class="lbl">派发 Bonus</div><div class="val myr-val" id="mMyrBonus">—</div>
+        <div class="sub">总成本</div><div class="click-hint">点击查看详情 →</div>
+      </div>
     </div>
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">领取人次趋势 (MYR)</div></div>
+      <div class="chart-card" onclick="openDetail('MYR','claims')">
+        <div class="chart-hd">
+          <div class="chart-title">领取人次趋势 (MYR)</div>
+          <div class="chart-hint">点击柱子看明细 · 点标题看详情</div>
+        </div>
         <div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div>
       </div>
-      <div class="chart-card">
+      <div class="chart-card" onclick="openDetail('MYR','deposit')">
         <div class="chart-hd">
           <div class="chart-title">存款 vs Bonus (MYR)</div>
           <div class="legend">
@@ -212,19 +274,35 @@ tr:hover td { background:rgba(255,255,255,0.02); }
   <div class="currency-section">
     <div class="currency-header sgd">
       <span class="currency-label sgd">🇸🇬 SGD</span>
+      <button class="section-detail-btn" onclick="openDetail('SGD')">详细分析 →</button>
     </div>
     <div class="metrics">
-      <div class="metric sgd-card"><div class="lbl">领取人次</div><div class="val sgd-val" id="mSgdClaims">—</div><div class="sub" id="mSgdClaimsSub">—</div></div>
-      <div class="metric sgd-card"><div class="lbl">存款人数</div><div class="val sgd-val" id="mSgdDepPpl">—</div><div class="sub" id="mSgdDepPplSub">—</div></div>
-      <div class="metric sgd-card"><div class="lbl">总存款金额</div><div class="val sgd-val" id="mSgdDeposit">—</div><div class="sub" id="mSgdDepositSub">—</div></div>
-      <div class="metric sgd-card"><div class="lbl">派发 Bonus</div><div class="val sgd-val" id="mSgdBonus">—</div><div class="sub">总成本</div></div>
+      <div class="metric sgd-card" onclick="openDetail('SGD','claims')">
+        <div class="lbl">领取人次</div><div class="val sgd-val" id="mSgdClaims">—</div>
+        <div class="sub" id="mSgdClaimsSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric sgd-card" onclick="openDetail('SGD','deposit_ppl')">
+        <div class="lbl">存款人数</div><div class="val sgd-val" id="mSgdDepPpl">—</div>
+        <div class="sub" id="mSgdDepPplSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric sgd-card" onclick="openDetail('SGD','deposit')">
+        <div class="lbl">总存款金额</div><div class="val sgd-val" id="mSgdDeposit">—</div>
+        <div class="sub" id="mSgdDepositSub">—</div><div class="click-hint">点击查看详情 →</div>
+      </div>
+      <div class="metric sgd-card" onclick="openDetail('SGD','bonus')">
+        <div class="lbl">派发 Bonus</div><div class="val sgd-val" id="mSgdBonus">—</div>
+        <div class="sub">总成本</div><div class="click-hint">点击查看详情 →</div>
+      </div>
     </div>
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-hd"><div class="chart-title">领取人次趋势 (SGD)</div></div>
+      <div class="chart-card" onclick="openDetail('SGD','claims')">
+        <div class="chart-hd">
+          <div class="chart-title">领取人次趋势 (SGD)</div>
+          <div class="chart-hint">点击柱子看明细 · 点标题看详情</div>
+        </div>
         <div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div>
       </div>
-      <div class="chart-card">
+      <div class="chart-card" onclick="openDetail('SGD','deposit')">
         <div class="chart-hd">
           <div class="chart-title">存款 vs Bonus (SGD)</div>
           <div class="legend">
@@ -237,367 +315,588 @@ tr:hover td { background:rgba(255,255,255,0.02); }
     </div>
   </div>
 
-  <!-- Table -->
   <div class="table-card">
-    <div class="table-hd">
-      <span id="tableTitle">明细数据（按 Promo 汇总）</span>
-    </div>
+    <div class="table-hd"><span id="tableTitle">明细数据</span></div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>日期</th>
-          <th>Promo 名称</th>
-          <th>货币</th>
-          <th>领取人次</th>
-          <th>存款人数</th>
-          <th>总存款</th>
-          <th>派发 Bonus</th>
-          <th>人均存款</th>
+          <th>日期</th><th>Promo 名称</th><th>货币</th>
+          <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>人均存款</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
   </div>
 </div>
+</div>
+</div>
 
+<!-- ── BAR CLICK MODAL ── -->
+<div class="modal-overlay hidden" id="barModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">—</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-summary" id="modalSummary"></div>
+      <div class="modal-table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">Promo 名称</th>
+            <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>人均存款</th>
+          </tr></thead>
+          <tbody id="modalTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DETAIL PAGE ── -->
+<div class="detail-page hidden" id="detailPage">
+  <div class="app">
+    <div class="detail-header">
+      <button class="back-btn" onclick="closeDetail()">← 返回</button>
+      <div class="detail-title" id="detailTitle">详细分析</div>
+    </div>
+
+    <div class="detail-controls">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>货币</label>
+        <select id="dCurrency" onchange="renderDetail()">
+          <option value="MYR">🇲🇾 MYR</option>
+          <option value="SGD">🇸🇬 SGD</option>
+          <option value="ALL">全部</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>Promo</label>
+        <select id="dPromo" onchange="renderDetail()">
+          <option value="all">全部</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>从</label>
+        <input type="date" id="dFrom" onchange="renderDetail()" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>至</label>
+        <input type="date" id="dTo" onchange="renderDetail()" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>显示维度</label>
+        <select id="dMetric" onchange="renderDetail()">
+          <option value="claims">领取人次</option>
+          <option value="deposit_ppl">存款人数</option>
+          <option value="deposit">存款金额</option>
+          <option value="bonus">派发 Bonus</option>
+          <option value="ppa">人均存款</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>时间分组</label>
+        <select id="dView" onchange="renderDetail()">
+          <option value="day">日</option>
+          <option value="week">周</option>
+          <option value="month">月</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="metrics-5" id="dMetrics"></div>
+
+    <div class="chart-card-detail">
+      <div class="chart-hd"><div class="chart-title" id="dChartTitle">趋势</div></div>
+      <div style="position:relative;width:100%;height:300px;"><canvas id="dTrendChart"></canvas></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="chart-card-detail">
+        <div class="chart-title" style="margin-bottom:1rem;">Promo 排名</div>
+        <div class="ranking-list" id="dRanking"></div>
+      </div>
+      <div class="chart-card-detail">
+        <div class="chart-hd"><div class="chart-title">存款 vs Bonus 对比</div></div>
+        <div style="position:relative;width:100%;height:260px;"><canvas id="dCompareChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-hd"><span>明细数据</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">日期</th>
+            <th style="text-align:left">Promo</th>
+            <th style="text-align:left">货币</th>
+            <th>领取人次</th><th>存款人数</th><th>存款金额</th><th>派发 Bonus</th><th>人均存款</th>
+          </tr></thead>
+          <tbody id="dTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-// ── Data store ──
-let myrData = []; // raw rows
-let sgdData = [];
-let view = 'day';
-let charts = {};
+// ── Data ──
+let myrData=[], sgdData=[], view='day', charts={}, dChart=null, dChart2=null;
 
 // ── File handling ──
-function handleFile(currency, input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const rows = parseCSV(e.target.result, currency);
-    if (currency === 'MYR') {
-      myrData = rows;
-      document.getElementById('zoneMYR').classList.add('loaded', 'myr');
-      document.getElementById('iconMYR').textContent = '✅';
-      document.getElementById('titleMYR').textContent = 'MYR 已加载';
-      document.getElementById('nameMYR').textContent = file.name + ' · ' + rows.length + ' 条记录';
+function handleFile(currency, input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const rows=parseCSV(e.target.result, currency);
+    if(currency==='MYR'){
+      myrData=rows;
+      setUpload('MYR', file.name, rows.length);
     } else {
-      sgdData = rows;
-      document.getElementById('zoneSGD').classList.add('loaded', 'sgd');
-      document.getElementById('iconSGD').textContent = '✅';
-      document.getElementById('titleSGD').textContent = 'SGD 已加载';
-      document.getElementById('nameSGD').textContent = file.name + ' · ' + rows.length + ' 条记录';
+      sgdData=rows;
+      setUpload('SGD', file.name, rows.length);
     }
     afterLoad();
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsText(file,'UTF-8');
 }
 
-// Drag and drop
-['zoneMYR','zoneSGD'].forEach(id => {
-  const el = document.getElementById(id);
-  const cur = id === 'zoneMYR' ? 'MYR' : 'SGD';
-  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
-  el.addEventListener('dragleave', () => el.classList.remove('drag'));
-  el.addEventListener('drop', e => {
-    e.preventDefault(); el.classList.remove('drag');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const inp = document.getElementById('file' + cur);
-    const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
-    handleFile(cur, inp);
+function setUpload(cur, fname, count){
+  const low=cur.toLowerCase();
+  document.getElementById('zone'+cur).classList.add('loaded',low);
+  document.getElementById('icon'+cur).textContent='✅';
+  document.getElementById('title'+cur).textContent=cur+' 已加载';
+  document.getElementById('name'+cur).textContent=fname+' · '+count+' 条记录';
+}
+
+['zoneMYR','zoneSGD'].forEach(id=>{
+  const el=document.getElementById(id);
+  const cur=id==='zoneMYR'?'MYR':'SGD';
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag');});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('drag');
+    const file=e.dataTransfer.files[0]; if(!file) return;
+    const inp=document.getElementById('file'+cur);
+    const dt=new DataTransfer(); dt.items.add(file); inp.files=dt.files;
+    handleFile(cur,inp);
   });
 });
 
 // ── CSV parser ──
-function parseCSV(text, currency) {
-  // Remove BOM
-  text = text.replace(/^\uFEFF/, '');
-  const lines = [];
-  text.trim().split('\n').forEach(line => {
-    const cols = []; let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += ch; }
+function parseCSV(text, currency){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=[];
+  text.trim().split('\n').forEach(line=>{
+    const cols=[]; let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){inQ=!inQ;}
+      else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+      else{cur+=ch;}
     }
     cols.push(cur.trim());
     lines.push(cols);
   });
-
-  // Find header
-  let hRow = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].some(c => c === 'Login' || c === 'Code' || c === 'Bonus')) { hRow = i; break; }
+  let hRow=-1;
+  for(let i=0;i<lines.length;i++){
+    if(lines[i].some(c=>c==='Login'||c==='Code'||c==='Bonus')){hRow=i;break;}
   }
-  if (hRow < 0) return [];
-
-  const headers = lines[hRow].map(h => h.trim());
-  const idx = h => headers.indexOf(h);
-
-  const iLogin   = idx('Login');
-  const iCode    = idx('Code');
-  const iStart   = idx('Start Time');
-  const iTransfer= idx('Transfer');
-  const iBonus   = idx('Bonus');
-
-  const rows = [];
-  for (let i = hRow + 1; i < lines.length; i++) {
-    const r = lines[i];
-    if (!r || r.length < 5) continue;
-
-    const login    = (r[iLogin]   || '').replace(/^="?(.*?)"?$/, '$1').trim();
-    const code     = (r[iCode]    || '').trim();
-    const startRaw = (r[iStart]   || '').trim();
-    const transfer = parseFloat((r[iTransfer] || '0').replace(/[^0-9.-]/g,'')) || 0;
-    const bonus    = parseFloat((r[iBonus]    || '0').replace(/[^0-9.-]/g,'')) || 0;
-
-    if (!login || !code || !startRaw) continue;
-
-    // Extract date YYYY-MM-DD from "2026-05-01 00:05:22"
-    const date = startRaw.slice(0, 10);
-    const hasDeposit = transfer > 0 ? 1 : 0;
-
-    rows.push({ date, login, code, currency, transfer, bonus, hasDeposit });
+  if(hRow<0) return [];
+  const headers=lines[hRow].map(h=>h.trim());
+  const idx=h=>headers.indexOf(h);
+  const iLogin=idx('Login'),iCode=idx('Code'),iStart=idx('Start Time'),iTransfer=idx('Transfer'),iBonus=idx('Bonus');
+  const rows=[];
+  for(let i=hRow+1;i<lines.length;i++){
+    const r=lines[i];
+    if(!r||r.length<5) continue;
+    const login=(r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const code=(r[iCode]||'').trim();
+    const startRaw=(r[iStart]||'').trim();
+    const transfer=parseFloat((r[iTransfer]||'0').replace(/[^0-9.-]/g,''))||0;
+    const bonus=parseFloat((r[iBonus]||'0').replace(/[^0-9.-]/g,''))||0;
+    if(!login||!code||!startRaw) continue;
+    const date=startRaw.slice(0,10);
+    rows.push({date,login,code,currency,transfer,bonus,hasDeposit:transfer>0?1:0});
   }
   return rows;
 }
 
-// ── After loading ──
-function afterLoad() {
-  const all = [...myrData, ...sgdData];
-  if (!all.length) return;
-
+// ── After load ──
+function afterLoad(){
+  const all=[...myrData,...sgdData];
+  if(!all.length) return;
   document.getElementById('statusDot').classList.add('live');
-  document.getElementById('statusText').textContent = '已加载 · ' + all.length + ' 条记录';
+  document.getElementById('statusText').textContent='已加载 · '+all.length+' 条记录';
   document.getElementById('dashboard').classList.remove('hidden');
-
-  // Populate promo filter
-  const promos = [...new Set(all.map(r => r.code).filter(Boolean))].sort();
-  document.getElementById('promoFilter').innerHTML =
-    '<option value="all">全部 Promo</option>' +
-    promos.map(p => `<option value="${p}">${p}</option>`).join('');
-
-  // Set date range
-  const dates = all.map(r => r.date).sort();
-  const fromEl = document.getElementById('dateFrom');
-  const toEl   = document.getElementById('dateTo');
-  if (!fromEl.value) fromEl.value = dates[0];
-  if (!toEl.value)   toEl.value   = dates[dates.length - 1];
-
+  const promos=[...new Set(all.map(r=>r.code).filter(Boolean))].sort();
+  document.getElementById('promoFilter').innerHTML='<option value="all">全部 Promo</option>'+promos.map(p=>`<option value="${p}">${p}</option>`).join('');
+  document.getElementById('dPromo').innerHTML='<option value="all">全部</option>'+promos.map(p=>`<option value="${p}">${p}</option>`).join('');
+  const dates=all.map(r=>r.date).sort();
+  const from=dates[0], to=dates[dates.length-1];
+  ['dateFrom','dFrom'].forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=from; });
+  ['dateTo','dTo'].forEach(id=>{ if(!document.getElementById(id).value) document.getElementById(id).value=to; });
   render();
 }
 
-function resetDates() {
-  const all = [...myrData, ...sgdData];
-  const dates = all.map(r => r.date).sort();
-  document.getElementById('dateFrom').value = dates[0] || '';
-  document.getElementById('dateTo').value   = dates[dates.length - 1] || '';
+function resetDates(){
+  const all=[...myrData,...sgdData];
+  const dates=all.map(r=>r.date).sort();
+  document.getElementById('dateFrom').value=dates[0]||'';
+  document.getElementById('dateTo').value=dates[dates.length-1]||'';
   render();
 }
 
-function setView(v, btn) {
-  view = v;
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+function setView(v,btn){
+  view=v;
+  document.querySelectorAll('#mainDash .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   render();
 }
 
-// ── Filtering ──
-function getFiltered(currency) {
-  const promo = document.getElementById('promoFilter').value;
-  const from  = document.getElementById('dateFrom').value;
-  const to    = document.getElementById('dateTo').value;
-  const src   = currency === 'MYR' ? myrData : sgdData;
-  return src.filter(r => {
-    if (promo !== 'all' && r.code !== promo) return false;
-    if (from && r.date < from) return false;
-    if (to   && r.date > to)   return false;
+// ── Filter ──
+function getFiltered(currency){
+  const promo=document.getElementById('promoFilter').value;
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  const src=currency==='MYR'?myrData:sgdData;
+  return src.filter(r=>{
+    if(promo!=='all'&&r.code!==promo) return false;
+    if(from&&r.date<from) return false;
+    if(to&&r.date>to) return false;
     return true;
   });
 }
 
-// ── Group by period ──
-function groupData(rows) {
-  const map = {};
-  rows.forEach(r => {
+// ── Group ──
+function groupData(rows, v){
+  v=v||view;
+  const map={};
+  rows.forEach(r=>{
     let key;
-    const d = new Date(r.date);
-    if (view === 'day') { key = r.date; }
-    else if (view === 'week') {
-      const jan1 = new Date(d.getFullYear(), 0, 1);
-      const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-      key = `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
-    } else { key = r.date.slice(0, 7); }
-
-    if (!map[key]) map[key] = { label:key, claims:0, depPpl:0, deposit:0, bonus:0 };
-    map[key].claims  += 1;
-    map[key].depPpl  += r.hasDeposit;
-    map[key].deposit += r.transfer;
-    map[key].bonus   += r.bonus;
+    const d=new Date(r.date);
+    if(v==='day'){key=r.date;}
+    else if(v==='week'){
+      const jan1=new Date(d.getFullYear(),0,1);
+      const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+      key=`${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+    } else {key=r.date.slice(0,7);}
+    if(!map[key]) map[key]={label:key,claims:0,depPpl:0,deposit:0,bonus:0};
+    map[key].claims+=1;
+    map[key].depPpl+=r.hasDeposit;
+    map[key].deposit+=r.transfer;
+    map[key].bonus+=r.bonus;
   });
-  return Object.values(map).sort((a,b) => a.label.localeCompare(b.label));
+  return Object.values(map).sort((a,b)=>a.label.localeCompare(b.label));
+}
+
+function groupByPromo(rows){
+  const map={};
+  rows.forEach(r=>{
+    if(!map[r.code]) map[r.code]={code:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
+    map[r.code].claims+=1;
+    map[r.code].depPpl+=r.hasDeposit;
+    map[r.code].deposit+=r.transfer;
+    map[r.code].bonus+=r.bonus;
+  });
+  return Object.values(map).sort((a,b)=>b.claims-a.claims);
 }
 
 // ── Format ──
-function fmtRM(n) {
-  if (!n && n !== 0) return '—';
-  const abs = Math.abs(n);
-  const s = 'RM' + abs.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
-  return n < 0 ? '(' + s + ')' : s;
-}
-function fmtSGD(n) {
-  if (!n && n !== 0) return '—';
-  const abs = Math.abs(n);
-  const s = 'S$' + abs.toLocaleString('en-SG', {minimumFractionDigits:2, maximumFractionDigits:2});
-  return n < 0 ? '(' + s + ')' : s;
-}
-function fmtN(n) { return n ? n.toLocaleString('en-MY') : '—'; }
-function fmtLabel(label) {
-  const d = new Date(label);
-  if (isNaN(d)) return label;
-  if (view === 'day')   return d.toLocaleDateString('en-MY', {day:'2-digit', month:'short'});
-  if (view === 'month') return d.toLocaleDateString('en-MY', {month:'short', year:'numeric'});
+function fmtRM(n){if(!n&&n!==0)return'—';const abs=Math.abs(n);const s='RM'+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;}
+function fmtSGD(n){if(!n&&n!==0)return'—';const abs=Math.abs(n);const s='S$'+abs.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;}
+function fmtAuto(n,cur){return cur==='SGD'?fmtSGD(n):fmtRM(n);}
+function fmtN(n){return n?n.toLocaleString('en-MY'):'—';}
+function fmtLabel(label,v){
+  v=v||view;
+  const d=new Date(label);
+  if(isNaN(d)) return label;
+  if(v==='day') return d.toLocaleDateString('en-MY',{day:'2-digit',month:'short'});
+  if(v==='month') return d.toLocaleDateString('en-MY',{month:'short',year:'numeric'});
   return label;
 }
 
-// ── Render ──
-function render() {
-  const myrRows = getFiltered('MYR');
-  const sgdRows = getFiltered('SGD');
+// ── Main render ──
+function render(){
+  const myrRows=getFiltered('MYR'), sgdRows=getFiltered('SGD');
+  const myrClaims=myrRows.length, myrDepPpl=myrRows.filter(r=>r.hasDeposit).length;
+  const myrDeposit=myrRows.reduce((s,r)=>s+r.transfer,0), myrBonus=myrRows.reduce((s,r)=>s+r.bonus,0);
+  const myrPPA=myrDepPpl>0?myrDeposit/myrDepPpl:0;
+  const sgdClaims=sgdRows.length, sgdDepPpl=sgdRows.filter(r=>r.hasDeposit).length;
+  const sgdDeposit=sgdRows.reduce((s,r)=>s+r.transfer,0), sgdBonus=sgdRows.reduce((s,r)=>s+r.bonus,0);
+  const sgdPPA=sgdDepPpl>0?sgdDeposit/sgdDepPpl:0;
 
-  // MYR metrics
-  const myrClaims  = myrRows.length;
-  const myrDepPpl  = myrRows.filter(r => r.hasDeposit).length;
-  const myrDeposit = myrRows.reduce((s,r) => s + r.transfer, 0);
-  const myrBonus   = myrRows.reduce((s,r) => s + r.bonus,   0);
-  const myrPPA     = myrDepPpl > 0 ? myrDeposit / myrDepPpl : 0;
+  document.getElementById('mMyrClaims').textContent=fmtN(myrClaims);
+  document.getElementById('mMyrClaimsSub').textContent=myrRows.length+' 条记录';
+  document.getElementById('mMyrDepPpl').textContent=fmtN(myrDepPpl);
+  document.getElementById('mMyrDepPplSub').textContent=myrClaims>0?Math.round(myrDepPpl/myrClaims*100)+'% 有存款':'—';
+  document.getElementById('mMyrDeposit').textContent=fmtRM(myrDeposit);
+  document.getElementById('mMyrDepositSub').textContent='人均: '+fmtRM(myrPPA);
+  document.getElementById('mMyrBonus').textContent=fmtRM(myrBonus);
+  document.getElementById('mSgdClaims').textContent=fmtN(sgdClaims);
+  document.getElementById('mSgdClaimsSub').textContent=sgdRows.length+' 条记录';
+  document.getElementById('mSgdDepPpl').textContent=fmtN(sgdDepPpl);
+  document.getElementById('mSgdDepPplSub').textContent=sgdClaims>0?Math.round(sgdDepPpl/sgdClaims*100)+'% 有存款':'—';
+  document.getElementById('mSgdDeposit').textContent=fmtSGD(sgdDeposit);
+  document.getElementById('mSgdDepositSub').textContent='人均: '+fmtSGD(sgdPPA);
+  document.getElementById('mSgdBonus').textContent=fmtSGD(sgdBonus);
 
-  document.getElementById('mMyrClaims').textContent    = fmtN(myrClaims);
-  document.getElementById('mMyrClaimsSub').textContent = myrRows.length + ' 条记录';
-  document.getElementById('mMyrDepPpl').textContent    = fmtN(myrDepPpl);
-  document.getElementById('mMyrDepPplSub').textContent = myrClaims > 0 ? Math.round(myrDepPpl/myrClaims*100) + '% 有存款' : '—';
-  document.getElementById('mMyrDeposit').textContent   = fmtRM(myrDeposit);
-  document.getElementById('mMyrDepositSub').textContent= '人均: ' + fmtRM(myrPPA);
-  document.getElementById('mMyrBonus').textContent     = fmtRM(myrBonus);
+  const titles={day:'日报明细',week:'周报明细',month:'月报明细'};
+  document.getElementById('tableTitle').textContent=titles[view];
 
-  // SGD metrics
-  const sgdClaims  = sgdRows.length;
-  const sgdDepPpl  = sgdRows.filter(r => r.hasDeposit).length;
-  const sgdDeposit = sgdRows.reduce((s,r) => s + r.transfer, 0);
-  const sgdBonus   = sgdRows.reduce((s,r) => s + r.bonus,   0);
-  const sgdPPA     = sgdDepPpl > 0 ? sgdDeposit / sgdDepPpl : 0;
-
-  document.getElementById('mSgdClaims').textContent    = fmtN(sgdClaims);
-  document.getElementById('mSgdClaimsSub').textContent = sgdRows.length + ' 条记录';
-  document.getElementById('mSgdDepPpl').textContent    = fmtN(sgdDepPpl);
-  document.getElementById('mSgdDepPplSub').textContent = sgdClaims > 0 ? Math.round(sgdDepPpl/sgdClaims*100) + '% 有存款' : '—';
-  document.getElementById('mSgdDeposit').textContent   = fmtSGD(sgdDeposit);
-  document.getElementById('mSgdDepositSub').textContent= '人均: ' + fmtSGD(sgdPPA);
-  document.getElementById('mSgdBonus').textContent     = fmtSGD(sgdBonus);
-
-  const titles = { day:'日报明细', week:'周报明细', month:'月报明细' };
-  document.getElementById('tableTitle').textContent = titles[view] + '（按 Promo 汇总）';
-
-  renderCharts(myrRows, sgdRows);
-  renderTable(myrRows, sgdRows);
+  renderCharts(myrRows,sgdRows);
+  renderTable(myrRows,sgdRows);
 }
 
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-function mkOpts(gridC, yCb) {
+function mkOpts(gridC,yCb,onClickFn){
   return {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+    responsive:true,maintainAspectRatio:false,
+    onClick:onClickFn||null,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
     scales:{
-      x:{ ticks:{font:{size:10,family:'Arial'}, color:'#5A6A78', autoSkip:true, maxRotation:45}, grid:{display:false}, border:{color:'transparent'} },
-      y:{ ticks:{font:{size:10,family:'Arial'}, color:'#5A6A78', callback:yCb}, grid:{color:'rgba(255,255,255,0.04)'}, border:{color:'transparent'} }
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:yCb},grid:{color:gridC},border:{color:'transparent'}}
     }
   };
 }
 
-function renderCharts(myrRows, sgdRows) {
-  const myrGrouped = groupData(myrRows);
-  const sgdGrouped = groupData(sgdRows);
-  const myrLabels  = myrGrouped.map(r => fmtLabel(r.label));
-  const sgdLabels  = sgdGrouped.map(r => fmtLabel(r.label));
+function renderCharts(myrRows,sgdRows){
+  const myrG=groupData(myrRows), sgdG=groupData(sgdRows);
+  const myrL=myrG.map(r=>fmtLabel(r.label)), sgdL=sgdG.map(r=>fmtLabel(r.label));
+  const gc='rgba(255,255,255,0.04)';
+
+  const makeClickHandler=(grouped,currency)=>(evt,elems)=>{
+    if(!elems||!elems.length) return;
+    const idx=elems[0].index;
+    const grp=grouped[idx];
+    if(!grp) return;
+    showBarModal(grp, currency);
+  };
 
   destroyChart('myrClaimChart');
-  charts['myrClaimChart'] = new Chart(document.getElementById('myrClaimChart'), {
+  charts['myrClaimChart']=new Chart(document.getElementById('myrClaimChart'),{
     type:'bar',
-    data:{ labels:myrLabels, datasets:[{ data:myrGrouped.map(r=>r.claims), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
-    options: mkOpts('rgba(255,255,255,0.04)', v => v.toLocaleString())
+    data:{labels:myrL,datasets:[{data:myrG.map(r=>r.claims),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:4}]},
+    options:{...mkOpts(gc,v=>v.toLocaleString(),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}}
   });
 
   destroyChart('myrDepBonusChart');
-  charts['myrDepBonusChart'] = new Chart(document.getElementById('myrDepBonusChart'), {
+  charts['myrDepBonusChart']=new Chart(document.getElementById('myrDepBonusChart'),{
     type:'bar',
-    data:{ labels:myrLabels, datasets:[
-      { label:'存款', data:myrGrouped.map(r=>r.deposit), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
-      { label:'Bonus', data:myrGrouped.map(r=>r.bonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    data:{labels:myrL,datasets:[
+      {label:'存款',data:myrG.map(r=>r.deposit),backgroundColor:'rgba(77,159,255,0.7)',hoverBackgroundColor:'rgba(77,159,255,1)',borderRadius:3},
+      {label:'Bonus',data:myrG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3},
     ]},
-    options:{ ...mkOpts('rgba(255,255,255,0.04)', v => fmtRM(v)),
-      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
+    options:{...mkOpts(gc,v=>fmtRM(v),makeClickHandler(myrG,'MYR')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
   });
 
   destroyChart('sgdClaimChart');
-  charts['sgdClaimChart'] = new Chart(document.getElementById('sgdClaimChart'), {
+  charts['sgdClaimChart']=new Chart(document.getElementById('sgdClaimChart'),{
     type:'bar',
-    data:{ labels:sgdLabels, datasets:[{ data:sgdGrouped.map(r=>r.claims), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:4 }]},
-    options: mkOpts('rgba(255,255,255,0.04)', v => v.toLocaleString())
+    data:{labels:sgdL,datasets:[{data:sgdG.map(r=>r.claims),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:4}]},
+    options:{...mkOpts(gc,v=>v.toLocaleString(),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'领取: '+ctx.parsed.y}}}}
   });
 
   destroyChart('sgdDepBonusChart');
-  charts['sgdDepBonusChart'] = new Chart(document.getElementById('sgdDepBonusChart'), {
+  charts['sgdDepBonusChart']=new Chart(document.getElementById('sgdDepBonusChart'),{
     type:'bar',
-    data:{ labels:sgdLabels, datasets:[
-      { label:'存款', data:sgdGrouped.map(r=>r.sgdDeposit||r.deposit), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:3 },
-      { label:'Bonus', data:sgdGrouped.map(r=>r.bonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    data:{labels:sgdL,datasets:[
+      {label:'存款',data:sgdG.map(r=>r.deposit),backgroundColor:'rgba(0,229,160,0.7)',hoverBackgroundColor:'rgba(0,229,160,1)',borderRadius:3},
+      {label:'Bonus',data:sgdG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',hoverBackgroundColor:'rgba(255,176,32,1)',borderRadius:3},
     ]},
-    options:{ ...mkOpts('rgba(255,255,255,0.04)', v => fmtSGD(v)),
-      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}}
+    options:{...mkOpts(gc,v=>fmtSGD(v),makeClickHandler(sgdG,'SGD')),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}}
   });
 }
 
-function renderTable(myrRows, sgdRows) {
-  const tbody = document.getElementById('tableBody');
+function renderTable(myrRows,sgdRows){
+  const tbody=document.getElementById('tableBody');
+  const map={};
+  [...myrRows.map(r=>({...r,cur:'MYR'})),...sgdRows.map(r=>({...r,cur:'SGD'}))].forEach(r=>{
+    const key=r.date+'||'+r.code+'||'+r.cur;
+    if(!map[key]) map[key]={date:r.date,code:r.code,cur:r.cur,claims:0,depPpl:0,deposit:0,bonus:0};
+    map[key].claims+=1; map[key].depPpl+=r.hasDeposit;
+    map[key].deposit+=r.transfer; map[key].bonus+=r.bonus;
+  });
+  const rows=Object.values(map).sort((a,b)=>b.date.localeCompare(a.date)||a.code.localeCompare(b.code));
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>';return;}
+  tbody.innerHTML=rows.map(r=>{
+    const isMYR=r.cur==='MYR';
+    const fmt=isMYR?fmtRM:fmtSGD;
+    const ppa=r.depPpl>0?fmt(r.deposit/r.depPpl):'—';
+    const cls=isMYR?'myr-v':'sgd-v';
+    const tagStyle=isMYR?'':'background:var(--green-dim);color:var(--green)';
+    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${fmt(r.deposit)}</td><td class="${cls}">${fmt(r.bonus)}</td><td class="${cls}">${ppa}</td></tr>`;
+  }).join('');
+}
 
-  // Group by date + promo
-  const map = {};
-  const allRows = [...myrRows.map(r=>({...r,cur:'MYR'})), ...sgdRows.map(r=>({...r,cur:'SGD'}))];
-  allRows.forEach(r => {
-    const key = r.date + '||' + r.code + '||' + r.cur;
-    if (!map[key]) map[key] = { date:r.date, code:r.code, cur:r.cur, claims:0, depPpl:0, deposit:0, bonus:0 };
-    map[key].claims  += 1;
-    map[key].depPpl  += r.hasDeposit;
-    map[key].deposit += r.transfer;
-    map[key].bonus   += r.bonus;
+// ── Bar click modal ──
+function showBarModal(grp, currency){
+  const isMYR=currency==='MYR';
+  const fmt=isMYR?fmtRM:fmtSGD;
+  const src=isMYR?myrData:sgdData;
+
+  // Get rows for this period
+  const periodRows=src.filter(r=>{
+    let key;
+    const d=new Date(r.date);
+    if(view==='day'){key=r.date;}
+    else if(view==='week'){
+      const jan1=new Date(d.getFullYear(),0,1);
+      const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+      key=`${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+    } else {key=r.date.slice(0,7);}
+    return key===grp.label;
   });
 
-  const rows = Object.values(map).sort((a,b) => b.date.localeCompare(a.date) || a.code.localeCompare(b.code));
+  const ppa=grp.depPpl>0?fmt(grp.deposit/grp.depPpl):'—';
+  document.getElementById('modalTitle').textContent=`${currency} · ${fmtLabel(grp.label)} 明细`;
+  document.getElementById('modalSummary').innerHTML=`
+    <div class="modal-metric"><div class="lbl">领取人次</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmtN(grp.claims)}</div></div>
+    <div class="modal-metric"><div class="lbl">总存款</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmt(grp.deposit)}</div></div>
+    <div class="modal-metric"><div class="lbl">派发 Bonus</div><div class="val ${isMYR?'myr-val':'sgd-val'}">${fmt(grp.bonus)}</div></div>
+  `;
 
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">没有数据</td></tr>`;
-    return;
-  }
+  // Group by promo
+  const promoMap={};
+  periodRows.forEach(r=>{
+    if(!promoMap[r.code]) promoMap[r.code]={code:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
+    promoMap[r.code].claims+=1; promoMap[r.code].depPpl+=r.hasDeposit;
+    promoMap[r.code].deposit+=r.transfer; promoMap[r.code].bonus+=r.bonus;
+  });
+  const promoRows=Object.values(promoMap).sort((a,b)=>b.claims-a.claims);
 
-  tbody.innerHTML = rows.map(r => {
-    const isMYR = r.cur === 'MYR';
-    const fmt   = isMYR ? fmtRM : fmtSGD;
-    const ppa   = r.depPpl > 0 ? fmt(r.deposit / r.depPpl) : '—';
-    const cls   = isMYR ? 'myr-v' : 'sgd-v';
-    return `<tr>
-      <td>${r.date}</td>
-      <td>${r.code}</td>
-      <td><span class="type-tag" style="${isMYR?'':'background:var(--green-dim);color:var(--green)'}">${r.cur}</span></td>
-      <td class="${cls}">${fmtN(r.claims)}</td>
-      <td class="${cls}">${fmtN(r.depPpl)}</td>
-      <td class="${cls}">${fmt(r.deposit)}</td>
-      <td class="${cls}">${fmt(r.bonus)}</td>
-      <td class="${cls}">${ppa}</td>
-    </tr>`;
+  document.getElementById('modalTableBody').innerHTML=promoRows.map(r=>{
+    const ppa2=r.depPpl>0?fmt(r.deposit/r.depPpl):'—';
+    return `<tr><td style="text-align:left">${r.code}</td><td>${fmtN(r.claims)}</td><td>${fmtN(r.depPpl)}</td><td>${fmt(r.deposit)}</td><td>${fmt(r.bonus)}</td><td>${ppa2}</td></tr>`;
+  }).join('');
+
+  document.getElementById('barModal').classList.remove('hidden');
+}
+
+function closeModal(){ document.getElementById('barModal').classList.add('hidden'); }
+
+// ── Detail page ──
+function openDetail(currency, metric){
+  if(currency) document.getElementById('dCurrency').value=currency;
+  if(metric)   document.getElementById('dMetric').value=metric;
+  document.getElementById('detailPage').classList.remove('hidden');
+  document.getElementById('detailTitle').textContent='详细分析 · '+(currency||'全部');
+  renderDetail();
+}
+
+function closeDetail(){ document.getElementById('detailPage').classList.add('hidden'); }
+
+function getDetailRows(){
+  const cur=document.getElementById('dCurrency').value;
+  const promo=document.getElementById('dPromo').value;
+  const from=document.getElementById('dFrom').value;
+  const to=document.getElementById('dTo').value;
+  let src=[];
+  if(cur==='MYR') src=myrData;
+  else if(cur==='SGD') src=sgdData;
+  else src=[...myrData,...sgdData];
+  return src.filter(r=>{
+    if(promo!=='all'&&r.code!==promo) return false;
+    if(from&&r.date<from) return false;
+    if(to&&r.date>to) return false;
+    return true;
+  });
+}
+
+function renderDetail(){
+  const rows=getDetailRows();
+  const cur=document.getElementById('dCurrency').value;
+  const metric=document.getElementById('dMetric').value;
+  const dview=document.getElementById('dView').value;
+  const isSGD=cur==='SGD';
+  const fmt=isSGD?fmtSGD:fmtRM;
+
+  const claims=rows.length;
+  const depPpl=rows.filter(r=>r.hasDeposit).length;
+  const deposit=rows.reduce((s,r)=>s+r.transfer,0);
+  const bonus=rows.reduce((s,r)=>s+r.bonus,0);
+  const ppa=depPpl>0?deposit/depPpl:0;
+
+  const metricLabels={claims:'领取人次',deposit_ppl:'存款人数',deposit:'总存款金额',bonus:'派发 Bonus',ppa:'人均存款'};
+  document.getElementById('dChartTitle').textContent=metricLabels[metric]+' 趋势';
+
+  const valCls=isSGD?'sgd-val':'myr-val';
+  document.getElementById('dMetrics').innerHTML=`
+    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">领取人次</div><div class="val ${valCls}">${fmtN(claims)}</div></div>
+    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">存款人数</div><div class="val ${valCls}">${fmtN(depPpl)}</div><div class="sub">${claims>0?Math.round(depPpl/claims*100)+'% 有存款':''}</div></div>
+    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">总存款</div><div class="val ${valCls}">${fmt(deposit)}</div></div>
+    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">派发 Bonus</div><div class="val ${valCls}">${fmt(bonus)}</div></div>
+    <div class="metric ${isSGD?'sgd-card':'myr-card'}"><div class="lbl">人均存款</div><div class="val ${valCls}">${fmt(ppa)}</div></div>
+  `;
+
+  const grouped=groupData(rows,dview);
+  const labels=grouped.map(r=>fmtLabel(r.label,dview));
+  const getVal=r=>{
+    if(metric==='claims') return r.claims;
+    if(metric==='deposit_ppl') return r.depPpl;
+    if(metric==='deposit') return r.deposit;
+    if(metric==='bonus') return r.bonus;
+    return r.depPpl>0?r.deposit/r.depPpl:0;
+  };
+  const data=grouped.map(getVal);
+  const color=isSGD?'rgba(0,229,160,0.7)':'rgba(77,159,255,0.7)';
+  const gc='rgba(255,255,255,0.04)';
+
+  if(dChart){dChart.destroy();dChart=null;}
+  dChart=new Chart(document.getElementById('dTrendChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:color,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>metricLabels[metric]+': '+(metric==='claims'||metric==='deposit_ppl'?fmtN(ctx.parsed.y):fmt(ctx.parsed.y))}}},
+      scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+        y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>metric==='claims'||metric==='deposit_ppl'?fmtN(v):fmt(v)},grid:{color:gc},border:{color:'transparent'}}}}
+  });
+
+  // Promo ranking
+  const byPromo=groupByPromo(rows).sort((a,b)=>getVal(b)-getVal(a));
+  const maxVal=byPromo[0]?getVal(byPromo[0]):1;
+  document.getElementById('dRanking').innerHTML=byPromo.slice(0,10).map((r,i)=>{
+    const val=getVal(r);
+    const pct=maxVal>0?val/maxVal*100:0;
+    const display=metric==='claims'||metric==='deposit_ppl'?fmtN(val):fmt(val);
+    return `<div class="ranking-row">
+      <div class="ranking-num">${i+1}</div>
+      <div class="ranking-name">${r.code}</div>
+      <div class="ranking-bar-wrap"><div class="ranking-bar"><div class="ranking-fill" style="width:${pct}%;background:${isSGD?'var(--green)':'var(--blue)'}"></div></div></div>
+      <div class="ranking-val">${display}</div>
+    </div>`;
+  }).join('');
+
+  // Compare chart
+  if(dChart2){dChart2.destroy();dChart2=null;}
+  const topPromos=byPromo.slice(0,8);
+  dChart2=new Chart(document.getElementById('dCompareChart'),{
+    type:'bar',
+    data:{labels:topPromos.map(r=>r.code.length>15?r.code.slice(0,15)+'…':r.code),datasets:[
+      {label:'存款',data:topPromos.map(r=>r.deposit),backgroundColor:isSGD?'rgba(0,229,160,0.7)':'rgba(77,159,255,0.7)',borderRadius:3},
+      {label:'Bonus',data:topPromos.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.x)}}},
+      scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:gc},border:{color:'transparent'}},
+        y:{ticks:{font:{size:9,family:'Arial'},color:'#5A6A78'},grid:{display:false},border:{color:'transparent'}}}}
+  });
+
+  // Detail table
+  const tmap={};
+  rows.forEach(r=>{
+    const key=r.date+'||'+r.code+'||'+r.currency;
+    if(!tmap[key]) tmap[key]={date:r.date,code:r.code,cur:r.currency,claims:0,depPpl:0,deposit:0,bonus:0};
+    tmap[key].claims+=1; tmap[key].depPpl+=r.hasDeposit;
+    tmap[key].deposit+=r.transfer; tmap[key].bonus+=r.bonus;
+  });
+  const trows=Object.values(tmap).sort((a,b)=>b.date.localeCompare(a.date)||a.code.localeCompare(b.code));
+  document.getElementById('dTableBody').innerHTML=trows.map(r=>{
+    const f=r.cur==='SGD'?fmtSGD:fmtRM;
+    const ppa2=r.depPpl>0?f(r.deposit/r.depPpl):'—';
+    const cls=r.cur==='SGD'?'sgd-v':'myr-v';
+    const tagStyle=r.cur==='SGD'?'background:var(--green-dim);color:var(--green)':'';
+    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${f(r.deposit)}</td><td class="${cls}">${f(r.bonus)}</td><td class="${cls}">${ppa2}</td></tr>`;
   }).join('');
 }
 </script>
