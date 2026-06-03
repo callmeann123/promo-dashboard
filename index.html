@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PROMO Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-
 <style>
 :root {
   --bg: #080B0F;
@@ -20,316 +19,301 @@
   --green: #00E5A0;
   --green-dim: rgba(0,229,160,0.12);
   --red: #FF3D5A;
-  --red-dim: rgba(255,61,90,0.12);
-  --amber: #FFB020;
-  --amber-dim: rgba(255,176,32,0.12);
   --blue: #4D9FFF;
   --blue-dim: rgba(77,159,255,0.12);
-  --purple: #A78BFA;
-  --purple-dim: rgba(167,139,250,0.12);
-  --font: Arial, sans-serif;
-  --mono: Arial, sans-serif;
+  --amber: #FFB020;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 18px; }
-body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; overflow-x: hidden; }
+body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(77,159,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,159,255,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+.app { position:relative; z-index:1; max-width:1600px; margin:0 auto; padding:2.5rem; }
 
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: linear-gradient(rgba(77,159,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(77,159,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
-}
-
-.app { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 2.5rem; }
-
-.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-.logo { display: flex; align-items: center; gap: 16px; }
-.logo-mark { width: 52px; height: 52px; background: linear-gradient(135deg, #4D9FFF, #00E5A0); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #080B0F; flex-shrink: 0; }
-.logo h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
-.logo h1 span { color: var(--blue); }
-.logo p { font-size: 0.75rem; color: var(--muted); font-family: Arial, sans-serif; margin-top: 4px; }
-
-.status-chip { display: flex; align-items: center; gap: 7px; padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; font-size: 0.78rem; font-family: Arial, sans-serif; color: var(--muted2); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+/* Header */
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+.logo { display:flex; align-items:center; gap:16px; }
+.logo-mark { width:52px; height:52px; background:linear-gradient(135deg,#4D9FFF,#00E5A0); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#080B0F; }
+.logo h1 { font-size:1.8rem; font-weight:800; letter-spacing:-0.02em; }
+.logo h1 span { color:var(--blue); }
+.logo p { font-size:0.75rem; color:var(--muted); margin-top:3px; }
+.status-chip { display:flex; align-items:center; gap:7px; padding:8px 16px; background:var(--surface2); border:1px solid var(--border2); border-radius:20px; font-size:0.78rem; color:var(--muted2); }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--muted); }
+.dot.live { background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-.loading-zone { border: 1.5px dashed var(--border2); border-radius: 16px; padding: 3rem 2rem; text-align: center; margin-bottom: 2rem; background: var(--surface); }
-.loading-zone .icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.loading-zone h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
-.loading-zone p { font-size: 0.82rem; color: var(--muted2); font-family: Arial, sans-serif; }
+/* Upload */
+.upload-section { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:2rem; }
+.upload-zone { border:1.5px dashed var(--border2); border-radius:14px; padding:2rem; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--surface); position:relative; }
+.upload-zone:hover { border-color:var(--blue); }
+.upload-zone.sgd:hover { border-color:var(--green); }
+.upload-zone.drag { border-color:var(--amber); background:rgba(255,176,32,0.04); }
+.upload-zone.loaded.myr { border-color:var(--blue); background:rgba(77,159,255,0.05); }
+.upload-zone.loaded.sgd { border-color:var(--green); background:rgba(0,229,160,0.05); }
+.upload-zone input { display:none; }
+.upload-icon { font-size:2rem; margin-bottom:0.75rem; }
+.upload-zone h3 { font-size:1rem; font-weight:700; margin-bottom:0.4rem; }
+.upload-zone p { font-size:0.78rem; color:var(--muted2); }
+.upload-zone .file-name { font-size:0.72rem; color:var(--muted2); margin-top:6px; font-style:italic; }
+.currency-badge { display:inline-block; padding:3px 10px; border-radius:5px; font-size:0.72rem; font-weight:700; margin-bottom:0.75rem; }
+.currency-badge.myr { background:var(--blue-dim); color:var(--blue); }
+.currency-badge.sgd { background:var(--green-dim); color:var(--green); }
 
-.controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px; }
-.tabs { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
-.tab { padding: 8px 22px; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted2); transition: all 0.15s; }
-.tab.active { background: var(--blue); color: #080B0F; }
-
-.filter-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
-.promo-filter { font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: Arial, sans-serif; cursor: pointer; min-width: 160px; }
+/* Controls */
+.controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:10px; }
+.tabs { display:flex; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
+.tab { padding:8px 22px; border-radius:7px; font-size:0.85rem; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--muted2); transition:all 0.15s; font-family:Arial,sans-serif; }
+.tab.active { background:var(--blue); color:#080B0F; }
+.filter-wrap { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.date-range { display:flex; align-items:center; gap:8px; }
+.date-input { font-size:0.8rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--text); font-family:Arial,sans-serif; cursor:pointer; }
+.date-sep { color:var(--muted); font-size:0.8rem; }
+.date-reset { font-size:0.78rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:transparent; color:var(--muted2); cursor:pointer; font-family:Arial,sans-serif; }
+.date-reset:hover { background:var(--surface2); color:var(--text); }
+.promo-filter { font-size:0.8rem; padding:8px 12px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--text); font-family:Arial,sans-serif; cursor:pointer; min-width:160px; }
 
 /* Currency sections */
-.currency-section { margin-bottom: 1.5rem; }
-.currency-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding: 10px 16px; border-radius: 10px; }
-.currency-header.myr { background: rgba(77,159,255,0.08); border: 1px solid rgba(77,159,255,0.2); }
-.currency-header.sgd { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); }
-.currency-label { font-size: 1rem; font-weight: 700; font-family: Arial, sans-serif; }
-.currency-label.myr { color: var(--blue); }
-.currency-label.sgd { color: var(--green); }
+.currency-section { margin-bottom:1.5rem; }
+.currency-header { display:flex; align-items:center; gap:10px; margin-bottom:1rem; padding:10px 16px; border-radius:10px; }
+.currency-header.myr { background:rgba(77,159,255,0.08); border:1px solid rgba(77,159,255,0.2); }
+.currency-header.sgd { background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); }
+.currency-label { font-size:1rem; font-weight:700; }
+.currency-label.myr { color:var(--blue); }
+.currency-label.sgd { color:var(--green); }
+.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:1.5rem; }
+.metric { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.4rem; position:relative; overflow:hidden; }
+.metric::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--blue); opacity:0.4; }
+.metric.myr-card::after { background:var(--blue); opacity:0.8; }
+.metric.sgd-card::after { background:var(--green); opacity:0.8; }
+.metric .lbl { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+.metric .val { font-size:1.8rem; font-weight:700; letter-spacing:-0.02em; line-height:1; }
+.metric .val.myr-val { color:var(--blue); }
+.metric .val.sgd-val { color:var(--green); }
+.metric .sub { font-size:0.7rem; color:var(--muted); margin-top:6px; }
 
-.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
-.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; position: relative; overflow: hidden; }
-.metric::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--blue); opacity: 0.4; }
-.metric.myr-card::after { background: var(--blue); opacity: 0.7; }
-.metric.sgd-card::after { background: var(--green); opacity: 0.7; }
-.metric .lbl { font-size: 0.72rem; color: var(--muted); font-family: Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-.metric .val { font-size: 1.8rem; font-weight: 700; font-family: Arial, sans-serif; letter-spacing: -0.02em; line-height: 1; }
-.metric .sub { font-size: 0.7rem; color: var(--muted); margin-top: 6px; font-family: Arial, sans-serif; }
+/* Charts */
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.4rem; }
+.chart-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.chart-title { font-size:0.75rem; color:var(--muted2); text-transform:uppercase; letter-spacing:0.08em; }
+.legend { display:flex; gap:14px; flex-wrap:wrap; }
+.legend span { display:flex; align-items:center; gap:5px; font-size:0.72rem; color:var(--muted2); }
+.leg { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+.chart-wrap { position:relative; width:100%; height:240px; }
 
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; }
-.chart-card.wide { grid-column: 1 / -1; }
-.chart-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.chart-title { font-size: 0.75rem; font-family: Arial, sans-serif; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
-.legend { display: flex; gap: 14px; flex-wrap: wrap; }
-.legend span { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--muted2); font-family: Arial, sans-serif; }
-.leg { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
-.chart-wrap { position: relative; width: 100%; height: 240px; }
-
-.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
-.table-hd { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-family: Arial, sans-serif; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; }
-.table-wrap { overflow-x: auto; }
-
-table { width: 100%; border-collapse: collapse; }
-th { font-size: 0.72rem; color: var(--muted); font-family: Arial, sans-serif; font-weight: 400; text-align: right; padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; }
-th:first-child, th:nth-child(2), th:nth-child(3) { text-align: left; }
-td { padding: 12px 16px; border-bottom: 1px solid var(--border); text-align: right; font-family: Arial, sans-serif; font-size: 0.85rem; white-space: nowrap; color: var(--muted2); }
-td:first-child { text-align: left; color: var(--muted); font-size: 0.78rem; }
-td:nth-child(2), td:nth-child(3) { text-align: left; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,0.02); }
-
-.type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-family: Arial, sans-serif; background: var(--blue-dim); color: var(--blue); }
-.myr-val { color: var(--blue); }
-.sgd-val { color: var(--green); }
-.divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
-.hidden { display: none !important; }
-
-.date-range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.date-input { font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: Arial, sans-serif; cursor: pointer; }
-.date-input::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
-.date-sep { color: var(--muted); font-size: 0.8rem; font-family: Arial, sans-serif; }
-.date-reset { font-size: 0.78rem; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--muted2); cursor: pointer; font-family: Arial, sans-serif; }
-.date-reset:hover { background: var(--surface2); color: var(--text); }
-
+/* Table */
+.table-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:14px; }
+.table-hd { padding:1.1rem 1.4rem; border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--muted2); text-transform:uppercase; letter-spacing:0.08em; display:flex; align-items:center; justify-content:space-between; }
+.table-wrap { overflow-x:auto; max-height:500px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; }
+th { font-size:0.72rem; color:var(--muted); font-weight:400; text-align:right; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; text-transform:uppercase; position:sticky; top:0; background:var(--surface); }
+th:first-child, th:nth-child(2), th:nth-child(3) { text-align:left; }
+td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:right; font-size:0.82rem; white-space:nowrap; color:var(--muted2); }
+td:first-child { text-align:left; color:var(--muted); font-size:0.78rem; }
+td:nth-child(2), td:nth-child(3) { text-align:left; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,0.02); }
+.type-tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.7rem; background:var(--blue-dim); color:var(--blue); }
+.myr-v { color:var(--blue); }
+.sgd-v { color:var(--green); }
+.divider { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+.hidden { display:none !important; }
+.empty-state { text-align:center; padding:3rem; color:var(--muted); font-size:0.85rem; }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <div class="header">
-    <div class="logo">
-      <div class="logo-mark">P</div>
-      <div>
-        <h1>PROMO <span>Dashboard</span></h1>
-        <p>存款行为分析  |  MYR & SGD</p>
-      </div>
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">P</div>
+    <div>
+      <h1>PROMO <span>Dashboard</span></h1>
+      <p>上传后台 CSV，自动分析  |  MYR & SGD</p>
     </div>
-    <div class="status-chip">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">加载中...</span>
+  </div>
+  <div class="status-chip">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">等待上传</span>
+  </div>
+</div>
+
+<!-- Upload zones -->
+<div class="upload-section">
+  <div class="upload-zone myr" id="zoneMYR" onclick="document.getElementById('fileMYR').click()">
+    <input type="file" id="fileMYR" accept=".csv" onchange="handleFile('MYR', this)" />
+    <div class="currency-badge myr">🇲🇾 MYR</div>
+    <div class="upload-icon" id="iconMYR">📂</div>
+    <h3 id="titleMYR">上传 MYR CSV</h3>
+    <p>从后台导出的 MYR 促销记录</p>
+    <div class="file-name" id="nameMYR"></div>
+  </div>
+  <div class="upload-zone sgd" id="zoneSGD" onclick="document.getElementById('fileSGD').click()">
+    <input type="file" id="fileSGD" accept=".csv" onchange="handleFile('SGD', this)" />
+    <div class="currency-badge sgd">🇸🇬 SGD</div>
+    <div class="upload-icon" id="iconSGD">📂</div>
+    <h3 id="titleSGD">上传 SGD CSV</h3>
+    <p>从后台导出的 SGD 促销记录</p>
+    <div class="file-name" id="nameSGD"></div>
+  </div>
+</div>
+
+<div id="dashboard" class="hidden">
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab active" onclick="setView('day',this)">日</button>
+      <button class="tab" onclick="setView('week',this)">周</button>
+      <button class="tab" onclick="setView('month',this)">月</button>
+    </div>
+    <div class="filter-wrap">
+      <div class="date-range">
+        <input type="date" class="date-input" id="dateFrom" onchange="render()" />
+        <span class="date-sep">至</span>
+        <input type="date" class="date-input" id="dateTo" onchange="render()" />
+        <button class="date-reset" onclick="resetDates()">重置</button>
+      </div>
+      <select class="promo-filter" id="promoFilter" onchange="render()">
+        <option value="all">全部 Promo</option>
+      </select>
     </div>
   </div>
 
-  <div class="loading-zone" id="loadingZone">
-    <div class="icon" id="loadingIcon">⏳</div>
-    <h3 id="loadingTitle">正在读取数据...</h3>
-    <p id="loadingDesc">从 Google Sheets 加载最新数据</p>
-  </div>
-
-  <div id="dashboard" class="hidden">
-    <div class="controls">
-      <div class="tabs">
-        <button class="tab active" onclick="setView('day',this)">日</button>
-        <button class="tab" onclick="setView('week',this)">周</button>
-        <button class="tab" onclick="setView('month',this)">月</button>
-      </div>
-      <div class="filter-wrap">
-        <div class="date-range">
-          <input type="date" class="date-input" id="dateFrom" onchange="render()" />
-          <span class="date-sep">至</span>
-          <input type="date" class="date-input" id="dateTo" onchange="render()" />
-          <button class="date-reset" onclick="resetDates()">重置</button>
-        </div>
-        <select class="promo-filter" id="typeFilter" onchange="render()">
-          <option value="all">全部类型</option>
-        </select>
-        <select class="promo-filter" id="nameFilter" onchange="render()">
-          <option value="all">全部 Promo</option>
-        </select>
-      </div>
+  <!-- MYR -->
+  <div class="currency-section">
+    <div class="currency-header myr">
+      <span class="currency-label myr">🇲🇾 MYR</span>
     </div>
-
-    <!-- MYR Section -->
-    <div class="currency-section">
-      <div class="currency-header myr">
-        <span class="currency-label myr">🇲🇾 MYR</span>
+    <div class="metrics">
+      <div class="metric myr-card"><div class="lbl">领取人次</div><div class="val myr-val" id="mMyrClaims">—</div><div class="sub" id="mMyrClaimsSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">存款人数</div><div class="val myr-val" id="mMyrDepPpl">—</div><div class="sub" id="mMyrDepPplSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">总存款金额</div><div class="val myr-val" id="mMyrDeposit">—</div><div class="sub" id="mMyrDepositSub">—</div></div>
+      <div class="metric myr-card"><div class="lbl">派发 Bonus</div><div class="val myr-val" id="mMyrBonus">—</div><div class="sub">总成本</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">领取人次趋势 (MYR)</div></div>
+        <div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div>
       </div>
-      <div class="metrics">
-        <div class="metric myr-card">
-          <div class="lbl">Active Player</div>
-          <div class="val myr-val" id="mMyrActive">—</div>
-          <div class="sub" id="mMyrActiveSub">—</div>
-        </div>
-        <div class="metric myr-card">
-          <div class="lbl">领取人数</div>
-          <div class="val myr-val" id="mMyrClaims">—</div>
-          <div class="sub" id="mMyrClaimsSub">—</div>
-        </div>
-        <div class="metric myr-card">
-          <div class="lbl">存款金额</div>
-          <div class="val myr-val" id="mMyrDeposit">—</div>
-          <div class="sub" id="mMyrDepositSub">—</div>
-        </div>
-        <div class="metric myr-card">
-          <div class="lbl">派发 Bonus</div>
-          <div class="val myr-val" id="mMyrBonus">—</div>
-          <div class="sub">总成本</div>
-        </div>
-      </div>
-
-      <div class="charts-grid">
-        <div class="chart-card">
-          <div class="chart-hd"><div class="chart-title">领取人数趋势 (MYR)</div></div>
-          <div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-hd">
-            <div class="chart-title">存款 vs Bonus (MYR)</div>
-            <div class="legend">
-              <span><span class="leg" style="background:var(--blue)"></span>存款</span>
-              <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
-            </div>
+      <div class="chart-card">
+        <div class="chart-hd">
+          <div class="chart-title">存款 vs Bonus (MYR)</div>
+          <div class="legend">
+            <span><span class="leg" style="background:var(--blue)"></span>存款</span>
+            <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
           </div>
-          <div class="chart-wrap"><canvas id="myrDepBonusChart"></canvas></div>
         </div>
-      </div>
-    </div>
-
-    <hr class="divider">
-
-    <!-- SGD Section -->
-    <div class="currency-section">
-      <div class="currency-header sgd">
-        <span class="currency-label sgd">🇸🇬 SGD</span>
-      </div>
-      <div class="metrics">
-        <div class="metric sgd-card">
-          <div class="lbl">Active Player</div>
-          <div class="val sgd-val" id="mSgdActive">—</div>
-          <div class="sub" id="mSgdActiveSub">—</div>
-        </div>
-        <div class="metric sgd-card">
-          <div class="lbl">领取人数</div>
-          <div class="val sgd-val" id="mSgdClaims">—</div>
-          <div class="sub" id="mSgdClaimsSub">—</div>
-        </div>
-        <div class="metric sgd-card">
-          <div class="lbl">存款金额</div>
-          <div class="val sgd-val" id="mSgdDeposit">—</div>
-          <div class="sub" id="mSgdDepositSub">—</div>
-        </div>
-        <div class="metric sgd-card">
-          <div class="lbl">派发 Bonus</div>
-          <div class="val sgd-val" id="mSgdBonus">—</div>
-          <div class="sub">总成本</div>
-        </div>
-      </div>
-
-      <div class="charts-grid">
-        <div class="chart-card">
-          <div class="chart-hd"><div class="chart-title">领取人数趋势 (SGD)</div></div>
-          <div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-hd">
-            <div class="chart-title">存款 vs Bonus (SGD)</div>
-            <div class="legend">
-              <span><span class="leg" style="background:var(--green)"></span>存款</span>
-              <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
-            </div>
-          </div>
-          <div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Detail Table -->
-    <div class="table-card">
-      <div class="table-hd" id="tableTitle">明细数据</div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>Promo 类型</th>
-              <th>Promo 名称</th>
-              <th>🇲🇾 Active</th>
-              <th>🇲🇾 领取</th>
-              <th>🇲🇾 存款人数</th>
-              <th>🇲🇾 存款金额</th>
-              <th>🇲🇾 Bonus</th>
-              <th>🇸🇬 Active</th>
-              <th>🇸🇬 领取</th>
-              <th>🇸🇬 存款人数</th>
-              <th>🇸🇬 存款金额</th>
-              <th>🇸🇬 Bonus</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+        <div class="chart-wrap"><canvas id="myrDepBonusChart"></canvas></div>
       </div>
     </div>
   </div>
+
+  <hr class="divider">
+
+  <!-- SGD -->
+  <div class="currency-section">
+    <div class="currency-header sgd">
+      <span class="currency-label sgd">🇸🇬 SGD</span>
+    </div>
+    <div class="metrics">
+      <div class="metric sgd-card"><div class="lbl">领取人次</div><div class="val sgd-val" id="mSgdClaims">—</div><div class="sub" id="mSgdClaimsSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">存款人数</div><div class="val sgd-val" id="mSgdDepPpl">—</div><div class="sub" id="mSgdDepPplSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">总存款金额</div><div class="val sgd-val" id="mSgdDeposit">—</div><div class="sub" id="mSgdDepositSub">—</div></div>
+      <div class="metric sgd-card"><div class="lbl">派发 Bonus</div><div class="val sgd-val" id="mSgdBonus">—</div><div class="sub">总成本</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-hd"><div class="chart-title">领取人次趋势 (SGD)</div></div>
+        <div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hd">
+          <div class="chart-title">存款 vs Bonus (SGD)</div>
+          <div class="legend">
+            <span><span class="leg" style="background:var(--green)"></span>存款</span>
+            <span><span class="leg" style="background:var(--amber)"></span>Bonus</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-hd">
+      <span id="tableTitle">明细数据（按 Promo 汇总）</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>日期</th>
+          <th>Promo 名称</th>
+          <th>货币</th>
+          <th>领取人次</th>
+          <th>存款人数</th>
+          <th>总存款</th>
+          <th>派发 Bonus</th>
+          <th>人均存款</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 </div>
 
 <script>
-let rawData = [];
+// ── Data store ──
+let myrData = []; // raw rows
+let sgdData = [];
 let view = 'day';
 let charts = {};
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9sXve06rBcPz7aFDzUPTWH3jUmEkQD_4g9UWbNDlkuGu8iEcMVkQsgdtzZ2J8Lg/pub?output=csv';
-
-async function loadData() {
-  try {
-    const res = await fetch(CSV_URL + '&t=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    parseCSV(text);
-  } catch (err) {
-    document.getElementById('loadingIcon').textContent = '❌';
-    document.getElementById('loadingTitle').textContent = '读取失败';
-    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 已发布成 CSV，或检查网络连接。';
-    document.getElementById('statusText').textContent = '读取失败';
-    console.error(err);
-  }
+// ── File handling ──
+function handleFile(currency, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result, currency);
+    if (currency === 'MYR') {
+      myrData = rows;
+      document.getElementById('zoneMYR').classList.add('loaded', 'myr');
+      document.getElementById('iconMYR').textContent = '✅';
+      document.getElementById('titleMYR').textContent = 'MYR 已加载';
+      document.getElementById('nameMYR').textContent = file.name + ' · ' + rows.length + ' 条记录';
+    } else {
+      sgdData = rows;
+      document.getElementById('zoneSGD').classList.add('loaded', 'sgd');
+      document.getElementById('iconSGD').textContent = '✅';
+      document.getElementById('titleSGD').textContent = 'SGD 已加载';
+      document.getElementById('nameSGD').textContent = file.name + ' · ' + rows.length + ' 条记录';
+    }
+    afterLoad();
+  };
+  reader.readAsText(file, 'UTF-8');
 }
 
-window.addEventListener('DOMContentLoaded', loadData);
+// Drag and drop
+['zoneMYR','zoneSGD'].forEach(id => {
+  const el = document.getElementById(id);
+  const cur = id === 'zoneMYR' ? 'MYR' : 'SGD';
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const inp = document.getElementById('file' + cur);
+    const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
+    handleFile(cur, inp);
+  });
+});
 
-function cleanNum(s) {
-  if (!s && s !== 0) return 0;
-  let str = String(s).replace(/RM|S\$|\$/gi,'').replace(/\s/g,'').replace(/"/g,'').trim();
-  const neg = str.startsWith('(') && str.endsWith(')');
-  str = str.replace(/[()]/g,'').replace(/,/g,'');
-  const n = parseFloat(str) || 0;
-  return neg ? -n : n;
-}
-
-function parseCSV(text) {
+// ── CSV parser ──
+function parseCSV(text, currency) {
+  // Remove BOM
+  text = text.replace(/^\uFEFF/, '');
   const lines = [];
   text.trim().split('\n').forEach(line => {
     const cols = []; let cur = '', inQ = false;
@@ -343,78 +327,74 @@ function parseCSV(text) {
     lines.push(cols);
   });
 
-  // Find header row with 日期 and Active
+  // Find header
   let hRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i][0] && lines[i][0].toString().trim() === '日期') {
-      hRow = i; break;
-    }
+    if (lines[i].some(c => c === 'Login' || c === 'Code' || c === 'Bonus')) { hRow = i; break; }
   }
+  if (hRow < 0) return [];
 
-  if (hRow < 0) {
-    document.getElementById('loadingIcon').textContent = '📭';
-    document.getElementById('loadingTitle').textContent = '找不到表头';
-    document.getElementById('loadingDesc').textContent = '请确认 Google Sheets 有包含「日期」和「领取人数」的表头行。';
-    return;
-  }
+  const headers = lines[hRow].map(h => h.trim());
+  const idx = h => headers.indexOf(h);
 
-  rawData = [];
+  const iLogin   = idx('Login');
+  const iCode    = idx('Code');
+  const iStart   = idx('Start Time');
+  const iTransfer= idx('Transfer');
+  const iBonus   = idx('Bonus');
+
+  const rows = [];
   for (let i = hRow + 1; i < lines.length; i++) {
     const r = lines[i];
-    if (!r || !r[0] || r[0] === '合计' || r[0].trim() === '') continue;
+    if (!r || r.length < 5) continue;
 
-    // Col index: A=0,B=1,C=2,D=3,E=4,F=5,G=6,H=7,I=8,J=9,K=10,L=11,M=12
-    const myrActive  = cleanNum(r[3]);
-    const myrClaims  = cleanNum(r[4]);
-    const myrDepPpl  = cleanNum(r[5]);
-    const myrDeposit = cleanNum(r[6]);
-    const myrBonus   = cleanNum(r[7]);
-    const sgdActive  = cleanNum(r[8]);
-    const sgdClaims  = cleanNum(r[9]);
-    const sgdDepPpl  = cleanNum(r[10]);
-    const sgdDeposit = cleanNum(r[11]);
-    const sgdBonus   = cleanNum(r[12]);
+    const login    = (r[iLogin]   || '').replace(/^="?(.*?)"?$/, '$1').trim();
+    const code     = (r[iCode]    || '').trim();
+    const startRaw = (r[iStart]   || '').trim();
+    const transfer = parseFloat((r[iTransfer] || '0').replace(/[^0-9.-]/g,'')) || 0;
+    const bonus    = parseFloat((r[iBonus]    || '0').replace(/[^0-9.-]/g,'')) || 0;
 
-    if (myrActive === 0 && sgdActive === 0 && myrClaims === 0 && sgdClaims === 0) continue;
+    if (!login || !code || !startRaw) continue;
 
-    rawData.push({
-      date:  r[0].trim(),
-      type:  String(r[1] || '').trim(),
-      name:  String(r[2] || '').trim(),
-      myrActive, myrClaims, myrDepPpl, myrDeposit, myrBonus,
-      sgdActive, sgdClaims, sgdDepPpl, sgdDeposit, sgdBonus,
-    });
+    // Extract date YYYY-MM-DD from "2026-05-01 00:05:22"
+    const date = startRaw.slice(0, 10);
+    const hasDeposit = transfer > 0 ? 1 : 0;
+
+    rows.push({ date, login, code, currency, transfer, bonus, hasDeposit });
   }
+  return rows;
+}
 
-  if (!rawData.length) {
-    document.getElementById('loadingIcon').textContent = '📭';
-    document.getElementById('loadingTitle').textContent = '暂无数据';
-    document.getElementById('loadingDesc').textContent = '请先在 Google Sheets 填入数据。';
-    return;
-  }
+// ── After loading ──
+function afterLoad() {
+  const all = [...myrData, ...sgdData];
+  if (!all.length) return;
 
   document.getElementById('statusDot').classList.add('live');
-  document.getElementById('statusText').textContent = '已同步 · ' + new Date().toLocaleTimeString('zh-MY');
-  document.getElementById('loadingZone').style.display = 'none';
+  document.getElementById('statusText').textContent = '已加载 · ' + all.length + ' 条记录';
   document.getElementById('dashboard').classList.remove('hidden');
 
-  const types = [...new Set(rawData.map(r => r.type).filter(Boolean))];
-  const names = [...new Set(rawData.map(r => r.name).filter(Boolean))];
+  // Populate promo filter
+  const promos = [...new Set(all.map(r => r.code).filter(Boolean))].sort();
+  document.getElementById('promoFilter').innerHTML =
+    '<option value="all">全部 Promo</option>' +
+    promos.map(p => `<option value="${p}">${p}</option>`).join('');
 
-  document.getElementById('typeFilter').innerHTML = '<option value="all">全部类型</option>' + types.map(t => `<option value="${t}">${t}</option>`).join('');
-  document.getElementById('nameFilter').innerHTML = '<option value="all">全部 Promo</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
-
-  // Set date input min/max based on data range
-  const dates = rawData.map(r => r.date).sort();
-  const minDate = dates[0];
-  const maxDate = dates[dates.length - 1];
+  // Set date range
+  const dates = all.map(r => r.date).sort();
   const fromEl = document.getElementById('dateFrom');
   const toEl   = document.getElementById('dateTo');
-  // Auto-set: from = earliest data date, to = today
-  const today = new Date().toISOString().slice(0,10);
-  if (!fromEl.value) fromEl.value = toISO(minDate);
-  if (!toEl.value)   toEl.value   = today;
+  if (!fromEl.value) fromEl.value = dates[0];
+  if (!toEl.value)   toEl.value   = dates[dates.length - 1];
 
+  render();
+}
+
+function resetDates() {
+  const all = [...myrData, ...sgdData];
+  const dates = all.map(r => r.date).sort();
+  document.getElementById('dateFrom').value = dates[0] || '';
+  document.getElementById('dateTo').value   = dates[dates.length - 1] || '';
   render();
 }
 
@@ -425,78 +405,43 @@ function setView(v, btn) {
   render();
 }
 
-function resetDates() {
-  document.getElementById('dateFrom').value = '';
-  document.getElementById('dateTo').value = '';
-  render();
-}
-
-function toISO(dateStr) {
-  if (!dateStr) return '';
-  // Handle D/M/YYYY or DD/MM/YYYY (day first, then month)
-  const slashParts = dateStr.split('/');
-  if (slashParts.length === 3) {
-    const day   = slashParts[0].padStart(2, '0');
-    const month = slashParts[1].padStart(2, '0');
-    const year  = slashParts[2].length === 2 ? '20' + slashParts[2] : slashParts[2];
-    return year + '-' + month + '-' + day;
-  }
-  // Handle D-M-YYYY
-  const dashParts = dateStr.split('-');
-  if (dashParts.length === 3 && dashParts[2].length === 4) {
-    const day   = dashParts[0].padStart(2, '0');
-    const month = dashParts[1].padStart(2, '0');
-    return dashParts[2] + '-' + month + '-' + day;
-  }
-  return dateStr;
-}
-
-function getFiltered() {
-  const type = document.getElementById('typeFilter').value;
-  const name = document.getElementById('nameFilter').value;
-  const from = document.getElementById('dateFrom').value;
-  const to   = document.getElementById('dateTo').value;
-  return rawData.filter(r => {
-    if (type !== 'all' && r.type !== type) return false;
-    if (name !== 'all' && r.name !== name) return false;
-    const d = toISO(r.date);
-    if (from && d < from) return false;
-    if (to   && d > to)   return false;
+// ── Filtering ──
+function getFiltered(currency) {
+  const promo = document.getElementById('promoFilter').value;
+  const from  = document.getElementById('dateFrom').value;
+  const to    = document.getElementById('dateTo').value;
+  const src   = currency === 'MYR' ? myrData : sgdData;
+  return src.filter(r => {
+    if (promo !== 'all' && r.code !== promo) return false;
+    if (from && r.date < from) return false;
+    if (to   && r.date > to)   return false;
     return true;
   });
 }
 
-function groupBy(data) {
+// ── Group by period ──
+function groupData(rows) {
   const map = {};
-  data.forEach(r => {
+  rows.forEach(r => {
     let key;
-    const iso = toISO(r.date);
-    if (view === 'day') { key = iso; }
+    const d = new Date(r.date);
+    if (view === 'day') { key = r.date; }
     else if (view === 'week') {
-      const d = new Date(iso);
-      if (isNaN(d)) { key = iso; }
-      else {
-        const jan1 = new Date(d.getFullYear(), 0, 1);
-        const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-        key = `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
-      }
-    } else { key = iso.slice(0, 7); }
+      const jan1 = new Date(d.getFullYear(), 0, 1);
+      const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+      key = `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+    } else { key = r.date.slice(0, 7); }
 
-    if (!map[key]) map[key] = { label:key, myrActive:0, myrClaims:0, myrDepPpl:0, myrDeposit:0, myrBonus:0, sgdActive:0, sgdClaims:0, sgdDepPpl:0, sgdDeposit:0, sgdBonus:0 };
-    map[key].myrActive  += r.myrActive;
-    map[key].myrClaims  += r.myrClaims;
-    map[key].myrDepPpl  += r.myrDepPpl;
-    map[key].myrDeposit += r.myrDeposit;
-    map[key].myrBonus   += r.myrBonus;
-    map[key].sgdActive  += r.sgdActive;
-    map[key].sgdClaims  += r.sgdClaims;
-    map[key].sgdDepPpl  += r.sgdDepPpl;
-    map[key].sgdDeposit += r.sgdDeposit;
-    map[key].sgdBonus   += r.sgdBonus;
+    if (!map[key]) map[key] = { label:key, claims:0, depPpl:0, deposit:0, bonus:0 };
+    map[key].claims  += 1;
+    map[key].depPpl  += r.hasDeposit;
+    map[key].deposit += r.transfer;
+    map[key].bonus   += r.bonus;
   });
   return Object.values(map).sort((a,b) => a.label.localeCompare(b.label));
 }
 
+// ── Format ──
 function fmtRM(n) {
   if (!n && n !== 0) return '—';
   const abs = Math.abs(n);
@@ -509,142 +454,151 @@ function fmtSGD(n) {
   const s = 'S$' + abs.toLocaleString('en-SG', {minimumFractionDigits:2, maximumFractionDigits:2});
   return n < 0 ? '(' + s + ')' : s;
 }
-function fmtN(n) { if (!n) return '—'; return Math.round(n).toLocaleString('en-MY'); }
+function fmtN(n) { return n ? n.toLocaleString('en-MY') : '—'; }
+function fmtLabel(label) {
+  const d = new Date(label);
+  if (isNaN(d)) return label;
+  if (view === 'day')   return d.toLocaleDateString('en-MY', {day:'2-digit', month:'short'});
+  if (view === 'month') return d.toLocaleDateString('en-MY', {month:'short', year:'numeric'});
+  return label;
+}
 
+// ── Render ──
 function render() {
-  const filtered = getFiltered();
-  const grouped  = groupBy(filtered);
+  const myrRows = getFiltered('MYR');
+  const sgdRows = getFiltered('SGD');
 
-  // MYR totals
-  const tMyrActive  = filtered.reduce((s,r) => s + r.myrActive,  0);
-  const tMyrClaims  = filtered.reduce((s,r) => s + r.myrClaims,  0);
-  const tMyrDepPpl  = filtered.reduce((s,r) => s + r.myrDepPpl,  0);
-  const tMyrDeposit = filtered.reduce((s,r) => s + r.myrDeposit, 0);
-  const tMyrBonus   = filtered.reduce((s,r) => s + r.myrBonus,   0);
-  const tMyrPPA     = tMyrDepPpl > 0 ? tMyrDeposit / tMyrDepPpl : 0;
+  // MYR metrics
+  const myrClaims  = myrRows.length;
+  const myrDepPpl  = myrRows.filter(r => r.hasDeposit).length;
+  const myrDeposit = myrRows.reduce((s,r) => s + r.transfer, 0);
+  const myrBonus   = myrRows.reduce((s,r) => s + r.bonus,   0);
+  const myrPPA     = myrDepPpl > 0 ? myrDeposit / myrDepPpl : 0;
 
-  // SGD totals
-  const tSgdActive  = filtered.reduce((s,r) => s + r.sgdActive,  0);
-  const tSgdClaims  = filtered.reduce((s,r) => s + r.sgdClaims,  0);
-  const tSgdDepPpl  = filtered.reduce((s,r) => s + r.sgdDepPpl,  0);
-  const tSgdDeposit = filtered.reduce((s,r) => s + r.sgdDeposit, 0);
-  const tSgdBonus   = filtered.reduce((s,r) => s + r.sgdBonus,   0);
-  const tSgdPPA     = tSgdDepPpl > 0 ? tSgdDeposit / tSgdDepPpl : 0;
+  document.getElementById('mMyrClaims').textContent    = fmtN(myrClaims);
+  document.getElementById('mMyrClaimsSub').textContent = myrRows.length + ' 条记录';
+  document.getElementById('mMyrDepPpl').textContent    = fmtN(myrDepPpl);
+  document.getElementById('mMyrDepPplSub').textContent = myrClaims > 0 ? Math.round(myrDepPpl/myrClaims*100) + '% 有存款' : '—';
+  document.getElementById('mMyrDeposit').textContent   = fmtRM(myrDeposit);
+  document.getElementById('mMyrDepositSub').textContent= '人均: ' + fmtRM(myrPPA);
+  document.getElementById('mMyrBonus').textContent     = fmtRM(myrBonus);
 
-  // Set MYR metrics
-  document.getElementById('mMyrActive').textContent  = fmtN(tMyrActive);
-  document.getElementById('mMyrActiveSub').textContent = filtered.length + ' 条记录';
-  document.getElementById('mMyrClaims').textContent  = fmtN(tMyrClaims);
-  document.getElementById('mMyrClaimsSub').textContent = '存款人数: ' + fmtN(tMyrDepPpl);
-  document.getElementById('mMyrDeposit').textContent = fmtRM(tMyrDeposit);
-  document.getElementById('mMyrDepositSub').textContent = '人均: ' + fmtRM(tMyrPPA);
-  document.getElementById('mMyrBonus').textContent   = fmtRM(tMyrBonus);
+  // SGD metrics
+  const sgdClaims  = sgdRows.length;
+  const sgdDepPpl  = sgdRows.filter(r => r.hasDeposit).length;
+  const sgdDeposit = sgdRows.reduce((s,r) => s + r.transfer, 0);
+  const sgdBonus   = sgdRows.reduce((s,r) => s + r.bonus,   0);
+  const sgdPPA     = sgdDepPpl > 0 ? sgdDeposit / sgdDepPpl : 0;
 
-  // Set SGD metrics
-  document.getElementById('mSgdActive').textContent  = fmtN(tSgdActive);
-  document.getElementById('mSgdActiveSub').textContent = filtered.length + ' 条记录';
-  document.getElementById('mSgdClaims').textContent  = fmtN(tSgdClaims);
-  document.getElementById('mSgdClaimsSub').textContent = '存款人数: ' + fmtN(tSgdDepPpl);
-  document.getElementById('mSgdDeposit').textContent = fmtSGD(tSgdDeposit);
-  document.getElementById('mSgdDepositSub').textContent = '人均: ' + fmtSGD(tSgdPPA);
-  document.getElementById('mSgdBonus').textContent   = fmtSGD(tSgdBonus);
+  document.getElementById('mSgdClaims').textContent    = fmtN(sgdClaims);
+  document.getElementById('mSgdClaimsSub').textContent = sgdRows.length + ' 条记录';
+  document.getElementById('mSgdDepPpl').textContent    = fmtN(sgdDepPpl);
+  document.getElementById('mSgdDepPplSub').textContent = sgdClaims > 0 ? Math.round(sgdDepPpl/sgdClaims*100) + '% 有存款' : '—';
+  document.getElementById('mSgdDeposit').textContent   = fmtSGD(sgdDeposit);
+  document.getElementById('mSgdDepositSub').textContent= '人均: ' + fmtSGD(sgdPPA);
+  document.getElementById('mSgdBonus').textContent     = fmtSGD(sgdBonus);
 
   const titles = { day:'日报明细', week:'周报明细', month:'月报明细' };
-  document.getElementById('tableTitle').textContent = titles[view];
+  document.getElementById('tableTitle').textContent = titles[view] + '（按 Promo 汇总）';
 
-  renderCharts(grouped);
-  renderTable(filtered);
+  renderCharts(myrRows, sgdRows);
+  renderTable(myrRows, sgdRows);
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function mkOpts(gridC, yCb) {
-  const xTick = { font:{size:10,family:'Arial'}, color:'#5A6A78', autoSkip:true, maxRotation:45 };
   return {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
     scales:{
-      x:{ ticks:xTick, grid:{display:false}, border:{color:'transparent'} },
-      y:{ ticks:{ font:{size:10,family:'Arial'}, color:'#5A6A78', callback:yCb }, grid:{color:gridC}, border:{color:'transparent'} }
+      x:{ ticks:{font:{size:10,family:'Arial'}, color:'#5A6A78', autoSkip:true, maxRotation:45}, grid:{display:false}, border:{color:'transparent'} },
+      y:{ ticks:{font:{size:10,family:'Arial'}, color:'#5A6A78', callback:yCb}, grid:{color:'rgba(255,255,255,0.04)'}, border:{color:'transparent'} }
     }
   };
 }
 
-function renderCharts(grouped) {
-  const labels = grouped.map(r => {
-    // Format label nicely
-    const d = new Date(r.label);
-    if (!isNaN(d)) {
-      if (view === 'day')   return d.toLocaleDateString('en-MY', {day:'2-digit', month:'short'});
-      if (view === 'month') return d.toLocaleDateString('en-MY', {month:'short', year:'numeric'});
-    }
-    return r.label;
-  });
-  const gridC  = 'rgba(255,255,255,0.04)';
+function renderCharts(myrRows, sgdRows) {
+  const myrGrouped = groupData(myrRows);
+  const sgdGrouped = groupData(sgdRows);
+  const myrLabels  = myrGrouped.map(r => fmtLabel(r.label));
+  const sgdLabels  = sgdGrouped.map(r => fmtLabel(r.label));
 
-  // MYR Claims
   destroyChart('myrClaimChart');
   charts['myrClaimChart'] = new Chart(document.getElementById('myrClaimChart'), {
     type:'bar',
-    data:{ labels, datasets:[{ label:'领取人数', data:grouped.map(r=>r.myrClaims), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
-    options: mkOpts(gridC, v => fmtN(v))
+    data:{ labels:myrLabels, datasets:[{ data:myrGrouped.map(r=>r.claims), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:4 }]},
+    options: mkOpts('rgba(255,255,255,0.04)', v => v.toLocaleString())
   });
 
-  // MYR Deposit vs Bonus
   destroyChart('myrDepBonusChart');
   charts['myrDepBonusChart'] = new Chart(document.getElementById('myrDepBonusChart'), {
     type:'bar',
-    data:{ labels, datasets:[
-      { label:'存款', data:grouped.map(r=>r.myrDeposit), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
-      { label:'Bonus', data:grouped.map(r=>r.myrBonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    data:{ labels:myrLabels, datasets:[
+      { label:'存款', data:myrGrouped.map(r=>r.deposit), backgroundColor:'rgba(77,159,255,0.7)', borderRadius:3 },
+      { label:'Bonus', data:myrGrouped.map(r=>r.bonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
     ]},
-    options:{ ...mkOpts(gridC, v => fmtRM(v)),
+    options:{ ...mkOpts('rgba(255,255,255,0.04)', v => fmtRM(v)),
       plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}}
   });
 
-  // SGD Claims
   destroyChart('sgdClaimChart');
   charts['sgdClaimChart'] = new Chart(document.getElementById('sgdClaimChart'), {
     type:'bar',
-    data:{ labels, datasets:[{ label:'领取人数', data:grouped.map(r=>r.sgdClaims), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:4 }]},
-    options: mkOpts(gridC, v => fmtN(v))
+    data:{ labels:sgdLabels, datasets:[{ data:sgdGrouped.map(r=>r.claims), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:4 }]},
+    options: mkOpts('rgba(255,255,255,0.04)', v => v.toLocaleString())
   });
 
-  // SGD Deposit vs Bonus
   destroyChart('sgdDepBonusChart');
   charts['sgdDepBonusChart'] = new Chart(document.getElementById('sgdDepBonusChart'), {
     type:'bar',
-    data:{ labels, datasets:[
-      { label:'存款', data:grouped.map(r=>r.sgdDeposit), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:3 },
-      { label:'Bonus', data:grouped.map(r=>r.sgdBonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
+    data:{ labels:sgdLabels, datasets:[
+      { label:'存款', data:sgdGrouped.map(r=>r.sgdDeposit||r.deposit), backgroundColor:'rgba(0,229,160,0.7)', borderRadius:3 },
+      { label:'Bonus', data:sgdGrouped.map(r=>r.bonus), backgroundColor:'rgba(255,176,32,0.7)', borderRadius:3 },
     ]},
-    options:{ ...mkOpts(gridC, v => fmtSGD(v)),
+    options:{ ...mkOpts('rgba(255,255,255,0.04)', v => fmtSGD(v)),
       plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}}
   });
 }
 
-function renderTable(data) {
+function renderTable(myrRows, sgdRows) {
   const tbody = document.getElementById('tableBody');
-  if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2rem;color:var(--muted)">没有数据</td></tr>`;
+
+  // Group by date + promo
+  const map = {};
+  const allRows = [...myrRows.map(r=>({...r,cur:'MYR'})), ...sgdRows.map(r=>({...r,cur:'SGD'}))];
+  allRows.forEach(r => {
+    const key = r.date + '||' + r.code + '||' + r.cur;
+    if (!map[key]) map[key] = { date:r.date, code:r.code, cur:r.cur, claims:0, depPpl:0, deposit:0, bonus:0 };
+    map[key].claims  += 1;
+    map[key].depPpl  += r.hasDeposit;
+    map[key].deposit += r.transfer;
+    map[key].bonus   += r.bonus;
+  });
+
+  const rows = Object.values(map).sort((a,b) => b.date.localeCompare(a.date) || a.code.localeCompare(b.code));
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">没有数据</td></tr>`;
     return;
   }
-  const sorted = [...data].sort((a,b) => toISO(b.date).localeCompare(toISO(a.date)));
-  tbody.innerHTML = sorted.map(r => `<tr>
-    <td>${r.date}</td>
-    <td><span class="type-tag">${r.type||'—'}</span></td>
-    <td>${r.name||'—'}</td>
-    <td class="myr-val">${fmtN(r.myrActive)}</td>
-    <td class="myr-val">${fmtN(r.myrClaims)}</td>
-    <td class="myr-val">${fmtN(r.myrDepPpl)}</td>
-    <td class="myr-val">${fmtRM(r.myrDeposit)}</td>
-    <td class="myr-val">${fmtRM(r.myrBonus)}</td>
-    <td class="sgd-val">${fmtN(r.sgdActive)}</td>
-    <td class="sgd-val">${fmtN(r.sgdClaims)}</td>
-    <td class="sgd-val">${fmtN(r.sgdDepPpl)}</td>
-    <td class="sgd-val">${fmtSGD(r.sgdDeposit)}</td>
-    <td class="sgd-val">${fmtSGD(r.sgdBonus)}</td>
-  </tr>`).join('');
+
+  tbody.innerHTML = rows.map(r => {
+    const isMYR = r.cur === 'MYR';
+    const fmt   = isMYR ? fmtRM : fmtSGD;
+    const ppa   = r.depPpl > 0 ? fmt(r.deposit / r.depPpl) : '—';
+    const cls   = isMYR ? 'myr-v' : 'sgd-v';
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${r.code}</td>
+      <td><span class="type-tag" style="${isMYR?'':'background:var(--green-dim);color:var(--green)'}">${r.cur}</span></td>
+      <td class="${cls}">${fmtN(r.claims)}</td>
+      <td class="${cls}">${fmtN(r.depPpl)}</td>
+      <td class="${cls}">${fmt(r.deposit)}</td>
+      <td class="${cls}">${fmt(r.bonus)}</td>
+      <td class="${cls}">${ppa}</td>
+    </tr>`;
+  }).join('');
 }
 </script>
 </body>
