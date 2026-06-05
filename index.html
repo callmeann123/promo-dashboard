@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PROMO Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg:#080B0F; --surface:#0E1318; --surface2:#141B22; --surface3:#1A2330;
@@ -38,7 +39,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .nav-tab.active{background:var(--blue);color:#080B0F;}
 
 /* Upload */
-.upload-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem;}
+.upload-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2rem;} .upload-section .upload-zone:last-child{grid-column:1/-1;}
 .upload-zone{border:1.5px dashed var(--border2);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);}
 .upload-zone:hover{border-color:var(--blue);}
 .upload-zone.sgd:hover{border-color:var(--green);}
@@ -200,6 +201,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <h3 id="titleSGD">上传 SGD CSV</h3>
     <p>从后台导出的 SGD 促销记录</p>
     <div class="file-name" id="nameSGD"></div>
+  </div>
+  <div class="upload-zone" id="zoneAP" onclick="document.getElementById('fileAP').click()" style="grid-column:1/-1;padding:1.2rem;">
+    <input type="file" id="fileAP" accept=".xlsx,.xls" onchange="handleActivePlayer(this)" />
+    <div class="currency-badge" style="background:rgba(167,139,250,0.15);color:#A78BFA;">📅 Active Players</div>
+    <div class="upload-icon" id="iconAP" style="font-size:1.5rem;margin-bottom:0.5rem;">📂</div>
+    <h3 id="titleAP" style="font-size:0.9rem;">上传 Active Player Excel（可选）</h3>
+    <p>每日在线人数，用于计算参与率</p>
+    <div class="file-name" id="nameAP"></div>
   </div>
 </div>
 
@@ -412,7 +421,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 <script>
 // ── Data ──
-let myrData=[], sgdData=[], view='day', ovCharts={}, builtCharts=[], chartCounter=0;
+let myrData=[], sgdData=[], activePlayerData={}, view='day', ovCharts={}, builtCharts=[], chartCounter=0;
 const COLORS=['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
 const METRIC_LABELS={claims:'领取人次',deposit_ppl:'存款人数',deposit:'存款金额',bonus:'派发 Bonus',ppa:'人均存款'};
 
@@ -435,6 +444,53 @@ function setUpload(cur,fname,count){
   document.getElementById('icon'+cur).textContent='✅';
   document.getElementById('title'+cur).textContent=cur+' 已加载';
   document.getElementById('name'+cur).textContent=fname+' · '+count+' 条记录';
+}
+
+function handleActivePlayer(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    activePlayerData = {};
+    // Find header row
+    let hRow = -1;
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] && raw[i].some(c => String(c).includes('日期') || String(c).includes('Date'))) { hRow = i; break; }
+    }
+    if (hRow < 0) { alert('找不到表头，请确认 Excel 有「日期」列'); return; }
+    for (let i = hRow + 1; i < raw.length; i++) {
+      const r = raw[i];
+      if (!r || !r[0]) continue;
+      const dateVal = r[0];
+      let dateStr = '';
+      if (dateVal instanceof Date) {
+        dateStr = dateVal.toISOString().slice(0, 10);
+      } else {
+        // Excel serial date number
+        const num = parseFloat(dateVal);
+        if (!isNaN(num) && num > 40000) {
+          const d = new Date((num - 25569) * 86400 * 1000);
+          dateStr = d.toISOString().slice(0, 10);
+        } else {
+          dateStr = String(dateVal).slice(0, 10);
+        }
+      }
+      if (!dateStr) continue;
+      const myr = parseFloat(r[1]) || 0;
+      const sgd = parseFloat(r[2]) || 0;
+      activePlayerData[dateStr] = { myr, sgd };
+    }
+    document.getElementById('zoneAP').classList.add('loaded');
+    document.getElementById('zoneAP').style.borderColor = '#A78BFA';
+    document.getElementById('zoneAP').style.background = 'rgba(167,139,250,0.05)';
+    document.getElementById('iconAP').textContent = '✅';
+    document.getElementById('titleAP').textContent = 'Active Player 已加载';
+    document.getElementById('nameAP').textContent = file.name + ' · ' + Object.keys(activePlayerData).length + ' 天数据';
+    if (myrData.length || sgdData.length) renderOverview();
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 ['zoneMYR','zoneSGD'].forEach(id=>{
@@ -606,15 +662,21 @@ function renderOverview(){
   const sgdDeposit=sgdRows.reduce((s,r)=>s+r.transfer,0), sgdBonus=sgdRows.reduce((s,r)=>s+r.bonus,0);
   const sgdPPA=sgdDepPpl>0?sgdDeposit/sgdDepPpl:0;
 
+  // Calc total active players from activePlayerData
+  const myrTotalAP = Object.values(activePlayerData).reduce((s,d)=>s+(d.myr||0),0);
+  const sgdTotalAP = Object.values(activePlayerData).reduce((s,d)=>s+(d.sgd||0),0);
+  const myrPartRate = myrTotalAP>0 ? (myrClaims/myrTotalAP*100).toFixed(1)+'%' : '—';
+  const sgdPartRate = sgdTotalAP>0 ? (sgdClaims/sgdTotalAP*100).toFixed(1)+'%' : '—';
+
   document.getElementById('mMyrClaims').textContent=fmtN(myrClaims);
-  document.getElementById('mMyrClaimsSub').textContent=myrRows.length+' 条记录';
+  document.getElementById('mMyrClaimsSub').textContent=myrPartRate!=='—'?'参与率: '+myrPartRate:myrRows.length+' 条记录';
   document.getElementById('mMyrDepPpl').textContent=fmtN(myrDepPpl);
   document.getElementById('mMyrDepPplSub').textContent=myrClaims>0?Math.round(myrDepPpl/myrClaims*100)+'% 有存款':'—';
   document.getElementById('mMyrDeposit').textContent=fmtRM(myrDeposit);
   document.getElementById('mMyrDepositSub').textContent='人均: '+fmtRM(myrPPA);
   document.getElementById('mMyrBonus').textContent=fmtRM(myrBonus);
   document.getElementById('mSgdClaims').textContent=fmtN(sgdClaims);
-  document.getElementById('mSgdClaimsSub').textContent=sgdRows.length+' 条记录';
+  document.getElementById('mSgdClaimsSub').textContent=sgdPartRate!=='—'?'参与率: '+sgdPartRate:sgdRows.length+' 条记录';
   document.getElementById('mSgdDepPpl').textContent=fmtN(sgdDepPpl);
   document.getElementById('mSgdDepPplSub').textContent=sgdClaims>0?Math.round(sgdDepPpl/sgdClaims*100)+'% 有存款':'—';
   document.getElementById('mSgdDeposit').textContent=fmtSGD(sgdDeposit);
@@ -939,12 +1001,17 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
 
   function kpiCards(totals, currency) {
     const depRate = totals.claims > 0 ? Math.round(totals.depPpl/totals.claims*100) : 0;
+    // Calc participation rate from activePlayerData
+    const apKey = currency === 'SGD' ? 'sgd' : 'myr';
+    const totalAP = Object.values(activePlayerData).reduce((s,d)=>s+(d[apKey]||0),0);
+    const partRate = totalAP > 0 ? (totals.claims/totalAP*100).toFixed(1)+'%' : null;
     return `
     <div class="kpi-grid">
       <div class="kpi-card blue"><div class="kpi-icon">🎫</div><div class="kpi-val">${totals.claims.toLocaleString()}</div><div class="kpi-label">Total Claims</div><div class="kpi-sub">promo redemptions</div></div>
       <div class="kpi-card teal"><div class="kpi-icon">👤</div><div class="kpi-val">${totals.depPpl.toLocaleString()}</div><div class="kpi-label">Depositors</div><div class="kpi-sub">${depRate}% of claimants</div></div>
       <div class="kpi-card green"><div class="kpi-icon">💰</div><div class="kpi-val">${fmtK(totals.deposit,currency)}</div><div class="kpi-label">Total Deposits</div><div class="kpi-sub">generated</div></div>
       <div class="kpi-card amber"><div class="kpi-icon">🎁</div><div class="kpi-val">${fmtK(totals.bonus,currency)}</div><div class="kpi-label">Bonus Paid Out</div><div class="kpi-sub">total cost</div></div>
+      ${partRate ? `<div class="kpi-card purple"><div class="kpi-icon">📊</div><div class="kpi-val">${partRate}</div><div class="kpi-label">Participation Rate</div><div class="kpi-sub">claims ÷ active players</div></div>` : ''}
     </div>`;
   }
 
@@ -1124,7 +1191,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
   .section-body{padding:24px;}
   .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px;}
   .kpi-card{background:white;border-radius:10px;padding:20px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
-  .kpi-card.blue{border-color:#1A6BB5;} .kpi-card.teal{border-color:#028090;} .kpi-card.green{border-color:#059669;} .kpi-card.amber{border-color:#D97706;}
+  .kpi-card.blue{border-color:#1A6BB5;} .kpi-card.teal{border-color:#028090;} .kpi-card.green{border-color:#059669;} .kpi-card.amber{border-color:#D97706;} .kpi-card.purple{border-color:#7C3AED;} .kpi-card.purple .kpi-val{color:#7C3AED;}
   .kpi-icon{font-size:26px;margin-bottom:8px;}
   .kpi-val{font-size:26px;font-weight:900;}
   .kpi-card.blue .kpi-val{color:#1A6BB5;} .kpi-card.teal .kpi-val{color:#028090;} .kpi-card.green .kpi-val{color:#059669;} .kpi-card.amber .kpi-val{color:#D97706;}
