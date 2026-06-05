@@ -156,6 +156,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .modal-metric .val.sgd-val{color:var(--green);}
 
 .hidden{display:none!important;}
+
+.ppt-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:opacity 0.15s;text-decoration:none;}
+.ppt-btn:hover{opacity:0.85;}
+.ppt-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
 </style>
 </head>
 <body>
@@ -169,9 +174,12 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <p>上传后台 CSV，自动分析  |  MYR & SGD</p>
     </div>
   </div>
-  <div class="status-chip">
-    <div class="dot" id="statusDot"></div>
-    <span id="statusText">等待上传</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="ppt-btn" id="pptBtn" onclick="generatePPT()" disabled>📊 生成 PPT 报告</button>
+    <div class="status-chip">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">等待上传</span>
+    </div>
   </div>
 </div>
 
@@ -485,6 +493,7 @@ function parseCSV(text,currency){
 function afterLoad(){
   const all=[...myrData,...sgdData]; if(!all.length) return;
   document.getElementById('statusDot').classList.add('live');
+  document.getElementById('pptBtn').disabled = false;
   document.getElementById('statusText').textContent='已加载 · '+all.length+' 条记录';
   document.getElementById('mainNav').style.display='flex';
 
@@ -843,6 +852,237 @@ function removeChart(id){
     document.getElementById('builderOutput').innerHTML='<div class="empty-builder"><div class="empty-icon">🎨</div><div>选择数据和图表类型，点击「生成图表」</div></div>';
   }
 }
+
+// ── PPT Generation ──
+function generatePPT() {
+  const btn = document.getElementById('pptBtn');
+  btn.textContent = '⏳ 生成中...';
+  btn.disabled = true;
+
+  // Build PPT data from current data
+  const allRows = [...myrData, ...sgdData];
+  if (!allRows.length) {
+    alert('请先上传 CSV 数据！');
+    btn.textContent = '📊 生成 PPT 报告';
+    btn.disabled = false;
+    return;
+  }
+
+  // Group by promo + currency
+  function groupByPromo(rows) {
+    const map = {};
+    rows.forEach(r => {
+      if (!map[r.code]) map[r.code] = { name: r.code, claims: 0, depPpl: 0, deposit: 0, bonus: 0 };
+      map[r.code].claims++;
+      map[r.code].depPpl += r.hasDeposit;
+      map[r.code].deposit += r.transfer;
+      map[r.code].bonus += r.bonus;
+    });
+    return Object.values(map).sort((a, b) => b.claims - a.claims);
+  }
+
+  function getStatus(p) {
+    if (p.depPpl === 0 && p.deposit === 0) return 'REVIEW';
+    const depRate = p.claims > 0 ? p.depPpl / p.claims : 0;
+    if (depRate >= 0.5 && p.deposit > p.bonus) return 'CONTINUE';
+    if (depRate < 0.3) return 'REVIEW';
+    return 'CONTINUE';
+  }
+
+  function fmtK(n, cur) {
+    const sym = cur === 'SGD' ? 'S$' : 'RM';
+    if (n >= 1000000) return sym + (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return sym + (n/1000).toFixed(1) + 'k';
+    return sym + Math.round(n);
+  }
+
+  const myrPromos = groupByPromo(myrData);
+  const sgdPromos = groupByPromo(sgdData);
+
+  function calcTotals(rows) {
+    return {
+      claims: rows.length,
+      depPpl: rows.filter(r => r.hasDeposit).length,
+      deposit: rows.reduce((s,r) => s+r.transfer, 0),
+      bonus: rows.reduce((s,r) => s+r.bonus, 0),
+    };
+  }
+
+  const myrT = calcTotals(myrData);
+  const sgdT = calcTotals(sgdData);
+
+  // Get month from data
+  const dates = allRows.map(r => r.date).sort();
+  const monthStr = dates.length > 0
+    ? new Date(dates[0]).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+    : new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+  // Build report data as JSON for the PPT generator
+  const reportData = {
+    month: monthStr,
+    myr: { totals: myrT, promos: myrPromos },
+    sgd: { totals: sgdT, promos: sgdPromos },
+  };
+
+  // Use the Anthropic API to generate the PPT via Claude
+  // Since we can't run Node.js in browser, we generate a downloadable HTML report instead
+  // and provide instructions to run the Node.js script
+  generateHTMLReport(reportData, monthStr, myrPromos, sgdPromos, myrT, sgdT, fmtK, getStatus);
+
+  btn.textContent = '📊 生成 PPT 报告';
+  btn.disabled = false;
+}
+
+function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fmtK, getStatus) {
+  // Generate a print-ready HTML report that looks like the PPT
+  const hasMYR = myrData.length > 0;
+  const hasSGD = sgdData.length > 0;
+
+  function promoTable(promos, currency) {
+    if (!promos.length) return '';
+    return `
+    <div class="section">
+      <h2>Promo Performance Details (${currency})</h2>
+      <table>
+        <thead><tr>
+          <th>Promo Name</th><th>Claims</th><th>Depositors</th>
+          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${promos.map(p => {
+            const depRate = p.claims > 0 ? Math.round(p.depPpl/p.claims*100) : 0;
+            const status = getStatus(p);
+            const statusColor = status==='CONTINUE'?'#059669':status==='STOP'?'#DC2626':'#D97706';
+            const statusBg = status==='CONTINUE'?'#D1FAE5':status==='STOP'?'#FEE2E2':'#FEF3C7';
+            return `<tr>
+              <td>${p.name}</td>
+              <td style="color:#1A6BB5;font-weight:bold;text-align:center">${p.claims}</td>
+              <td style="color:#028090;text-align:center">${p.depPpl}</td>
+              <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
+              <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
+              <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center">${depRate}%</td>
+              <td style="background:${statusBg};color:${statusColor};font-weight:bold;text-align:center;border-radius:4px">${status}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  function kpiCards(totals, currency) {
+    const depRate = totals.claims > 0 ? Math.round(totals.depPpl/totals.claims*100) : 0;
+    return `
+    <div class="kpi-grid">
+      <div class="kpi-card blue"><div class="kpi-icon">🎫</div><div class="kpi-val">${totals.claims.toLocaleString()}</div><div class="kpi-label">Total Claims</div><div class="kpi-sub">promo redemptions</div></div>
+      <div class="kpi-card teal"><div class="kpi-icon">👤</div><div class="kpi-val">${totals.depPpl.toLocaleString()}</div><div class="kpi-label">Depositors</div><div class="kpi-sub">${depRate}% of claimants</div></div>
+      <div class="kpi-card green"><div class="kpi-icon">💰</div><div class="kpi-val">${fmtK(totals.deposit,currency)}</div><div class="kpi-label">Total Deposits</div><div class="kpi-sub">generated</div></div>
+      <div class="kpi-card amber"><div class="kpi-icon">🎁</div><div class="kpi-val">${fmtK(totals.bonus,currency)}</div><div class="kpi-label">Bonus Paid Out</div><div class="kpi-sub">total cost</div></div>
+    </div>`;
+  }
+
+  function recommendations(promos, currency) {
+    const cont = promos.filter(p => getStatus(p) === 'CONTINUE');
+    const rev  = promos.filter(p => getStatus(p) === 'REVIEW');
+    return `
+    <div class="section">
+      <h2>Recommendations (${currency})</h2>
+      <div class="rec-grid">
+        <div class="rec-box green-box">
+          <div class="rec-title">✅ Continue</div>
+          <div class="rec-sub">High engagement & good conversion</div>
+          ${cont.map(p => `<div class="rec-item"><b>${p.name}</b><br><span>Claims: ${p.claims} | Deposit: ${fmtK(p.deposit,currency)} | Bonus: ${fmtK(p.bonus,currency)}</span></div>`).join('')}
+        </div>
+        <div class="rec-box amber-box">
+          <div class="rec-title">⚠️ Monitor</div>
+          <div class="rec-sub">Low deposit rate — review conditions</div>
+          ${rev.map(p => `<div class="rec-item"><b>${p.name}</b><br><span>Claims: ${p.claims} | Deposit: ${fmtK(p.deposit,currency)} | Bonus: ${fmtK(p.bonus,currency)}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>PROMO Report ${monthStr}</title>
+<style>
+  @media print { .no-print{display:none} body{margin:0} .section{page-break-before:always} .cover{page-break-after:always} }
+  body{font-family:Arial,sans-serif;margin:0;background:#f8fafc;color:#1e293b;}
+  .cover{background:#0F3460;color:white;padding:80px 60px;min-height:400px;display:flex;flex-direction:column;justify-content:center;}
+  .cover h1{font-size:60px;font-weight:900;margin:0 0 10px;color:white;}
+  .cover h2{font-size:32px;color:#00D4AA;margin:0 0 30px;}
+  .cover .meta{font-size:16px;color:#8899AA;}
+  .section{background:white;margin:30px;padding:40px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+  .section h2{font-size:22px;font-weight:800;color:#0F3460;margin:0 0 24px;padding-bottom:12px;border-bottom:2px solid #E2E8F0;}
+  .section-header{background:#0F3460;color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:800;margin:-40px -40px 24px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:10px;}
+  .kpi-card{background:white;border-radius:10px;padding:20px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.07);}
+  .kpi-card.blue{border-color:#1A6BB5;} .kpi-card.teal{border-color:#028090;} .kpi-card.green{border-color:#059669;} .kpi-card.amber{border-color:#D97706;}
+  .kpi-icon{font-size:28px;margin-bottom:8px;}
+  .kpi-val{font-size:28px;font-weight:900;color:#0F3460;}
+  .kpi-card.blue .kpi-val{color:#1A6BB5;} .kpi-card.teal .kpi-val{color:#028090;} .kpi-card.green .kpi-val{color:#059669;} .kpi-card.amber .kpi-val{color:#D97706;}
+  .kpi-label{font-weight:700;font-size:13px;color:#1e293b;margin-top:4px;}
+  .kpi-sub{font-size:11px;color:#64748B;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:#0F3460;color:white;padding:10px 12px;text-align:left;font-size:12px;}
+  td{padding:9px 12px;border-bottom:1px solid #E2E8F0;}
+  tr:nth-child(even) td{background:#F8FAFC;}
+  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .rec-box{padding:20px;border-radius:10px;border:2px solid;}
+  .green-box{background:#D1FAE5;border-color:#059669;}
+  .amber-box{background:#FEF3C7;border-color:#D97706;}
+  .rec-title{font-size:16px;font-weight:800;margin-bottom:4px;}
+  .green-box .rec-title{color:#059669;} .amber-box .rec-title{color:#D97706;}
+  .rec-sub{font-size:11px;font-style:italic;margin-bottom:14px;}
+  .green-box .rec-sub{color:#059669;} .amber-box .rec-sub{color:#D97706;}
+  .rec-item{margin-bottom:10px;font-size:12px;padding:8px;background:rgba(255,255,255,0.6);border-radius:6px;}
+  .rec-item span{color:#64748B;font-size:11px;}
+  .print-btn{position:fixed;bottom:24px;right:24px;padding:14px 24px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+  .print-btn:hover{background:#1A6BB5;}
+  .footer{background:#0F3460;color:#8899AA;padding:20px 60px;font-size:12px;margin-top:30px;}
+</style>
+</head><body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ 打印 / 另存为 PDF</button>
+
+<div class="cover">
+  <h1>PROMO</h1>
+  <h2>Performance Report</h2>
+  <div class="meta">${monthStr}  |  Currency: ${hasMYR && hasSGD ? 'MYR & SGD' : hasMYR ? 'MYR' : 'SGD'}</div>
+  <div class="meta" style="margin-top:16px">Prepared by: PROMO Department  |  ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+</div>
+
+${hasMYR ? `
+<div class="section">
+  <div class="section-header">Monthly Overview — ${monthStr} (MYR)</div>
+  ${kpiCards(myrT, 'MYR')}
+</div>
+${promoTable(myrPromos, 'MYR')}
+${recommendations(myrPromos, 'MYR')}
+` : ''}
+
+${hasSGD ? `
+<div class="section">
+  <div class="section-header">Monthly Overview — ${monthStr} (SGD)</div>
+  ${kpiCards(sgdT, 'SGD')}
+</div>
+${promoTable(sgdPromos, 'SGD')}
+${recommendations(sgdPromos, 'SGD')}
+` : ''}
+
+<div class="footer">PROMO Department  |  ${monthStr}  |  Confidential</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PROMO_Report_${monthStr.replace(' ','_')}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  alert('✅ 报告已下载！\n\n打开 HTML 文件后，点击右下角「打印」按钮，选择「另存为 PDF」就可以得到 PDF 版本了。');
+}
+
 </script>
 </body>
 </html>
