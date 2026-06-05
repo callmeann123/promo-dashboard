@@ -934,40 +934,8 @@ function generatePPT() {
 }
 
 function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fmtK, getStatus) {
-  // Generate a print-ready HTML report that looks like the PPT
   const hasMYR = myrData.length > 0;
   const hasSGD = sgdData.length > 0;
-
-  function promoTable(promos, currency) {
-    if (!promos.length) return '';
-    return `
-    <div class="section">
-      <h2>Promo Performance Details (${currency})</h2>
-      <table>
-        <thead><tr>
-          <th>Promo Name</th><th>Claims</th><th>Depositors</th>
-          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Status</th>
-        </tr></thead>
-        <tbody>
-          ${promos.map(p => {
-            const depRate = p.claims > 0 ? Math.round(p.depPpl/p.claims*100) : 0;
-            const status = getStatus(p);
-            const statusColor = status==='CONTINUE'?'#059669':status==='STOP'?'#DC2626':'#D97706';
-            const statusBg = status==='CONTINUE'?'#D1FAE5':status==='STOP'?'#FEE2E2':'#FEF3C7';
-            return `<tr>
-              <td>${p.name}</td>
-              <td style="color:#1A6BB5;font-weight:bold;text-align:center">${p.claims}</td>
-              <td style="color:#028090;text-align:center">${p.depPpl}</td>
-              <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
-              <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
-              <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center">${depRate}%</td>
-              <td style="background:${statusBg};color:${statusColor};font-weight:bold;text-align:center;border-radius:4px">${status}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  }
 
   function kpiCards(totals, currency) {
     const depRate = totals.claims > 0 ? Math.round(totals.depPpl/totals.claims*100) : 0;
@@ -980,12 +948,43 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
     </div>`;
   }
 
+  function promoTableHTML(promos, currency) {
+    if (!promos.length) return '';
+    return `
+    <div class="section">
+      <div class="section-header">Promo Performance Details (${currency})</div>
+      <table>
+        <thead><tr>
+          <th>Promo Name</th><th>Claims</th><th>Depositors</th>
+          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${promos.map((p,i) => {
+            const depRate = p.claims > 0 ? Math.round(p.depPpl/p.claims*100) : 0;
+            const status = getStatus(p);
+            const statusColor = status==='CONTINUE'?'#059669':'#D97706';
+            const statusBg = status==='CONTINUE'?'#D1FAE5':'#FEF3C7';
+            return `<tr style="background:${i%2===0?'white':'#F8FAFC'}">
+              <td>${p.name}</td>
+              <td style="color:#1A6BB5;font-weight:bold;text-align:center">${p.claims}</td>
+              <td style="color:#028090;text-align:center">${p.depPpl}</td>
+              <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
+              <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
+              <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center;font-weight:bold">${depRate}%</td>
+              <td style="background:${statusBg};color:${statusColor};font-weight:bold;text-align:center">${status}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
   function recommendations(promos, currency) {
     const cont = promos.filter(p => getStatus(p) === 'CONTINUE');
     const rev  = promos.filter(p => getStatus(p) === 'REVIEW');
     return `
     <div class="section">
-      <h2>Recommendations (${currency})</h2>
+      <div class="section-header">Recommendations (${currency})</div>
       <div class="rec-grid">
         <div class="rec-box green-box">
           <div class="rec-title">✅ Continue</div>
@@ -1001,75 +1000,191 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
     </div>`;
   }
 
+  // Encode chart data for inline use
+  function encodeChartData(promos, currency) {
+    const top8 = promos.slice(0, 8);
+    return {
+      labels: JSON.stringify(top8.map(p => p.name.length > 20 ? p.name.slice(0,20)+'…' : p.name)),
+      claims: JSON.stringify(top8.map(p => p.claims)),
+      deposits: JSON.stringify(top8.map(p => p.deposit)),
+      bonuses: JSON.stringify(top8.map(p => p.bonus)),
+      depPpl: JSON.stringify(top8.map(p => p.depPpl)),
+      currency: currency,
+      sym: currency === 'SGD' ? 'S$' : 'RM',
+    };
+  }
+
+  function chartsSection(promos, currency, idSuffix) {
+    if (!promos.length) return '';
+    const d = encodeChartData(promos, currency);
+    return `
+    <div class="section charts-section">
+      <div class="section-header">Charts & Analysis (${currency})</div>
+      <div class="chart-grid">
+        <div class="chart-box">
+          <h3>Claims by Promo (Top 8)</h3>
+          <canvas id="claimChart${idSuffix}" height="260"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Deposit vs Bonus</h3>
+          <canvas id="depBonusChart${idSuffix}" height="260"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Bonus Distribution</h3>
+          <canvas id="bonusPieChart${idSuffix}" height="260"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Depositors by Promo</h3>
+          <canvas id="depPplChart${idSuffix}" height="260"></canvas>
+        </div>
+      </div>
+      <script>
+      (function() {
+        const labels = ${d.labels};
+        const claims = ${d.claims};
+        const deposits = ${d.deposits};
+        const bonuses = ${d.bonuses};
+        const depPpl = ${d.depPpl};
+        const sym = '${d.sym}';
+        const COLORS = ['#1A6BB5','#028090','#059669','#D97706','#7C3AED','#DB2777','#EA580C','#0891B2'];
+
+        function fmtV(v) {
+          if (v >= 1000000) return sym+(v/1000000).toFixed(1)+'M';
+          if (v >= 1000) return sym+(v/1000).toFixed(1)+'k';
+          return sym+Math.round(v);
+        }
+
+        const opts = {responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{font:{size:10},color:'#64748B'},grid:{display:false}},
+            y:{ticks:{font:{size:10},color:'#64748B'},grid:{color:'#E2E8F0'}}}};
+
+        new Chart(document.getElementById('claimChart${idSuffix}'), {
+          type:'bar', data:{labels, datasets:[{data:claims, backgroundColor:COLORS, borderRadius:4}]},
+          options:{...opts, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>'Claims: '+c.parsed.y}}}}
+        });
+
+        new Chart(document.getElementById('depBonusChart${idSuffix}'), {
+          type:'bar',
+          data:{labels, datasets:[
+            {label:'Deposit', data:deposits, backgroundColor:'#1A6BB5', borderRadius:3},
+            {label:'Bonus',   data:bonuses,  backgroundColor:'#D97706', borderRadius:3},
+          ]},
+          options:{responsive:true, plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+            tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+fmtV(c.parsed.y)}}},
+            scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},
+              y:{ticks:{font:{size:10},color:'#64748B',callback:v=>fmtV(v)},grid:{color:'#E2E8F0'}}}}
+        });
+
+        new Chart(document.getElementById('bonusPieChart${idSuffix}'), {
+          type:'pie',
+          data:{labels, datasets:[{data:bonuses, backgroundColor:COLORS, borderWidth:1, borderColor:'#fff'}]},
+          options:{responsive:true, plugins:{
+            legend:{position:'right',labels:{font:{size:9},boxWidth:12}},
+            tooltip:{callbacks:{label:c=>c.label+': '+fmtV(c.parsed)}}}}
+        });
+
+        new Chart(document.getElementById('depPplChart${idSuffix}'), {
+          type:'bar',
+          data:{labels, datasets:[
+            {label:'Total Claims', data:claims, backgroundColor:'#CBD5E1', borderRadius:3},
+            {label:'Depositors',   data:depPpl,  backgroundColor:'#059669', borderRadius:3},
+          ]},
+          options:{responsive:true, plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+            tooltip:{mode:'index',intersect:false}},
+            scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},
+              y:{ticks:{font:{size:10},color:'#64748B'},grid:{color:'#E2E8F0'}}}}
+        });
+      })();
+      <\/script>
+    </div>`;
+  }
+
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>PROMO Report ${monthStr}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
 <style>
-  @media print { .no-print{display:none} body{margin:0} .section{page-break-before:always} .cover{page-break-after:always} }
-  body{font-family:Arial,sans-serif;margin:0;background:#f8fafc;color:#1e293b;}
-  .cover{background:#0F3460;color:white;padding:80px 60px;min-height:400px;display:flex;flex-direction:column;justify-content:center;}
-  .cover h1{font-size:60px;font-weight:900;margin:0 0 10px;color:white;}
-  .cover h2{font-size:32px;color:#00D4AA;margin:0 0 30px;}
-  .cover .meta{font-size:16px;color:#8899AA;}
-  .section{background:white;margin:30px;padding:40px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
-  .section h2{font-size:22px;font-weight:800;color:#0F3460;margin:0 0 24px;padding-bottom:12px;border-bottom:2px solid #E2E8F0;}
-  .section-header{background:#0F3460;color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:800;margin:-40px -40px 24px;}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:10px;}
-  .kpi-card{background:white;border-radius:10px;padding:20px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.07);}
+  @media print {
+    .no-print{display:none!important}
+    body{margin:0}
+    .section{page-break-inside:avoid;margin:16px 0;}
+    .charts-section{page-break-before:always;}
+    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  }
+  body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#1e293b;}
+  .cover{background:#0F3460;color:white;padding:80px 60px;min-height:380px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
+  .cover::after{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(0,212,170,0.15);border-radius:50%;}
+  .cover::before{content:'';position:absolute;bottom:-40px;right:100px;width:200px;height:200px;background:rgba(26,107,181,0.2);border-radius:50%;}
+  .cover h1{font-size:64px;font-weight:900;margin:0 0 8px;color:white;position:relative;z-index:1;}
+  .cover h2{font-size:30px;color:#00D4AA;margin:0 0 30px;font-weight:400;position:relative;z-index:1;}
+  .cover .meta{font-size:15px;color:#8899AA;position:relative;z-index:1;}
+  .cover .accent{display:inline-block;width:4px;height:60px;background:#00D4AA;margin-right:20px;vertical-align:middle;}
+  .section{background:white;margin:20px 30px;padding:0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);overflow:hidden;}
+  .section-header{background:#0F3460;color:white;padding:14px 24px;font-size:16px;font-weight:800;}
+  .section-body{padding:24px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px;}
+  .kpi-card{background:white;border-radius:10px;padding:20px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
   .kpi-card.blue{border-color:#1A6BB5;} .kpi-card.teal{border-color:#028090;} .kpi-card.green{border-color:#059669;} .kpi-card.amber{border-color:#D97706;}
-  .kpi-icon{font-size:28px;margin-bottom:8px;}
-  .kpi-val{font-size:28px;font-weight:900;color:#0F3460;}
+  .kpi-icon{font-size:26px;margin-bottom:8px;}
+  .kpi-val{font-size:26px;font-weight:900;}
   .kpi-card.blue .kpi-val{color:#1A6BB5;} .kpi-card.teal .kpi-val{color:#028090;} .kpi-card.green .kpi-val{color:#059669;} .kpi-card.amber .kpi-val{color:#D97706;}
-  .kpi-label{font-weight:700;font-size:13px;color:#1e293b;margin-top:4px;}
-  .kpi-sub{font-size:11px;color:#64748B;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{background:#0F3460;color:white;padding:10px 12px;text-align:left;font-size:12px;}
-  td{padding:9px 12px;border-bottom:1px solid #E2E8F0;}
-  tr:nth-child(even) td{background:#F8FAFC;}
-  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .kpi-label{font-weight:700;font-size:12px;margin-top:5px;}
+  .kpi-sub{font-size:11px;color:#64748B;margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{background:#0F3460;color:white;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:0.05em;}
+  td{padding:9px 14px;border-bottom:1px solid #E2E8F0;}
+  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;}
   .rec-box{padding:20px;border-radius:10px;border:2px solid;}
   .green-box{background:#D1FAE5;border-color:#059669;}
   .amber-box{background:#FEF3C7;border-color:#D97706;}
-  .rec-title{font-size:16px;font-weight:800;margin-bottom:4px;}
+  .rec-title{font-size:15px;font-weight:800;margin-bottom:4px;}
   .green-box .rec-title{color:#059669;} .amber-box .rec-title{color:#D97706;}
-  .rec-sub{font-size:11px;font-style:italic;margin-bottom:14px;}
+  .rec-sub{font-size:11px;font-style:italic;margin-bottom:12px;}
   .green-box .rec-sub{color:#059669;} .amber-box .rec-sub{color:#D97706;}
-  .rec-item{margin-bottom:10px;font-size:12px;padding:8px;background:rgba(255,255,255,0.6);border-radius:6px;}
+  .rec-item{margin-bottom:8px;font-size:12px;padding:8px 10px;background:rgba(255,255,255,0.65);border-radius:6px;line-height:1.6;}
   .rec-item span{color:#64748B;font-size:11px;}
-  .print-btn{position:fixed;bottom:24px;right:24px;padding:14px 24px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;}
+  .chart-box{background:#F8FAFC;border-radius:10px;padding:16px;}
+  .chart-box h3{font-size:13px;color:#0F3460;margin:0 0 12px;font-weight:700;}
+  .print-btn{position:fixed;bottom:24px;right:24px;padding:14px 24px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:100;}
   .print-btn:hover{background:#1A6BB5;}
-  .footer{background:#0F3460;color:#8899AA;padding:20px 60px;font-size:12px;margin-top:30px;}
+  .footer{background:#0F3460;color:#8899AA;padding:16px 40px;font-size:11px;margin-top:20px;text-align:center;}
+  .divider{height:4px;background:linear-gradient(90deg,#0F3460,#00D4AA);margin:10px 30px;}
 </style>
 </head><body>
 
 <button class="print-btn no-print" onclick="window.print()">🖨️ 打印 / 另存为 PDF</button>
 
 <div class="cover">
-  <h1>PROMO</h1>
+  <div><span class="accent"></span><span style="vertical-align:middle;font-size:64px;font-weight:900;color:white">PROMO</span></div>
   <h2>Performance Report</h2>
-  <div class="meta">${monthStr}  |  Currency: ${hasMYR && hasSGD ? 'MYR & SGD' : hasMYR ? 'MYR' : 'SGD'}</div>
-  <div class="meta" style="margin-top:16px">Prepared by: PROMO Department  |  ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
+  <div class="meta">${monthStr} &nbsp;|&nbsp; Currency: ${hasMYR && hasSGD ? 'MYR & SGD' : hasMYR ? 'MYR' : 'SGD'}</div>
+  <div class="meta" style="margin-top:10px">Prepared by: PROMO Department &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
 </div>
 
 ${hasMYR ? `
+<div class="divider"></div>
 <div class="section">
   <div class="section-header">Monthly Overview — ${monthStr} (MYR)</div>
   ${kpiCards(myrT, 'MYR')}
 </div>
-${promoTable(myrPromos, 'MYR')}
+${chartsSection(myrPromos, 'MYR', 'MYR')}
+${promoTableHTML(myrPromos, 'MYR')}
 ${recommendations(myrPromos, 'MYR')}
 ` : ''}
 
 ${hasSGD ? `
+<div class="divider"></div>
 <div class="section">
   <div class="section-header">Monthly Overview — ${monthStr} (SGD)</div>
   ${kpiCards(sgdT, 'SGD')}
 </div>
-${promoTable(sgdPromos, 'SGD')}
+${chartsSection(sgdPromos, 'SGD', 'SGD')}
+${promoTableHTML(sgdPromos, 'SGD')}
 ${recommendations(sgdPromos, 'SGD')}
 ` : ''}
 
-<div class="footer">PROMO Department  |  ${monthStr}  |  Confidential</div>
+<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential</div>
 </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html' });
@@ -1079,8 +1194,7 @@ ${recommendations(sgdPromos, 'SGD')}
   a.download = `PROMO_Report_${monthStr.replace(' ','_')}.html`;
   a.click();
   URL.revokeObjectURL(url);
-
-  alert('✅ 报告已下载！\n\n打开 HTML 文件后，点击右下角「打印」按钮，选择「另存为 PDF」就可以得到 PDF 版本了。');
+  setTimeout(() => alert('✅ 报告已下载！\n\n打开 HTML 文件后点右下角「打印」按钮，选「另存为 PDF」即可。'), 500);
 }
 
 </script>
