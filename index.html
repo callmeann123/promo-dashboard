@@ -299,7 +299,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <table>
         <thead><tr>
           <th>日期</th><th>Promo 名称</th><th>货币</th>
-          <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>人均存款</th>
+          <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>人均存款</th><th>参与率</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -622,14 +622,27 @@ function groupData(rows,v){
   return Object.values(map).sort((a,b)=>a.label.localeCompare(b.label));
 }
 
-function groupByPromo(rows){
+function groupByPromo(rows, currency){
   const map={};
   rows.forEach(r=>{
-    if(!map[r.code]) map[r.code]={label:r.code,claims:0,depPpl:0,deposit:0,bonus:0};
+    if(!map[r.code]) map[r.code]={label:r.code,claims:0,depPpl:0,deposit:0,bonus:0,dayMap:{}};
     map[r.code].claims+=1; map[r.code].depPpl+=r.hasDeposit;
     map[r.code].deposit+=r.transfer; map[r.code].bonus+=r.bonus;
+    // track daily claims
+    if(!map[r.code].dayMap[r.date]) map[r.code].dayMap[r.date]=0;
+    map[r.code].dayMap[r.date]+=1;
   });
-  return Object.values(map).sort((a,b)=>b.claims-a.claims);
+  const apKey = currency==='SGD'?'sgd':'myr';
+  return Object.values(map).sort((a,b)=>b.claims-a.claims).map(p=>{
+    // calc daily participation rate then average
+    let totalRate=0, dayCount=0;
+    Object.entries(p.dayMap).forEach(([date, cnt])=>{
+      const ap = activePlayerData[date] ? activePlayerData[date][apKey] : 0;
+      if(ap>0){ totalRate+=cnt/ap; dayCount++; }
+    });
+    p.partRate = dayCount>0 ? totalRate/dayCount : null;
+    return p;
+  });
 }
 
 // ── Format ──
@@ -737,7 +750,11 @@ function renderOverview(){
     const ppa=r.depPpl>0?fmt(r.deposit/r.depPpl):'—';
     const cls=isMYR?'myr-v':'sgd-v';
     const tagStyle=isMYR?'':'background:var(--green-dim);color:var(--green)';
-    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${fmt(r.deposit)}</td><td class="${cls}">${fmt(r.bonus)}</td><td class="${cls}">${ppa}</td></tr>`;
+    const apKey2=r.cur==='SGD'?'sgd':'myr';
+    const apDay=activePlayerData[r.date]?activePlayerData[r.date][apKey2]:0;
+    const partR=apDay>0?(r.claims/apDay*100).toFixed(1)+'%':'—';
+    const partC=apDay>0?(r.claims/apDay>=0.1?'var(--green)':r.claims/apDay>=0.05?'var(--amber)':'var(--red)'):'var(--muted)';
+    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${fmt(r.deposit)}</td><td class="${cls}">${fmt(r.bonus)}</td><td class="${cls}">${ppa}</td><td style="color:${partC};font-weight:bold;text-align:right">${partR}</td></tr>`;
   }).join('');
 }
 
@@ -1023,7 +1040,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
       <table>
         <thead><tr>
           <th>Promo Name</th><th>Claims</th><th>Depositors</th>
-          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Status</th>
+          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Participation Rate</th><th>Status</th>
         </tr></thead>
         <tbody>
           ${promos.map((p,i) => {
@@ -1031,6 +1048,8 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
             const status = getStatus(p);
             const statusColor = status==='CONTINUE'?'#059669':'#D97706';
             const statusBg = status==='CONTINUE'?'#D1FAE5':'#FEF3C7';
+            const partStr = p.partRate!=null ? (p.partRate*100).toFixed(1)+'%' : '—';
+            const partColor = p.partRate!=null ? (p.partRate>=0.1?'#059669':p.partRate>=0.05?'#D97706':'#DC2626') : '#64748B';
             return `<tr style="background:${i%2===0?'white':'#F8FAFC'}">
               <td>${p.name}</td>
               <td style="color:#1A6BB5;font-weight:bold;text-align:center">${p.claims}</td>
@@ -1038,6 +1057,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
               <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
               <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
               <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center;font-weight:bold">${depRate}%</td>
+              <td style="color:${partColor};text-align:center;font-weight:bold">${partStr}</td>
               <td style="background:${statusBg};color:${statusColor};font-weight:bold;text-align:center">${status}</td>
             </tr>`;
           }).join('')}
