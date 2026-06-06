@@ -756,9 +756,9 @@ function renderOverview(){
   const map={};
   [...myrRows.map(r=>({...r,cur:'MYR'})),...sgdRows.map(r=>({...r,cur:'SGD'}))].forEach(r=>{
     const key=r.date+'||'+r.code+'||'+r.cur;
-    if(!map[key]) map[key]={date:r.date,code:r.code,cur:r.cur,claims:0,depPpl:0,deposit:0,bonus:0};
+    if(!map[key]) map[key]={date:r.date,code:r.code,cur:r.cur,claims:0,depPpl:0,deposit:0,bonus:0,winloss:0};
     map[key].claims+=1; map[key].depPpl+=r.hasDeposit;
-    map[key].deposit+=r.transfer; map[key].bonus+=r.bonus;
+    map[key].deposit+=r.transfer; map[key].bonus+=r.bonus; map[key].winloss+=(r.winloss||0);
   });
   const rows=Object.values(map).sort((a,b)=>b.date.localeCompare(a.date)||a.code.localeCompare(b.code));
   document.getElementById('tableBody').innerHTML=rows.map(r=>{
