@@ -299,7 +299,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <table>
         <thead><tr>
           <th>日期</th><th>Promo 名称</th><th>货币</th>
-          <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>人均存款</th><th>参与率</th>
+          <th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th><th>人均存款</th><th>参与率</th>
         </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -625,9 +625,10 @@ function groupData(rows,v){
 function groupByPromo(rows, currency){
   const map={};
   rows.forEach(r=>{
-    if(!map[r.code]) map[r.code]={label:r.code,claims:0,depPpl:0,deposit:0,bonus:0,dayMap:{}};
+    if(!map[r.code]) map[r.code]={label:r.code,claims:0,depPpl:0,deposit:0,bonus:0,winloss:0,dayMap:{}};
     map[r.code].claims+=1; map[r.code].depPpl+=r.hasDeposit;
     map[r.code].deposit+=r.transfer; map[r.code].bonus+=r.bonus;
+    map[r.code].winloss+=r.winloss;
     // track daily claims
     if(!map[r.code].dayMap[r.date]) map[r.code].dayMap[r.date]=0;
     map[r.code].dayMap[r.date]+=1;
@@ -641,6 +642,9 @@ function groupByPromo(rows, currency){
       if(ap>0){ totalRate+=cnt/ap; dayCount++; }
     });
     p.partRate = dayCount>0 ? totalRate/dayCount : null;
+    // Net Profit = -winloss - bonus
+    p.netProfit = -p.winloss - p.bonus;
+    p.roi = p.bonus > 0 ? p.netProfit / p.bonus : null;
     return p;
   });
 }
@@ -688,6 +692,16 @@ function renderOverview(){
   document.getElementById('mMyrDeposit').textContent=fmtRM(myrDeposit);
   document.getElementById('mMyrDepositSub').textContent='人均: '+fmtRM(myrPPA);
   document.getElementById('mMyrBonus').textContent=fmtRM(myrBonus);
+  // Net Profit totals
+  const myrNetProfit = myrRows.reduce((s,r)=>s+(-( r.winloss||0)-r.bonus),0);
+  const sgdNetProfit = sgdRows.reduce((s,r)=>s+(-( r.winloss||0)-r.bonus),0);
+  const myrROI = myrBonus>0?myrNetProfit/myrBonus:null;
+  const sgdROI = sgdBonus>0?sgdNetProfit/sgdBonus:null;
+  // Update sub labels with net profit info
+  document.getElementById('mMyrDepositSub').textContent='净利润: '+(myrNetProfit>=0?'+':'')+fmtRM(myrNetProfit);
+  document.getElementById('mMyrDepositSub').style.color=myrNetProfit>0?'var(--green)':'var(--red)';
+  document.getElementById('mSgdDepositSub').textContent='净利润: '+(sgdNetProfit>=0?'+':'')+fmtSGD(sgdNetProfit);
+  document.getElementById('mSgdDepositSub').style.color=sgdNetProfit>0?'var(--green)':'var(--red)';
   document.getElementById('mSgdClaims').textContent=fmtN(sgdClaims);
   document.getElementById('mSgdClaimsSub').textContent=sgdPartRate!=='—'?'参与率: '+sgdPartRate:sgdRows.length+' 条记录';
   document.getElementById('mSgdDepPpl').textContent=fmtN(sgdDepPpl);
@@ -754,7 +768,14 @@ function renderOverview(){
     const apDay=activePlayerData[r.date]?activePlayerData[r.date][apKey2]:0;
     const partR=apDay>0?(r.claims/apDay*100).toFixed(1)+'%':'—';
     const partC=apDay>0?(r.claims/apDay>=0.1?'var(--green)':r.claims/apDay>=0.05?'var(--amber)':'var(--red)'):'var(--muted)';
-    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${fmt(r.deposit)}</td><td class="${cls}">${fmt(r.bonus)}</td><td class="${cls}">${ppa}</td><td style="color:${partC};font-weight:bold;text-align:right">${partR}</td></tr>`;
+    const wl = r.winloss||0;
+    const np = -wl - (r.bonus||0);
+    const roi = (r.bonus||0)>0 ? np/(r.bonus||0) : null;
+    const npFmt = fmt(np);
+    const npColor = np>0?'var(--green)':np<0?'var(--red)':'var(--muted)';
+    const roiStr = roi!==null?(roi>=0?'+':'')+( roi*100).toFixed(1)+'%':'—';
+    const roiColor = roi!==null?(roi>0?'var(--green)':roi<0?'var(--red)':'var(--muted)'):'var(--muted)';
+    return `<tr><td>${r.date}</td><td>${r.code}</td><td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td><td class="${cls}">${fmtN(r.claims)}</td><td class="${cls}">${fmtN(r.depPpl)}</td><td class="${cls}">${fmt(r.deposit)}</td><td class="${cls}">${fmt(r.bonus)}</td><td style="text-align:right;color:var(--muted2)">${fmt(wl)}</td><td style="text-align:right;color:${npColor};font-weight:bold">${np>=0?'+':''}${npFmt}</td><td style="text-align:right;color:${roiColor};font-weight:bold">${roiStr}</td><td class="${cls}">${ppa}</td><td style="color:${partC};font-weight:bold;text-align:right">${partR}</td></tr>`;
   }).join('');
 }
 
@@ -1040,7 +1061,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
       <table>
         <thead><tr>
           <th>Promo Name</th><th>Claims</th><th>Depositors</th>
-          <th>Total Deposit</th><th>Bonus Paid</th><th>Dep %</th><th>Participation Rate</th><th>Status</th>
+          <th>Total Deposit</th><th>Bonus Paid</th><th>Net Profit</th><th>ROI</th><th>Dep %</th><th>Part. Rate</th><th>Status</th>
         </tr></thead>
         <tbody>
           ${promos.map((p,i) => {
@@ -1050,12 +1071,19 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
             const statusBg = status==='CONTINUE'?'#D1FAE5':'#FEF3C7';
             const partStr = p.partRate!=null ? (p.partRate*100).toFixed(1)+'%' : '—';
             const partColor = p.partRate!=null ? (p.partRate>=0.1?'#059669':p.partRate>=0.05?'#D97706':'#DC2626') : '#64748B';
+            const np = p.netProfit||0;
+            const npStr = (np>=0?'+':'')+fmtK(np,currency);
+            const npColor = np>0?'#059669':np<0?'#DC2626':'#64748B';
+            const roiStr2 = p.roi!=null?(p.roi>=0?'+':'')+(p.roi*100).toFixed(1)+'%':'—';
+            const roiColor2 = p.roi!=null?(p.roi>0?'#059669':p.roi<0?'#DC2626':'#64748B'):'#64748B';
             return `<tr style="background:${i%2===0?'white':'#F8FAFC'}">
               <td>${p.name}</td>
               <td style="color:#1A6BB5;font-weight:bold;text-align:center">${p.claims}</td>
               <td style="color:#028090;text-align:center">${p.depPpl}</td>
               <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
               <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
+              <td style="color:${npColor};text-align:right;font-weight:bold">${npStr}</td>
+              <td style="color:${roiColor2};text-align:center;font-weight:bold">${roiStr2}</td>
               <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center;font-weight:bold">${depRate}%</td>
               <td style="color:${partColor};text-align:center;font-weight:bold">${partStr}</td>
               <td style="background:${statusBg};color:${statusColor};font-weight:bold;text-align:center">${status}</td>
