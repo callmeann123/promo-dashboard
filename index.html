@@ -531,6 +531,8 @@ function parseCSV(text,currency){
   const idx=h=>headers.findIndex(hh=>hh===h);
   const iLogin=idx('Login'),iCode=idx('Code'),iStart=idx('Start Time');
   const iTransfer=idx('Transfer'),iBonus=idx('Bonus'),iWL=idx('Current Win Loss');
+  console.log('Headers count:',headers.length,'iWL:',iWL,'headers:',headers);
+  if(lines[hRow+1]) console.log('First data row count:',lines[hRow+1].length,'row:',lines[hRow+1]);
   const rows=[];
   for(let i=hRow+1;i<lines.length;i++){
     const r=lines[i]; if(!r||r.length<5) continue;
@@ -539,7 +541,7 @@ function parseCSV(text,currency){
     const startRaw=(r[iStart]||'').trim();
     const transfer=parseFloat((r[iTransfer]||'0').replace(/[^0-9.-]/g,''))||0;
     const bonus=parseFloat((r[iBonus]||'0').replace(/[^0-9.-]/g,''))||0;
-    const winloss=parseFloat((r[iWL]||'0').replace(/"/g,'').trim())||0;
+    const winloss=parseFloat((r[iWL>=0?iWL:15]||'0').replace(/"/g,'').trim())||0;
     if(!login||!code||!startRaw) continue;
     const date=startRaw.slice(0,10);
     rows.push({date,login,code,currency,transfer,bonus,winloss,hasDeposit:transfer>0?1:0});
