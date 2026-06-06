@@ -974,13 +974,18 @@ function generatePPT() {
   function groupByPromo(rows) {
     const map = {};
     rows.forEach(r => {
-      if (!map[r.code]) map[r.code] = { name: r.code, claims: 0, depPpl: 0, deposit: 0, bonus: 0 };
+      if (!map[r.code]) map[r.code] = { name: r.code, claims: 0, depPpl: 0, deposit: 0, bonus: 0, winloss: 0 };
       map[r.code].claims++;
       map[r.code].depPpl += r.hasDeposit;
       map[r.code].deposit += r.transfer;
       map[r.code].bonus += r.bonus;
+      map[r.code].winloss += (r.winloss||0);
     });
-    return Object.values(map).sort((a, b) => b.claims - a.claims);
+    return Object.values(map).sort((a, b) => b.claims - a.claims).map(p => {
+      p.netProfit = -p.winloss - p.bonus;
+      p.roi = p.bonus > 0 ? p.netProfit / p.bonus : null;
+      return p;
+    });
   }
 
   function getStatus(p) {
