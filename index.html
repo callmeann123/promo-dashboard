@@ -1224,7 +1224,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
       <table>
         <thead><tr>
           <th>Promo Name</th><th>Claims</th><th>Depositors</th>
-          <th>Total Deposit</th><th>Bonus Paid</th><th>Net Profit</th><th>ROI</th><th>Dep %</th><th>Part. Rate</th><th>Status</th>
+          <th>Total Deposit</th><th>Bonus Paid</th><th>Win/Loss</th><th>Net Profit</th><th>ROI</th><th>Dep %</th><th>Part. Rate</th><th>Status</th>
         </tr></thead>
         <tbody>
           ${promos.map((p,i) => {
@@ -1235,6 +1235,9 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
             const partStr = p.partRate!=null ? (p.partRate*100).toFixed(1)+'%' : '—';
             const partColor = p.partRate!=null ? (p.partRate>=0.1?'#059669':p.partRate>=0.05?'#D97706':'#DC2626') : '#64748B';
             const np = p.netProfit||0;
+            const wl = p.winloss||0;
+            const wlStr = fmtK(wl, currency);
+            const wlColor = wl<0?'#059669':wl>0?'#DC2626':'#64748B';
             const npStr = (np>=0?'+':'')+fmtK(np,currency);
             const npColor = np>0?'#059669':np<0?'#DC2626':'#64748B';
             const roiStr2 = p.roi!=null?(p.roi>=0?'+':'')+(p.roi*100).toFixed(1)+'%':'—';
@@ -1245,6 +1248,7 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
               <td style="color:#028090;text-align:center">${p.depPpl}</td>
               <td style="color:#059669;text-align:right">${fmtK(p.deposit,currency)}</td>
               <td style="color:#D97706;text-align:right">${fmtK(p.bonus,currency)}</td>
+              <td style="color:${wlColor};text-align:right;font-weight:bold">${wlStr}</td>
               <td style="color:${npColor};text-align:right;font-weight:bold">${npStr}</td>
               <td style="color:${roiColor2};text-align:center;font-weight:bold">${roiStr2}</td>
               <td style="color:${depRate>=50?'#059669':'#DC2626'};text-align:center;font-weight:bold">${depRate}%</td>
