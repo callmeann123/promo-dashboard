@@ -99,9 +99,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 table{width:100%;border-collapse:collapse;table-layout:fixed;}
 th{font-size:0.72rem;color:var(--muted);font-weight:400;text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;position:sticky;top:0;background:var(--surface);overflow:hidden;text-overflow:ellipsis;}
 th:first-child,th:nth-child(2),th:nth-child(3){text-align:left;}
-td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;white-space:nowrap;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;font-family:'Courier New',monospace;}
-td:first-child{text-align:left;color:var(--muted);font-size:0.75rem;font-family:Arial,sans-serif;}
-td:nth-child(2),td:nth-child(3){text-align:left;font-family:Arial,sans-serif;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;white-space:nowrap;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;}
+td:first-child{text-align:left;color:var(--muted);font-size:0.75rem;}
+td:nth-child(2),td:nth-child(3){text-align:left;}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:rgba(255,255,255,0.02);}
 .type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;background:var(--blue-dim);color:var(--blue);}
@@ -157,6 +157,21 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .modal-metric .val.sgd-val{color:var(--green);}
 
 .hidden{display:none!important;}
+.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.5rem;}
+.analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.analysis-card-header{padding:12px 16px;font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+.analysis-card-header.green{background:rgba(0,229,160,0.12);color:var(--green);}
+.analysis-card-header.red{background:rgba(255,61,90,0.12);color:var(--red);}
+.analysis-card-header.amber{background:rgba(255,176,32,0.12);color:var(--amber);}
+.analysis-item{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.analysis-item:last-child{border-bottom:none;}
+.analysis-item-name{font-size:0.82rem;color:var(--text);flex:1;}
+.analysis-item-stats{font-size:0.75rem;color:var(--muted);text-align:right;white-space:nowrap;}
+.analysis-item-profit{font-size:0.82rem;font-weight:700;white-space:nowrap;}
+.analysis-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.cur-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:1.5rem;width:fit-content;}
+.cur-tab{padding:7px 20px;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.cur-tab.active{background:var(--blue);color:#080B0F;}
 
 .ppt-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:opacity 0.15s;text-decoration:none;}
 .ppt-btn:hover{opacity:0.85;}
@@ -215,6 +230,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- Nav -->
 <div class="nav" id="mainNav" style="display:none;">
   <button class="nav-tab active" onclick="switchPage('overview',this)">📊 总览</button>
+  <button class="nav-tab" onclick="switchPage('analysis',this)">🔍 Promo 分析</button>
   <button class="nav-tab" onclick="switchPage('builder',this)">🎨 图表构建器</button>
 </div>
 
@@ -396,6 +412,33 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<!-- Analysis Page -->
+<div id="analysisPage" class="hidden">
+  <div class="cur-toggle">
+    <button class="cur-tab active" onclick="setAnalysisCur('MYR',this)">🇲🇾 MYR</button>
+    <button class="cur-tab" onclick="setAnalysisCur('SGD',this)">🇸🇬 SGD</button>
+    <button class="cur-tab" onclick="setAnalysisCur('ALL',this)">全部</button>
+  </div>
+
+  <div class="analysis-summary" id="analysisSummary"></div>
+
+  <div style="margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;">
+    <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">判断标准</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.82rem;">
+      <span style="color:var(--green)">✅ 继续 — 净利润 &gt; 0（平台赚钱）</span>
+      <span style="color:var(--amber)">⚠️ 检讨 — 净利润 &lt; 0 但存款转化率 100%（有带来存款）</span>
+      <span style="color:var(--red)">🛑 停止 — 净利润 &lt; 0 且没有存款（纯亏 Bonus）</span>
+    </div>
+  </div>
+
+  <div class="analysis-grid" id="analysisGrid"></div>
+
+  <div class="chart-card" style="margin-bottom:14px;">
+    <div class="chart-hd"><div class="chart-title">净利润排名（由高到低）</div></div>
+    <div style="position:relative;width:100%;height:350px;"><canvas id="analysisChart"></canvas></div>
+  </div>
+</div>
+
 <!-- Modal -->
 <div class="modal-overlay hidden" id="barModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -573,7 +616,119 @@ function switchPage(page, btn){
   btn.classList.add('active');
   document.getElementById('overviewPage').classList.toggle('hidden', page!=='overview');
   document.getElementById('builderPage').classList.toggle('hidden', page!=='builder');
+  document.getElementById('analysisPage').classList.toggle('hidden', page!=='analysis');
   if(page==='overview') renderOverview();
+  if(page==='analysis') renderAnalysis();
+}
+
+let analysisCur = 'MYR';
+let analysisChart = null;
+
+function setAnalysisCur(cur, btn) {
+  analysisCur = cur;
+  document.querySelectorAll('.cur-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAnalysis();
+}
+
+function renderAnalysis() {
+  let rows = [];
+  if (analysisCur === 'MYR') rows = myrData;
+  else if (analysisCur === 'SGD') rows = sgdData;
+  else rows = [...myrData, ...sgdData];
+
+  const currency = analysisCur === 'SGD' ? 'SGD' : 'MYR';
+  const fmt = analysisCur === 'SGD' ? fmtSGD : fmtRM;
+
+  // Group by promo
+  const map = {};
+  rows.forEach(r => {
+    if (!map[r.code]) map[r.code] = { name:r.code, claims:0, depPpl:0, deposit:0, bonus:0, winloss:0 };
+    map[r.code].claims++;
+    map[r.code].depPpl += r.hasDeposit;
+    map[r.code].deposit += r.transfer;
+    map[r.code].bonus += r.bonus;
+    map[r.code].winloss += (r.winloss||0);
+  });
+
+  const promos = Object.values(map).map(p => {
+    p.netProfit = -p.winloss - p.bonus;
+    p.roi = p.bonus > 0 ? p.netProfit / p.bonus * 100 : null;
+    p.depRate = p.claims > 0 ? p.depPpl / p.claims : 0;
+    // Status logic
+    if (p.netProfit > 0) p.status = 'continue';
+    else if (p.netProfit < 0 && p.depPpl > 0) p.status = 'review';
+    else p.status = 'stop';
+    return p;
+  }).sort((a,b) => b.netProfit - a.netProfit);
+
+  const continueP = promos.filter(p => p.status === 'continue');
+  const reviewP   = promos.filter(p => p.status === 'review');
+  const stopP     = promos.filter(p => p.status === 'stop');
+
+  const totalProfit = promos.reduce((s,p) => s+p.netProfit, 0);
+  const totalBonus  = promos.reduce((s,p) => s+p.bonus, 0);
+  const totalClaims = promos.reduce((s,p) => s+p.claims, 0);
+  const overallROI  = totalBonus > 0 ? totalProfit/totalBonus*100 : 0;
+
+  // Summary metrics
+  document.getElementById('analysisSummary').innerHTML = `
+    <div class="metric"><div class="lbl">总 Promo 数</div><div class="val" style="color:var(--blue)">${promos.length}</div><div class="sub">${totalClaims.toLocaleString()} 次领取</div></div>
+    <div class="metric"><div class="lbl">总净利润</div><div class="val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${fmt(totalProfit)}</div><div class="sub">整体 ROI: ${overallROI>=0?'+':''}${overallROI.toFixed(1)}%</div></div>
+    <div class="metric"><div class="lbl">✅ 建议继续</div><div class="val" style="color:var(--green)">${continueP.length}</div><div class="sub">净利润为正</div></div>
+    <div class="metric"><div class="lbl">🛑 建议停止</div><div class="val" style="color:var(--red)">${stopP.length}</div><div class="sub">净亏且无存款</div></div>
+  `;
+
+  // Analysis cards
+  function makeItems(list) {
+    return list.map(p => {
+      const profitColor = p.netProfit > 0 ? 'var(--green)' : 'var(--red)';
+      const roiStr = p.roi !== null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
+      return `<div class="analysis-item">
+        <div class="analysis-item-name">${p.name}</div>
+        <div style="text-align:right">
+          <div class="analysis-item-profit" style="color:${profitColor}">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</div>
+          <div class="analysis-item-stats">ROI ${roiStr} | 领取 ${p.claims}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('analysisGrid').innerHTML = `
+    <div class="analysis-card">
+      <div class="analysis-card-header green">✅ 继续跑 (${continueP.length})</div>
+      ${continueP.length ? makeItems(continueP) : '<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-header amber">⚠️ 需要检讨 (${reviewP.length})</div>
+      ${reviewP.length ? makeItems(reviewP) : '<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-header red">🛑 建议停止 (${stopP.length})</div>
+      ${stopP.length ? makeItems(stopP) : '<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}
+    </div>
+  `;
+
+  // Chart - Net Profit ranking
+  const top15 = [...promos].slice(0, 15);
+  const labels = top15.map(p => p.name.length>22?p.name.slice(0,22)+'…':p.name);
+  const profits = top15.map(p => p.netProfit);
+  const colors = profits.map(v => v>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)');
+
+  if (analysisChart) { analysisChart.destroy(); analysisChart = null; }
+  analysisChart = new Chart(document.getElementById('analysisChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data:profits, backgroundColor:colors, borderRadius:4 }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}} },
+      scales: {
+        x: { ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)}, grid:{color:'rgba(255,255,255,0.04)'}, border:{color:'transparent'} },
+        y: { ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'}, grid:{display:false}, border:{color:'transparent'} }
+      }
+    }
+  });
 }
 
 // ── Filters ──
@@ -1256,8 +1411,8 @@ function generateHTMLReport(data, monthStr, myrPromos, sgdPromos, myrT, sgdT, fm
   table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
   th{background:#0F3460;color:white;padding:10px 12px;text-align:right;font-size:11px;letter-spacing:0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   th:first-child{text-align:left;}
-  td{padding:9px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'Courier New',monospace;font-size:12px;white-space:nowrap;}
-  td:first-child{text-align:left;font-family:Arial,sans-serif;font-size:11.5px;}
+  td{padding:9px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-size:12px;white-space:nowrap;}
+  td:first-child{text-align:left;font-size:11.5px;}
   .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px;}
   .rec-box{padding:20px;border-radius:10px;border:2px solid;}
   .green-box{background:#D1FAE5;border-color:#059669;}
