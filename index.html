@@ -141,15 +141,27 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .player-stat{background:var(--surface2);border-radius:10px;padding:1rem;text-align:center;}
 .player-stat .lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
 .player-stat .val{font-size:1.2rem;font-weight:700;}
-.timeline{display:flex;flex-direction:column;gap:8px;}
-.timeline-day{background:var(--surface2);border-radius:10px;padding:12px 14px;}
-.timeline-date{font-size:0.75rem;color:var(--muted);margin-bottom:8px;font-weight:700;}
-.timeline-promos{display:flex;flex-direction:column;gap:6px;}
-.timeline-promo{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface3);border-radius:8px;}
-.tp-name{font-size:0.82rem;color:var(--text);flex:1;}
-.tp-deposit{font-size:0.78rem;font-weight:700;}
-.tp-bonus{font-size:0.78rem;color:var(--amber);}
-.tp-wl{font-size:0.78rem;font-weight:700;}
+.promo-category{background:var(--surface2);border-radius:12px;overflow:hidden;margin-bottom:8px;}
+.promo-category-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;transition:background 0.15s;}
+.promo-category-header:hover{background:var(--surface3);}
+.pch-left{display:flex;align-items:center;gap:12px;}
+.pch-name{font-size:0.9rem;font-weight:700;color:var(--text);}
+.pch-count{font-size:0.72rem;color:var(--muted);background:var(--surface3);padding:2px 8px;border-radius:10px;}
+.pch-right{display:flex;align-items:center;gap:16px;}
+.pch-stat{text-align:right;}
+.pch-stat .lbl{font-size:0.65rem;color:var(--muted);text-transform:uppercase;}
+.pch-stat .val{font-size:0.82rem;font-weight:700;}
+.pch-arrow{color:var(--muted);font-size:0.85rem;transition:transform 0.2s;}
+.pch-arrow.open{transform:rotate(180deg);}
+.promo-category-table{display:none;border-top:1px solid var(--border);}
+.promo-category-table.open{display:block;}
+.promo-category-table table{width:100%;border-collapse:collapse;}
+.promo-category-table th{font-size:0.7rem;color:var(--muted);font-weight:400;text-align:right;padding:8px 14px;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);}
+.promo-category-table th:first-child{text-align:left;}
+.promo-category-table td{padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;color:var(--muted2);}
+.promo-category-table td:first-child{text-align:left;color:var(--muted);}
+.promo-category-table tr:last-child td{border-bottom:none;}
+.promo-category-table tr:hover td{background:rgba(255,255,255,0.02);}
 
 /* Builder */
 .builder-layout{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;}
@@ -805,6 +817,13 @@ function renderAnalysis() {
 }
 
 // ── Player ──
+function toggleCategory(id) {
+  const table = document.getElementById('cat-table-' + id);
+  const arrow = document.getElementById('cat-arrow-' + id);
+  table.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
 async function searchPlayer() {
   const login = document.getElementById('playerInput').value.trim();
   if (!login) return;
@@ -826,13 +845,81 @@ async function searchPlayer() {
     const hasMYR = rows.some(r => r.currency === 'MYR');
     const fmt = hasMYR ? fmtRM : fmtSGD;
 
-    // Group by date
-    const dayMap = {};
+    // Group by promo category
+    const promoMap = {};
     rows.forEach(r => {
-      if (!dayMap[r.date]) dayMap[r.date] = [];
-      dayMap[r.date].push(r);
+      if (!promoMap[r.code]) promoMap[r.code] = { name: r.code, claims: 0, deposit: 0, bonus: 0, winloss: 0, rows: [] };
+      promoMap[r.code].claims++;
+      promoMap[r.code].deposit += r.transfer;
+      promoMap[r.code].bonus   += r.bonus;
+      promoMap[r.code].winloss += r.winloss;
+      promoMap[r.code].rows.push(r);
     });
-    const days = Object.entries(dayMap).sort((a,b) => b[0].localeCompare(a[0]));
+
+    const promos = Object.values(promoMap).sort((a,b) => b.claims - a.claims).map(p => ({
+      ...p,
+      netProfit: -p.winloss - p.bonus,
+      rows: p.rows.sort((a,b) => b.date.localeCompare(a.date))
+    }));
+
+    const categoriesHTML = promos.map((p, i) => {
+      const np = p.netProfit;
+      const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
+      const roi = p.bonus > 0 ? (np/p.bonus*100).toFixed(1)+'%' : '—';
+      const tableRows = p.rows.map(r => {
+        const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
+        const hasDeposit = r.transfer > 0;
+        const rnp = -r.winloss - r.bonus;
+        const rnpC = rnp > 0 ? 'var(--green)' : rnp < 0 ? 'var(--red)' : 'var(--muted)';
+        return `<tr>
+          <td>${r.date}</td>
+          <td style="color:${hasDeposit?'var(--green)':'var(--muted)'};">${hasDeposit ? '✅ '+f(r.transfer) : '❌ 无存款'}</td>
+          <td style="color:var(--amber);text-align:right">${f(r.bonus)}</td>
+          <td style="color:var(--muted2);text-align:right">${f(r.winloss)}</td>
+          <td style="color:${rnpC};font-weight:bold;text-align:right">${rnp>=0?'+':''}${f(rnp)}</td>
+        </tr>`;
+      }).join('');
+
+      return `<div class="promo-category">
+        <div class="promo-category-header" onclick="toggleCategory(${i})">
+          <div class="pch-left">
+            <div class="pch-name">${p.name}</div>
+            <div class="pch-count">${p.claims} 次</div>
+          </div>
+          <div class="pch-right">
+            <div class="pch-stat">
+              <div class="lbl">总存款</div>
+              <div class="val" style="color:var(--green)">${fmt(p.deposit)}</div>
+            </div>
+            <div class="pch-stat">
+              <div class="lbl">Bonus</div>
+              <div class="val" style="color:var(--amber)">${fmt(p.bonus)}</div>
+            </div>
+            <div class="pch-stat">
+              <div class="lbl">净利润</div>
+              <div class="val" style="color:${npC}">${np>=0?'+':''}${fmt(np)}</div>
+            </div>
+            <div class="pch-stat">
+              <div class="lbl">ROI</div>
+              <div class="val" style="color:${npC}">${roi}</div>
+            </div>
+            <div class="pch-arrow" id="cat-arrow-${i}">▼</div>
+          </div>
+        </div>
+        <div class="promo-category-table" id="cat-table-${i}">
+          <table>
+            <thead><tr>
+              <th>日期</th>
+              <th>存款</th>
+              <th>Bonus</th>
+              <th>Win/Loss</th>
+              <th>净利润</th>
+            </tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('');
 
     document.getElementById('playerContent').innerHTML = `
       <div class="player-card">
@@ -844,29 +931,8 @@ async function searchPlayer() {
           <div class="player-stat"><div class="lbl">Win/Loss</div><div class="val" style="color:var(--muted2)">${fmt(totalWL)}</div></div>
           <div class="player-stat"><div class="lbl">净利润</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
         </div>
-        <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">每日领取记录</div>
-        <div class="timeline">
-          ${days.map(([date, dayRows]) => `
-            <div class="timeline-day">
-              <div class="timeline-date">${date}</div>
-              <div class="timeline-promos">
-                ${dayRows.map(r => {
-                  const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
-                  const hasDeposit = r.transfer > 0;
-                  const np = -r.winloss - r.bonus;
-                  return `<div class="timeline-promo">
-                    <div class="tp-name">${r.code}</div>
-                    <div style="display:flex;gap:12px;align-items:center;">
-                      <span class="tp-deposit" style="color:${hasDeposit?'var(--green)':'var(--muted)'}">${hasDeposit?'✅ '+f(r.transfer):'❌ 无存款'}</span>
-                      <span class="tp-bonus">Bonus: ${f(r.bonus)}</span>
-                      <span class="tp-wl" style="color:${np>=0?'var(--green)':'var(--red)'}">净: ${np>=0?'+':''}${f(np)}</span>
-                    </div>
-                  </div>`;
-                }).join('')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
+        <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">按 Promo 分类 — 点击展开明细</div>
+        ${categoriesHTML}
       </div>
     `;
   } catch(e) {
