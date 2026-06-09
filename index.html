@@ -594,7 +594,7 @@ async function loadData() {
 
     // Also load full data (no date filter) for comparison page
     try {
-      allDataFull = await apiFetch('/records?limit=50000');
+      allDataFull = await apiFetch('/records?limit=10000');
     } catch(e) {
       allDataFull = allData;
     }
