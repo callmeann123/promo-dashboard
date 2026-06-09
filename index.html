@@ -349,15 +349,38 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
 </div>
 <script>
-const API = 'https://promo-api.annann5653.workers.dev';
+let API = 'https://promo-api.annann5653.workers.dev';
+let CONFIG = {};
 const METRIC_LABELS = { claims:'领取人次', deposit_ppl:'存款人数', deposit:'存款金额', bonus:'派发 Bonus', netProfit:'净利润', roi:'ROI %' };
 const COLORS = ['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
 
 let allData = [], activeData = {}, view = 'day', ovCharts = {}, builtCharts = [], chartCounter = 0;
 let analysisCur = 'MYR', analysisChartInst = null, selectedChartType = 'bar';
 
+// ── Load Config ──
+async function loadConfig() {
+  try {
+    const res = await fetch('./config.json?t=' + Date.now());
+    if (res.ok) {
+      CONFIG = await res.json();
+      // Apply config
+      if (CONFIG.api?.worker_url) API = CONFIG.api.worker_url;
+      if (CONFIG.dashboard?.title) {
+        document.querySelector('.logo h1').innerHTML = CONFIG.dashboard.title.replace('PROMO', 'PROMO <span>') + '</span>';
+      }
+      if (CONFIG.dashboard?.subtitle) {
+        document.querySelector('.logo p').textContent = CONFIG.dashboard.subtitle;
+      }
+      console.log('Config loaded:', CONFIG);
+    }
+  } catch(e) {
+    console.warn('Config not found, using defaults');
+  }
+}
+
 // ── Init ──
 async function init() {
+  await loadConfig();
   try {
     const dates = await apiFetch('/dates');
     if (dates.myr?.from || dates.sgd?.from) {
