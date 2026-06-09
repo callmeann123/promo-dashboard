@@ -1,0 +1,62 @@
+{
+  "api": {
+    "worker_url": "https://promo-api.annann5653.workers.dev"
+  },
+
+  "dashboard": {
+    "title": "PROMO Dashboard",
+    "subtitle": "MYR & SGD  |  实时数据分析",
+    "company": "PROMO Department"
+  },
+
+  "currencies": {
+    "MYR": {
+      "symbol": "RM",
+      "flag": "🇲🇾",
+      "color": "#4D9FFF",
+      "locale": "en-MY"
+    },
+    "SGD": {
+      "symbol": "S$",
+      "flag": "🇸🇬",
+      "color": "#00E5A0",
+      "locale": "en-SG"
+    }
+  },
+
+  "promo_categories": {
+    "DEPOSIT BONUS": {
+      "label": "Deposit Bonus",
+      "color": "#4D9FFF",
+      "requires_deposit": true
+    },
+    "RESCUE BONUS": {
+      "label": "Rescue / Yesterday Loss",
+      "color": "#A78BFA",
+      "requires_deposit": false
+    },
+    "TOTO": {
+      "label": "TOTO / Accumulative",
+      "color": "#FFB020",
+      "requires_deposit": true
+    },
+    "CASHBACK": {
+      "label": "Cashback",
+      "color": "#00E5A0",
+      "requires_deposit": false
+    }
+  },
+
+  "analysis": {
+    "continue_threshold": 0,
+    "review_condition": "has_deposit",
+    "stop_condition": "no_deposit"
+  },
+
+  "report": {
+    "show_winloss": true,
+    "show_roi": true,
+    "show_participation_rate": true,
+    "show_net_profit": true
+  }
+}
