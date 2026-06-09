@@ -10,41 +10,30 @@
   },
 
   "currencies": {
-    "MYR": {
-      "symbol": "RM",
-      "flag": "🇲🇾",
-      "color": "#4D9FFF",
-      "locale": "en-MY"
-    },
-    "SGD": {
-      "symbol": "S$",
-      "flag": "🇸🇬",
-      "color": "#00E5A0",
-      "locale": "en-SG"
-    }
+    "MYR": { "symbol": "RM", "flag": "🇲🇾", "color": "#4D9FFF", "locale": "en-MY" },
+    "SGD": { "symbol": "S$", "flag": "🇸🇬", "color": "#00E5A0", "locale": "en-SG" }
   },
 
-  "promo_categories": {
-    "DEPOSIT BONUS": {
-      "label": "Deposit Bonus",
-      "color": "#4D9FFF",
-      "requires_deposit": true
-    },
-    "RESCUE BONUS": {
-      "label": "Rescue / Yesterday Loss",
-      "color": "#A78BFA",
-      "requires_deposit": false
-    },
-    "TOTO": {
-      "label": "TOTO / Accumulative",
-      "color": "#FFB020",
-      "requires_deposit": true
-    },
-    "CASHBACK": {
-      "label": "Cashback",
-      "color": "#00E5A0",
-      "requires_deposit": false
-    }
+  "pages": {
+    "overview":       { "enabled": true,  "label": "📊 总览" },
+    "analysis":       { "enabled": true,  "label": "🔍 Promo 分析" },
+    "player":         { "enabled": true,  "label": "👤 玩家行为" },
+    "comparison":     { "enabled": true,  "label": "📅 月份对比" },
+    "provider":       { "enabled": true,  "label": "🎮 供应商分析" },
+    "builder":        { "enabled": true,  "label": "🎨 图表构建器" }
+  },
+
+  "metrics": {
+    "claims":           { "enabled": true,  "label": "领取人次" },
+    "deposit_ppl":      { "enabled": true,  "label": "存款人数" },
+    "deposit":          { "enabled": true,  "label": "总存款" },
+    "bonus":            { "enabled": true,  "label": "派发 Bonus" },
+    "winloss":          { "enabled": true,  "label": "Win/Loss" },
+    "net_profit":       { "enabled": true,  "label": "净利润" },
+    "roi":              { "enabled": true,  "label": "ROI" },
+    "participation":    { "enabled": true,  "label": "参与率" },
+    "deposit_rate":     { "enabled": true,  "label": "存款转化率" },
+    "avg_deposit":      { "enabled": true,  "label": "人均存款" }
   },
 
   "analysis": {
@@ -54,9 +43,7 @@
   },
 
   "report": {
-    "show_winloss": true,
-    "show_roi": true,
-    "show_participation_rate": true,
-    "show_net_profit": true
+    "html_report":    { "enabled": true },
+    "email_format":   { "enabled": false }
   }
 }
