@@ -192,6 +192,32 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important;}
+
+/* Comparison page */
+.comparison-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem;}
+.comparison-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
+.comparison-header{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;}
+.comparison-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.comparison-row:last-child{border-bottom:none;}
+.comparison-label{font-size:0.82rem;color:var(--muted2);}
+.comparison-vals{display:flex;gap:16px;align-items:center;}
+.comparison-val{font-size:0.85rem;font-weight:700;text-align:right;min-width:100px;}
+.comparison-change{font-size:0.75rem;font-weight:700;padding:2px 7px;border-radius:5px;}
+.change-up{background:var(--green-dim);color:var(--green);}
+.change-down{background:var(--red-dim);color:var(--red);}
+.change-flat{background:var(--border);color:var(--muted);}
+.month-tabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;}
+.month-tab{padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;}
+.month-tab.active{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+
+/* Provider page */
+.provider-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;}
+.provider-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem;cursor:pointer;transition:border-color 0.15s;}
+.provider-card:hover{border-color:var(--blue);}
+.provider-card.active{border-color:var(--blue);background:var(--blue-dim);}
+.provider-name{font-size:0.85rem;font-weight:700;margin-bottom:8px;}
+.provider-stats{display:flex;gap:10px;flex-wrap:wrap;}
+.provider-stat{font-size:0.72rem;color:var(--muted2);}
 </style>
 </head>
 <body>
@@ -232,10 +258,12 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 
 <!-- Nav -->
-<div class="nav">
+<div class="nav" id="mainNav">
   <button class="nav-tab active" onclick="switchPage('overview',this)">📊 总览</button>
   <button class="nav-tab" onclick="switchPage('analysis',this)">🔍 Promo 分析</button>
   <button class="nav-tab" onclick="switchPage('player',this)">👤 玩家行为</button>
+  <button class="nav-tab" onclick="switchPage('comparison',this)">📅 月份对比</button>
+  <button class="nav-tab" onclick="switchPage('provider',this)">🎮 供应商分析</button>
   <button class="nav-tab" onclick="switchPage('builder',this)">🎨 图表构建器</button>
 </div>
 
@@ -347,6 +375,43 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+  <!-- ── COMPARISON PAGE ── -->
+  <div id="comparisonPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setCompCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setCompCur('SGD',this)">🇸🇬 SGD</button>
+    </div>
+    <div id="compMonthTabs" class="month-tabs"></div>
+    <div id="comparisonContent">
+      <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>
+    </div>
+  </div>
+
+  <!-- ── PROVIDER PAGE ── -->
+  <div id="providerPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setProviderCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setProviderCur('SGD',this)">🇸🇬 SGD</button>
+      <button class="cur-tab" onclick="setProviderCur('ALL',this)">全部</button>
+    </div>
+    <div id="providerGrid" class="provider-grid"></div>
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-hd"><div class="chart-title" id="providerChartTitle">供应商净利润对比</div></div>
+      <div style="position:relative;width:100%;height:300px;"><canvas id="providerChart"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-hd" id="providerTableTitle">供应商明细</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>供应商</th><th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th>
+          </tr></thead>
+          <tbody id="providerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 <script>
 let API = 'https://promo-api.annann5653.workers.dev';
@@ -363,13 +428,35 @@ async function loadConfig() {
     const res = await fetch('./config.json?t=' + Date.now());
     if (res.ok) {
       CONFIG = await res.json();
-      // Apply config
       if (CONFIG.api?.worker_url) API = CONFIG.api.worker_url;
       if (CONFIG.dashboard?.title) {
-        document.querySelector('.logo h1').innerHTML = CONFIG.dashboard.title.replace('PROMO', 'PROMO <span>') + '</span>';
+        document.querySelector('.logo h1').innerHTML = 'PROMO <span>Dashboard</span>';
       }
       if (CONFIG.dashboard?.subtitle) {
         document.querySelector('.logo p').textContent = CONFIG.dashboard.subtitle;
+      }
+      // Build nav from config
+      if (CONFIG.pages) {
+        const pageMap = {
+          overview:   { fn: "switchPage('overview',this)",   label: '📊 总览' },
+          analysis:   { fn: "switchPage('analysis',this)",   label: '🔍 Promo 分析' },
+          player:     { fn: "switchPage('player',this)",     label: '👤 玩家行为' },
+          comparison: { fn: "switchPage('comparison',this)", label: '📅 月份对比' },
+          provider:   { fn: "switchPage('provider',this)",   label: '🎮 供应商分析' },
+          builder:    { fn: "switchPage('builder',this)",    label: '🎨 图表构建器' },
+        };
+        const nav = document.getElementById('mainNav');
+        nav.innerHTML = '';
+        let first = true;
+        Object.entries(CONFIG.pages).forEach(([key, cfg]) => {
+          if (!cfg.enabled) return;
+          const btn = document.createElement('button');
+          btn.className = 'nav-tab' + (first ? ' active' : '');
+          btn.setAttribute('onclick', pageMap[key].fn);
+          btn.textContent = cfg.label || pageMap[key].label;
+          nav.appendChild(btn);
+          first = false;
+        });
       }
       console.log('Config loaded:', CONFIG);
     }
@@ -538,10 +625,12 @@ function resetDates() {
 function switchPage(page, btn) {
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['overviewPage','analysisPage','playerPage','builderPage'].forEach(id => {
+  ['overviewPage','analysisPage','playerPage','comparisonPage','providerPage','builderPage'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', !id.startsWith(page));
   });
-  if (page === 'analysis') renderAnalysis();
+  if (page === 'analysis')    renderAnalysis();
+  if (page === 'comparison')  renderComparison();
+  if (page === 'provider')    renderProvider();
 }
 
 function setView(v, btn) {
@@ -1221,7 +1310,44 @@ ${promoTable(sgdPromos,'SGD')}
 </div></div>
 ${recSection(sgdPromos,'SGD')}
 `:''}
-<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential</div>
+<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential  <!-- ── COMPARISON PAGE ── -->
+  <div id="comparisonPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setCompCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setCompCur('SGD',this)">🇸🇬 SGD</button>
+    </div>
+    <div id="compMonthTabs" class="month-tabs"></div>
+    <div id="comparisonContent">
+      <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>
+    </div>
+  </div>
+
+  <!-- ── PROVIDER PAGE ── -->
+  <div id="providerPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setProviderCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setProviderCur('SGD',this)">🇸🇬 SGD</button>
+      <button class="cur-tab" onclick="setProviderCur('ALL',this)">全部</button>
+    </div>
+    <div id="providerGrid" class="provider-grid"></div>
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-hd"><div class="chart-title" id="providerChartTitle">供应商净利润对比</div></div>
+      <div style="position:relative;width:100%;height:300px;"><canvas id="providerChart"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-hd" id="providerTableTitle">供应商明细</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>供应商</th><th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th>
+          </tr></thead>
+          <tbody id="providerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
 <script>
 function mkCharts(promos, prefix, fmtFn) {
   const top8 = promos.slice(0,8);
@@ -1247,6 +1373,192 @@ ${sgdPromos.length?`mkCharts(${JSON.stringify(sgdPromos.slice(0,8))},'sgd',n=>{c
   a.click();
   URL.revokeObjectURL(url);
   setTimeout(() => alert('✅ 报告已下载！\n打开 HTML 文件后点右下角「打印」→「另存为 PDF」'), 500);
+}
+
+// ── Comparison ──
+let compCur = 'MYR';
+function setCompCur(cur, btn) {
+  compCur = cur;
+  document.querySelectorAll('#comparisonPage .cur-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderComparison();
+}
+
+function renderComparison() {
+  const rows = compCur === 'ALL' ? allData : allData.filter(r => r.currency === compCur);
+  const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
+
+  // Get unique months
+  const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
+  if (months.length < 2) {
+    document.getElementById('comparisonContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>';
+    document.getElementById('compMonthTabs').innerHTML = '';
+    return;
+  }
+
+  // Month tabs — show last 6 months
+  const recentMonths = months.slice(-6);
+  document.getElementById('compMonthTabs').innerHTML = recentMonths.map((m,i) =>
+    `<button class="month-tab ${i===recentMonths.length-1?'active':''}" onclick="selectCompMonth('${m}',this)">${m}</button>`
+  ).join('');
+
+  const latestMonth = recentMonths[recentMonths.length-1];
+  const prevMonth   = recentMonths[recentMonths.length-2];
+  renderCompMonths(latestMonth, prevMonth, rows, fmt);
+}
+
+function selectCompMonth(month, btn) {
+  document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = compCur === 'ALL' ? allData : allData.filter(r => r.currency === compCur);
+  const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
+  const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
+  const idx = months.indexOf(month);
+  const prev = idx > 0 ? months[idx-1] : null;
+  renderCompMonths(month, prev, rows, fmt);
+}
+
+function renderCompMonths(curMonth, prevMonth, rows, fmt) {
+  function calcMonth(m) {
+    const r = rows.filter(r => r.date.slice(0,7) === m);
+    const bonus = r.reduce((s,x)=>s+x.bonus,0);
+    const wl    = r.reduce((s,x)=>s+x.winloss,0);
+    const np    = -wl - bonus;
+    return {
+      claims:  r.length,
+      depPpl:  r.filter(x=>x.transfer>0).length,
+      deposit: r.reduce((s,x)=>s+x.transfer,0),
+      bonus, winloss: wl, netProfit: np,
+      roi: bonus > 0 ? np/bonus*100 : null,
+    };
+  }
+
+  const cur  = calcMonth(curMonth);
+  const prev = prevMonth ? calcMonth(prevMonth) : null;
+
+  function chg(a, b, isPercent=false) {
+    if (!b || b === 0) return '';
+    const pct = ((a - b) / Math.abs(b) * 100).toFixed(1);
+    const up = a >= b;
+    const cls = up ? 'change-up' : 'change-down';
+    return `<span class="comparison-change ${cls}">${up?'▲':'▼'} ${Math.abs(pct)}%</span>`;
+  }
+
+  function row(label, curVal, prevVal, fmtFn, invertColor=false) {
+    const curFmt  = fmtFn(curVal);
+    const prevFmt = prevVal !== null ? fmtFn(prevVal) : '—';
+    const change  = prevVal !== null ? chg(curVal, prevVal) : '';
+    const curColor = invertColor ? (curVal>=0?'var(--green)':'var(--red)') : 'var(--text)';
+    return `<div class="comparison-row">
+      <div class="comparison-label">${label}</div>
+      <div class="comparison-vals">
+        <div class="comparison-val" style="color:var(--muted2)">${prevFmt}</div>
+        <div class="comparison-val" style="color:${curColor}">${curFmt}</div>
+        ${change}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('comparisonContent').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:1rem;font-size:0.75rem;">
+      <span style="color:var(--muted2);min-width:200px;">指标</span>
+      <span style="color:var(--muted);min-width:100px;text-align:right">${prevMonth||'—'}</span>
+      <span style="color:var(--blue);min-width:100px;text-align:right">${curMonth}</span>
+      <span style="color:var(--muted2)">变化</span>
+    </div>
+    <div class="comparison-card">
+      ${row('领取人次', cur.claims, prev?.claims, fmtN)}
+      ${row('存款人数', cur.depPpl, prev?.depPpl, fmtN)}
+      ${row('总存款', cur.deposit, prev?.deposit, fmt)}
+      ${row('派发 Bonus', cur.bonus, prev?.bonus, fmt)}
+      ${row('Win/Loss', cur.winloss, prev?.winloss, fmt)}
+      ${row('净利润', cur.netProfit, prev?.netProfit, fmt, true)}
+      ${row('ROI', cur.roi||0, prev?.roi||0, v=>(v>=0?'+':'')+v.toFixed(1)+'%', true)}
+    </div>
+  `;
+}
+
+// ── Provider ──
+let providerCur = 'MYR', providerChartInst = null;
+function setProviderCur(cur, btn) {
+  providerCur = cur;
+  document.querySelectorAll('#providerPage .cur-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProvider();
+}
+
+function renderProvider() {
+  const rows = providerCur === 'ALL' ? allData : allData.filter(r => r.currency === providerCur);
+  const fmt  = providerCur === 'SGD' ? fmtSGD : fmtRM;
+  const currency = providerCur;
+
+  // Group by provider
+  const map = {};
+  rows.forEach(r => {
+    const p = r.provider || 'Unknown';
+    if (!map[p]) map[p] = { name:p, claims:0, depPpl:0, deposit:0, bonus:0, winloss:0 };
+    map[p].claims++;
+    map[p].depPpl  += r.transfer > 0 ? 1 : 0;
+    map[p].deposit += r.transfer;
+    map[p].bonus   += r.bonus;
+    map[p].winloss += r.winloss;
+  });
+
+  const providers = Object.values(map).map(p => ({
+    ...p,
+    netProfit: -p.winloss - p.bonus,
+    roi: p.bonus > 0 ? (-p.winloss - p.bonus) / p.bonus * 100 : null,
+  })).sort((a,b) => b.claims - a.claims);
+
+  // Provider cards
+  document.getElementById('providerGrid').innerHTML = providers.slice(0,9).map(p => {
+    const np = p.netProfit;
+    const npC = np > 0 ? 'var(--green)' : 'var(--red)';
+    return `<div class="provider-card">
+      <div class="provider-name">${p.name}</div>
+      <div class="provider-stats">
+        <span class="provider-stat">领取 <b style="color:var(--blue)">${fmtN(p.claims)}</b></span>
+        <span class="provider-stat">净利润 <b style="color:${npC}">${np>=0?'+':''}${fmt(np)}</b></span>
+        <span class="provider-stat">ROI <b style="color:${npC}">${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</b></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Chart
+  if (providerChartInst) { providerChartInst.destroy(); providerChartInst = null; }
+  const top10 = [...providers].sort((a,b) => b.netProfit - a.netProfit).slice(0,10);
+  providerChartInst = new Chart(document.getElementById('providerChart'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(p => p.name),
+      datasets: [{ data: top10.map(p => p.netProfit), backgroundColor: top10.map(p => p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'), borderRadius:4 }]
+    },
+    options: {
+      indexAxis: 'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+        y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}
+      }
+    }
+  });
+
+  // Table
+  document.getElementById('providerTableBody').innerHTML = providers.map((p,i) => {
+    const np = p.netProfit;
+    const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
+    const roi = p.roi != null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
+    return `<tr>
+      <td>${p.name}</td>
+      <td class="myr-v">${fmtN(p.claims)}</td>
+      <td class="myr-v">${fmtN(p.depPpl)}</td>
+      <td style="text-align:right;color:var(--green)">${fmt(p.deposit)}</td>
+      <td style="text-align:right;color:var(--amber)">${fmt(p.bonus)}</td>
+      <td style="text-align:right;color:var(--muted2)">${fmt(p.winloss)}</td>
+      <td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td>
+      <td style="text-align:right;color:${npC};font-weight:bold">${roi}</td>
+    </tr>`;
+  }).join('');
 }
 
 // Start
