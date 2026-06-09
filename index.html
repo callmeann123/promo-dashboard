@@ -419,7 +419,7 @@ let CONFIG = {};
 const METRIC_LABELS = { claims:'领取人次', deposit_ppl:'存款人数', deposit:'存款金额', bonus:'派发 Bonus', netProfit:'净利润', roi:'ROI %' };
 const COLORS = ['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
 
-let allData = [], activeData = {}, view = 'day', ovCharts = {}, builtCharts = [], chartCounter = 0;
+let allData = [], allDataFull = [], activeData = {}, view = 'day', ovCharts = {}, builtCharts = [], chartCounter = 0;
 let analysisCur = 'MYR', analysisChartInst = null, selectedChartType = 'bar';
 
 // ── Load Config ──
@@ -591,6 +591,13 @@ async function loadData() {
     if (from) q += '&from=' + from;
     if (to)   q += '&to='   + to;
     allData = await apiFetch(q);
+
+    // Also load full data (no date filter) for comparison page
+    try {
+      allDataFull = await apiFetch('/records?limit=50000');
+    } catch(e) {
+      allDataFull = allData;
+    }
 
     // Active players
     let aq = '/active?';
@@ -1385,7 +1392,7 @@ function setCompCur(cur, btn) {
 }
 
 function renderComparison() {
-  const rows = compCur === 'ALL' ? allData : allData.filter(r => r.currency === compCur);
+  const rows = compCur === 'ALL' ? allDataFull : allDataFull.filter(r => r.currency === compCur);
   const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
 
   // Get unique months
@@ -1410,7 +1417,7 @@ function renderComparison() {
 function selectCompMonth(month, btn) {
   document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const rows = compCur === 'ALL' ? allData : allData.filter(r => r.currency === compCur);
+  const rows = compCur === 'ALL' ? allDataFull : allDataFull.filter(r => r.currency === compCur);
   const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
   const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
   const idx = months.indexOf(month);
