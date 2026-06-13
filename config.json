@@ -2,18 +2,15 @@
   "api": {
     "worker_url": "https://promo-api.annann5653.workers.dev"
   },
-
   "dashboard": {
     "title": "PROMO Dashboard",
     "subtitle": "MYR & SGD  |  实时数据分析",
     "company": "PROMO Department"
   },
-
   "currencies": {
     "MYR": { "symbol": "RM", "flag": "🇲🇾", "color": "#4D9FFF", "locale": "en-MY" },
     "SGD": { "symbol": "S$", "flag": "🇸🇬", "color": "#00E5A0", "locale": "en-SG" }
   },
-
   "pages": {
     "overview":       { "enabled": true,  "label": "📊 总览" },
     "analysis":       { "enabled": true,  "label": "🔍 Promo 分析" },
@@ -22,7 +19,21 @@
     "provider":       { "enabled": true,  "label": "🎮 供应商分析" },
     "builder":        { "enabled": true,  "label": "🎨 图表构建器" }
   },
-
+  "upload": {
+    "promo": {
+      "myr":          { "enabled": true,  "label": "📂 MYR CSV" },
+      "sgd":          { "enabled": true,  "label": "📂 SGD CSV" },
+      "active_player":{ "enabled": true,  "label": "📅 Active Player" }
+    },
+    "deposit": {
+      "myr":          { "enabled": true,  "label": "💰 Dep MYR" },
+      "sgd":          { "enabled": true,  "label": "💰 Dep SGD" }
+    },
+    "withdraw": {
+      "myr":          { "enabled": true,  "label": "💸 WD MYR" },
+      "sgd":          { "enabled": true,  "label": "💸 WD SGD" }
+    }
+  },
   "metrics": {
     "claims":           { "enabled": true,  "label": "领取人次" },
     "deposit_ppl":      { "enabled": true,  "label": "存款人数" },
@@ -35,13 +46,11 @@
     "deposit_rate":     { "enabled": true,  "label": "存款转化率" },
     "avg_deposit":      { "enabled": true,  "label": "人均存款" }
   },
-
   "analysis": {
     "continue_threshold": 0,
     "review_condition": "has_deposit",
     "stop_condition": "no_deposit"
   },
-
   "report": {
     "html_report":    { "enabled": true },
     "email_format":   { "enabled": false }
