@@ -45,10 +45,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* Upload section */
 .upload-bar{display:flex;align-items:center;gap:10px;padding:1rem 1.4rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:1.5rem;flex-wrap:wrap;}
 .upload-bar-title{font-size:0.78rem;color:var(--muted2);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-right:8px;}
+.upload-bar-sep{width:1px;height:28px;background:var(--border2);margin:0 4px;}
 .upload-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;transition:all 0.15s;}
 .upload-btn:hover{border-color:var(--blue);color:var(--blue);}
 .upload-btn.uploading{opacity:0.6;cursor:wait;}
 .upload-btn.done{border-color:var(--green);color:var(--green);}
+.upload-btn.done-dep{border-color:var(--amber);color:var(--amber);}
+.upload-btn.done-wd{border-color:var(--purple);color:var(--purple);}
 .upload-btn input{display:none;}
 .ppt-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;margin-left:auto;}
 .ppt-btn:hover{opacity:0.85;}
@@ -163,6 +166,36 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .promo-category-table tr:last-child td{border-bottom:none;}
 .promo-category-table tr:hover td{background:rgba(255,255,255,0.02);}
 
+/* ── Timeline ── */
+.timeline-section{margin-top:1.5rem;}
+.timeline-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border2);}
+.tl-item{position:relative;margin-bottom:10px;}
+.tl-dot{position:absolute;left:-22px;top:12px;width:12px;height:12px;border-radius:50%;border:2px solid;}
+.tl-dot.deposit{background:rgba(77,159,255,0.3);border-color:var(--blue);}
+.tl-dot.bonus{background:rgba(255,176,32,0.3);border-color:var(--amber);}
+.tl-dot.withdraw{background:rgba(255,61,90,0.3);border-color:var(--red);}
+.tl-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.tl-card:hover{border-color:var(--border2);}
+.tl-left{display:flex;align-items:center;gap:10px;}
+.tl-badge{font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;}
+.tl-badge.deposit{background:var(--blue-dim);color:var(--blue);}
+.tl-badge.bonus{background:var(--amber-dim);color:var(--amber);}
+.tl-badge.withdraw{background:var(--red-dim);color:var(--red);}
+.tl-time{font-size:0.72rem;color:var(--muted);}
+.tl-desc{font-size:0.78rem;color:var(--muted2);}
+.tl-amount{font-size:0.88rem;font-weight:700;white-space:nowrap;}
+.tl-amount.deposit{color:var(--blue);}
+.tl-amount.bonus{color:var(--amber);}
+.tl-amount.withdraw{color:var(--red);}
+.tl-gap{display:inline-block;margin:4px 0 4px 0;padding:3px 10px;border-radius:5px;font-size:0.7rem;color:var(--muted);background:var(--surface3);border:1px dashed var(--border2);}
+.timeline-empty{padding:1.2rem;text-align:center;color:var(--muted);font-size:0.82rem;background:var(--surface2);border-radius:10px;}
+.tl-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.2rem;}
+.tl-sum-card{background:var(--surface2);border-radius:10px;padding:0.9rem;text-align:center;}
+.tl-sum-card .lbl{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
+.tl-sum-card .val{font-size:1rem;font-weight:700;}
+
 /* Builder */
 .builder-layout{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;}
 .builder-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:sticky;top:1rem;}
@@ -240,21 +273,9 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
-<!-- Upload Bar -->
-<div class="upload-bar">
+<!-- Upload Bar (dynamically built from config.json) -->
+<div class="upload-bar" id="uploadBar">
   <span class="upload-bar-title">上传数据</span>
-  <label class="upload-btn" id="btnMYR">
-    <input type="file" accept=".csv" onchange="uploadCSV('MYR',this)" />
-    📂 MYR CSV
-  </label>
-  <label class="upload-btn" id="btnSGD">
-    <input type="file" accept=".csv" onchange="uploadCSV('SGD',this)" />
-    📂 SGD CSV
-  </label>
-  <label class="upload-btn" id="btnAP">
-    <input type="file" accept=".xlsx,.xls" onchange="uploadActivePlayer(this)" />
-    📅 Active Player
-  </label>
 </div>
 
 <!-- Nav -->
@@ -429,12 +450,7 @@ async function loadConfig() {
     if (res.ok) {
       CONFIG = await res.json();
       if (CONFIG.api?.worker_url) API = CONFIG.api.worker_url;
-      if (CONFIG.dashboard?.title) {
-        document.querySelector('.logo h1').innerHTML = 'PROMO <span>Dashboard</span>';
-      }
-      if (CONFIG.dashboard?.subtitle) {
-        document.querySelector('.logo p').textContent = CONFIG.dashboard.subtitle;
-      }
+
       // Build nav from config
       if (CONFIG.pages) {
         const pageMap = {
@@ -458,11 +474,55 @@ async function loadConfig() {
           first = false;
         });
       }
-      console.log('Config loaded:', CONFIG);
+
+      // Build upload bar from config
+      if (CONFIG.upload) {
+        const bar = document.getElementById('uploadBar');
+        bar.innerHTML = '';
+
+        const addTitle = (text) => {
+          const t = document.createElement('span');
+          t.className = 'upload-bar-title';
+          t.textContent = text;
+          bar.appendChild(t);
+        };
+        const addSep = () => {
+          const sep = document.createElement('div');
+          sep.className = 'upload-bar-sep';
+          bar.appendChild(sep);
+        };
+        const addBtn = (id, label, accept, onchange) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'upload-btn';
+          lbl.id = id;
+          lbl.innerHTML = `<input type="file" accept="${accept}" onchange="${onchange}" />${label}`;
+          bar.appendChild(lbl);
+        };
+
+        // Promo
+        const p = CONFIG.upload.promo || {};
+        const hasPromo = p.myr?.enabled || p.sgd?.enabled || p.active_player?.enabled;
+        if (hasPromo) addTitle('Promo');
+        if (p.myr?.enabled)           addBtn('btnMYR',    p.myr.label,           '.csv',       "uploadCSV('MYR',this)");
+        if (p.sgd?.enabled)           addBtn('btnSGD',    p.sgd.label,           '.csv',       "uploadCSV('SGD',this)");
+        if (p.active_player?.enabled) addBtn('btnAP',     p.active_player.label, '.xlsx,.xls', "uploadActivePlayer(this)");
+
+        // Deposit
+        const d = CONFIG.upload.deposit || {};
+        const hasDep = d.myr?.enabled || d.sgd?.enabled;
+        if (hasDep) { addSep(); addTitle('Deposit'); }
+        if (d.myr?.enabled) addBtn('btnDepMYR', d.myr.label, '.csv', "uploadDepositWithdraw('deposit','MYR',this)");
+        if (d.sgd?.enabled) addBtn('btnDepSGD', d.sgd.label, '.csv', "uploadDepositWithdraw('deposit','SGD',this)");
+
+        // Withdraw
+        const w = CONFIG.upload.withdraw || {};
+        const hasWD = w.myr?.enabled || w.sgd?.enabled;
+        if (hasWD) { addSep(); addTitle('Withdraw'); }
+        if (w.myr?.enabled) addBtn('btnWdMYR', w.myr.label, '.csv', "uploadDepositWithdraw('withdraw','MYR',this)");
+        if (w.sgd?.enabled) addBtn('btnWdSGD', w.sgd.label, '.csv', "uploadDepositWithdraw('withdraw','SGD',this)");
+      }
     }
-  } catch(e) {
-    console.warn('Config not found, using defaults');
-  }
+  } catch(e) { console.warn('Config not found, using defaults'); }
 }
 
 // ── Init ──
@@ -499,19 +559,16 @@ function setStatus(type, text) {
   document.getElementById('statusText').textContent = text;
 }
 
-// ── Upload CSV ──
+// ── Upload Promo CSV ──
 async function uploadCSV(currency, input) {
   const file = input.files[0]; if (!file) return;
   const btn = document.getElementById('btn' + currency);
   btn.className = 'upload-btn uploading';
-  btn.querySelector('input').previousSibling && null;
   setStatus('', '上传中...');
-
   try {
     const text = await file.text();
     const res = await fetch(API + '/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ csv: text, currency })
     });
     const data = await res.json();
@@ -520,9 +577,39 @@ async function uploadCSV(currency, input) {
       btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadCSV('${currency}',this)" /> ✅ ${currency} (${data.inserted})`;
       setStatus('live', '上传成功');
       await loadData();
-    } else {
-      throw new Error(data.error);
-    }
+    } else throw new Error(data.error);
+  } catch(e) {
+    btn.className = 'upload-btn';
+    setStatus('error', '上传失败: ' + e.message);
+    alert('上传失败: ' + e.message);
+  }
+}
+
+// ── Upload Deposit / Withdraw CSV ──
+async function uploadDepositWithdraw(type, currency, input) {
+  const file = input.files[0]; if (!file) return;
+  const btnId = type === 'deposit'
+    ? (currency === 'MYR' ? 'btnDepMYR' : 'btnDepSGD')
+    : (currency === 'MYR' ? 'btnWdMYR'  : 'btnWdSGD');
+  const btn = document.getElementById(btnId);
+  btn.className = 'upload-btn uploading';
+  setStatus('', '上传中...');
+  try {
+    const text = await file.text();
+    const endpoint = type === 'deposit' ? '/upload-deposit' : '/upload-withdraw';
+    const res = await fetch(API + endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csv: text, currency })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const doneClass = type === 'deposit' ? 'upload-btn done-dep' : 'upload-btn done-wd';
+      btn.className = doneClass;
+      const icon = type === 'deposit' ? '💰' : '💸';
+      const label = type === 'deposit' ? 'Dep' : 'WD';
+      btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadDepositWithdraw('${type}','${currency}',this)" /> ✅ ${label} ${currency} (${data.inserted})`;
+      setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功`);
+    } else throw new Error(data.error);
   } catch(e) {
     btn.className = 'upload-btn';
     setStatus('error', '上传失败: ' + e.message);
@@ -535,19 +622,16 @@ async function uploadActivePlayer(input) {
   const file = input.files[0]; if (!file) return;
   const btn = document.getElementById('btnAP');
   btn.className = 'upload-btn uploading';
-
   try {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
     let hRow = -1;
     for (let i = 0; i < raw.length; i++) {
       if (raw[i] && raw[i].some(c => String(c).includes('日期') || String(c).toLowerCase().includes('date'))) { hRow = i; break; }
     }
     if (hRow < 0) throw new Error('找不到表头');
-
     const records = [];
     for (let i = hRow + 1; i < raw.length; i++) {
       const r = raw[i]; if (!r || !r[0]) continue;
@@ -556,16 +640,12 @@ async function uploadActivePlayer(input) {
       if (typeof dateVal === 'number' && dateVal > 40000) {
         const d = new Date((dateVal - 25569) * 86400 * 1000);
         dateStr = d.toISOString().slice(0, 10);
-      } else {
-        dateStr = String(dateVal).slice(0, 10);
-      }
+      } else { dateStr = String(dateVal).slice(0, 10); }
       if (!dateStr) continue;
       records.push({ date: dateStr, myr_count: parseInt(r[1]) || 0, sgd_count: parseInt(r[2]) || 0 });
     }
-
     const res = await fetch(API + '/upload-active', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ records })
     });
     const data = await res.json();
@@ -584,34 +664,22 @@ async function uploadActivePlayer(input) {
 async function loadData() {
   const from = document.getElementById('dateFrom').value;
   const to   = document.getElementById('dateTo').value;
-
   setStatus('', '加载中...');
   try {
     let q = '/records?limit=50000';
     if (from) q += '&from=' + from;
     if (to)   q += '&to='   + to;
     allData = await apiFetch(q);
-
-    // Also load full data (no date filter) for comparison page
-    try {
-      allDataFull = await apiFetch('/records?limit=10000');
-    } catch(e) {
-      allDataFull = allData;
-    }
-
-    // Active players
+    try { allDataFull = await apiFetch('/records?limit=10000'); } catch(e) { allDataFull = allData; }
     let aq = '/active?';
     if (from) aq += 'from=' + from + '&';
     if (to)   aq += 'to='   + to;
     const apRows = await apiFetch(aq);
     activeData = {};
     apRows.forEach(r => { activeData[r.date] = { myr: r.myr_count, sgd: r.sgd_count }; });
-
-    // Populate filters
     const promos = [...new Set(allData.map(r => r.code).filter(Boolean))].sort();
     document.getElementById('promoFilter').innerHTML = '<option value="all">全部 Promo</option>' + promos.map(p => `<option value="${p}">${p}</option>`).join('');
     document.getElementById('bPromoList').innerHTML = promos.map(p => `<label><input type="checkbox" value="${p}" checked /> ${p}</label>`).join('');
-
     setStatus('live', `已同步 · ${allData.length.toLocaleString()} 条记录`);
     document.getElementById('pptBtn').disabled = false;
     renderOverview();
@@ -635,9 +703,9 @@ function switchPage(page, btn) {
   ['overviewPage','analysisPage','playerPage','comparisonPage','providerPage','builderPage'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', !id.startsWith(page));
   });
-  if (page === 'analysis')    renderAnalysis();
-  if (page === 'comparison')  renderComparison();
-  if (page === 'provider')    renderProvider();
+  if (page === 'analysis')   renderAnalysis();
+  if (page === 'comparison') renderComparison();
+  if (page === 'provider')   renderProvider();
 }
 
 function setView(v, btn) {
@@ -695,14 +763,12 @@ function groupByPromo(rows, currency) {
   return Object.values(map).sort((a, b) => b.claims - a.claims).map(p => {
     p.netProfit = -p.winloss - p.bonus;
     p.roi = p.bonus > 0 ? p.netProfit / p.bonus * 100 : null;
-    // Participation rate
     let totalRate = 0, dayCount = 0;
     Object.entries(p.dayMap).forEach(([date, cnt]) => {
       const ap = activeData[date] ? activeData[date][apKey] : 0;
       if (ap > 0) { totalRate += cnt / ap; dayCount++; }
     });
     p.partRate = dayCount > 0 ? totalRate / dayCount : null;
-    // Status
     if (p.netProfit > 0) p.status = 'continue';
     else if (p.netProfit < 0 && p.depPpl > 0) p.status = 'review';
     else p.status = 'stop';
@@ -722,12 +788,27 @@ function fmtLabel(label, v) {
   if (v === 'month') return d.toLocaleDateString('en-MY', { month: 'short', year: 'numeric' });
   return label;
 }
+function fmtDateTime(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function timeDiffStr(a, b) {
+  if (!a || !b) return null;
+  const diff = Math.abs(new Date(b) - new Date(a));
+  const hrs  = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (hrs >= 24) return Math.floor(hrs/24) + '天' + (hrs%24) + '小时后';
+  if (hrs > 0)   return hrs + '小时' + mins + '分后';
+  return mins + '分钟后';
+}
 
 // ── Overview ──
 function renderOverview() {
   const myrRows = getFiltered('MYR');
   const sgdRows = getFiltered('SGD');
-
   const myrClaims  = myrRows.length;
   const myrDepPpl  = myrRows.filter(r => r.transfer > 0).length;
   const myrDeposit = myrRows.reduce((s,r) => s + r.transfer, 0);
@@ -737,7 +818,6 @@ function renderOverview() {
   const myrPPA     = myrDepPpl > 0 ? myrDeposit / myrDepPpl : 0;
   const myrTotalAP = Object.values(activeData).reduce((s,d) => s + (d.myr||0), 0);
   const myrPart    = myrTotalAP > 0 ? (myrClaims / myrTotalAP * 100).toFixed(1) + '%' : null;
-
   const sgdClaims  = sgdRows.length;
   const sgdDepPpl  = sgdRows.filter(r => r.transfer > 0).length;
   const sgdDeposit = sgdRows.reduce((s,r) => s + r.transfer, 0);
@@ -747,8 +827,6 @@ function renderOverview() {
   const sgdPPA     = sgdDepPpl > 0 ? sgdDeposit / sgdDepPpl : 0;
   const sgdTotalAP = Object.values(activeData).reduce((s,d) => s + (d.sgd||0), 0);
   const sgdPart    = sgdTotalAP > 0 ? (sgdClaims / sgdTotalAP * 100).toFixed(1) + '%' : null;
-
-  // Table data
   const tableMap = {};
   [...myrRows.map(r=>({...r,cur:'MYR'})), ...sgdRows.map(r=>({...r,cur:'SGD'}))].forEach(r => {
     const key = r.date + '||' + r.code + '||' + r.cur;
@@ -760,13 +838,10 @@ function renderOverview() {
     tableMap[key].winloss += r.winloss;
   });
   const tableRows = Object.values(tableMap).sort((a,b) => b.date.localeCompare(a.date) || a.code.localeCompare(b.code));
-
   const myrG = groupByTime(myrRows);
   const sgdG = groupByTime(sgdRows);
   const gc = 'rgba(255,255,255,0.04)';
-
   document.getElementById('overviewContent').innerHTML = `
-    <!-- MYR -->
     <div class="currency-section">
       <div class="currency-header myr"><span class="currency-label myr">🇲🇾 MYR</span></div>
       <div class="metrics">
@@ -781,7 +856,6 @@ function renderOverview() {
       </div>
     </div>
     <hr class="divider">
-    <!-- SGD -->
     <div class="currency-section">
       <div class="currency-header sgd"><span class="currency-label sgd">🇸🇬 SGD</span></div>
       <div class="metrics">
@@ -795,7 +869,6 @@ function renderOverview() {
         <div class="chart-card"><div class="chart-hd"><div class="chart-title">存款 vs Bonus (SGD)</div><div class="legend"><span><span class="leg" style="background:var(--green)"></span>存款</span><span><span class="leg" style="background:var(--amber)"></span>Bonus</span></div></div><div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div></div>
       </div>
     </div>
-    <!-- Table -->
     <div class="table-card">
       <div class="table-hd">明细数据</div>
       <div class="table-wrap">
@@ -815,16 +888,15 @@ function renderOverview() {
               const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
               const tagStyle = isMYR ? '' : 'background:var(--green-dim);color:var(--green)';
               return `<tr>
-                <td>${r.date}</td>
-                <td>${r.code}</td>
+                <td>${r.date}</td><td>${r.code}</td>
                 <td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td>
                 <td class="${cls}">${fmtN(r.claims)}</td>
                 <td class="${cls}">${fmtN(r.depPpl)}</td>
                 <td class="${cls}">${fmt(r.deposit)}</td>
                 <td class="${cls}">${fmt(r.bonus)}</td>
-                <td style="text-align:right;color:var(--muted2)">${fmt(r.winloss)}</td>
-                <td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td>
-                <td style="text-align:right;color:${npC};font-weight:bold">${roi}</td>
+                <td style="color:var(--muted2)">${fmt(r.winloss)}</td>
+                <td style="color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td>
+                <td style="color:${npC};font-weight:bold">${roi}</td>
                 <td class="${cls}">${ppa}</td>
               </tr>`;
             }).join('')}
@@ -833,32 +905,26 @@ function renderOverview() {
       </div>
     </div>
   `;
-
-  // Render charts
   const mkOpts = (yCb) => ({
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-    scales: {
-      x: { ticks: { font:{size:10,family:'Arial'}, color:'#5A6A78', autoSkip:true, maxRotation:45 }, grid:{display:false}, border:{color:'transparent'} },
-      y: { ticks: { font:{size:10,family:'Arial'}, color:'#5A6A78', callback: yCb }, grid:{color:gc}, border:{color:'transparent'} }
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:yCb},grid:{color:gc},border:{color:'transparent'}}
     }
   });
-
   const mkC = (id, type, labels, datasets, opts) => {
     if (ovCharts[id]) { ovCharts[id].destroy(); delete ovCharts[id]; }
     const el = document.getElementById(id);
-    if (el) ovCharts[id] = new Chart(el, { type, data: { labels, datasets }, options: opts });
+    if (el) ovCharts[id] = new Chart(el, { type, data:{ labels, datasets }, options:opts });
   };
-
   const myrL = myrG.map(r => fmtLabel(r.label));
   const sgdL = sgdG.map(r => fmtLabel(r.label));
-
   mkC('myrClaimChart','bar',myrL,[{data:myrG.map(r=>r.claims),backgroundColor:'rgba(77,159,255,0.7)',borderRadius:4}],mkOpts(v=>fmtN(v)));
   mkC('myrDepBonusChart','bar',myrL,[
     {label:'存款',data:myrG.map(r=>r.deposit),backgroundColor:'rgba(77,159,255,0.7)',borderRadius:3},
     {label:'Bonus',data:myrG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',borderRadius:3}
   ],{...mkOpts(v=>fmtRM(v)),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}});
-
   mkC('sgdClaimChart','bar',sgdL,[{data:sgdG.map(r=>r.claims),backgroundColor:'rgba(0,229,160,0.7)',borderRadius:4}],mkOpts(v=>fmtN(v)));
   mkC('sgdDepBonusChart','bar',sgdL,[
     {label:'存款',data:sgdG.map(r=>r.deposit),backgroundColor:'rgba(0,229,160,0.7)',borderRadius:3},
@@ -879,23 +945,19 @@ function renderAnalysis() {
   const currency = analysisCur === 'SGD' ? 'SGD' : 'MYR';
   const fmt = analysisCur === 'SGD' ? fmtSGD : fmtRM;
   const promos = groupByPromo(rows, currency);
-
   const continueP = promos.filter(p => p.status === 'continue');
   const reviewP   = promos.filter(p => p.status === 'review');
   const stopP     = promos.filter(p => p.status === 'stop');
-
   const totalClaims = promos.reduce((s,p) => s+p.claims, 0);
   const totalProfit = promos.reduce((s,p) => s+p.netProfit, 0);
   const totalBonus  = promos.reduce((s,p) => s+p.bonus, 0);
   const overallROI  = totalBonus > 0 ? totalProfit/totalBonus*100 : 0;
-
   document.getElementById('analysisSummary').innerHTML = `
     <div class="metric"><div class="lbl">总 Promo</div><div class="val" style="color:var(--blue)">${promos.length}</div><div class="sub">${fmtN(totalClaims)} 次领取</div></div>
     <div class="metric"><div class="lbl">总净利润</div><div class="val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${fmt(totalProfit)}</div><div class="sub">ROI: ${overallROI>=0?'+':''}${overallROI.toFixed(1)}%</div></div>
     <div class="metric"><div class="lbl">✅ 建议继续</div><div class="val" style="color:var(--green)">${continueP.length}</div><div class="sub">净利润为正</div></div>
     <div class="metric"><div class="lbl">🛑 建议停止</div><div class="val" style="color:var(--red)">${stopP.length}</div><div class="sub">净亏且无存款</div></div>
   `;
-
   function makeItems(list) {
     return list.map(p => {
       const npC = p.netProfit > 0 ? 'var(--green)' : 'var(--red)';
@@ -909,23 +971,18 @@ function renderAnalysis() {
       </div>`;
     }).join('');
   }
-
   document.getElementById('analysisGrid').innerHTML = `
     <div class="analysis-card"><div class="analysis-card-header green">✅ 继续跑 (${continueP.length})</div>${continueP.length?makeItems(continueP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
     <div class="analysis-card"><div class="analysis-card-header amber">⚠️ 需检讨 (${reviewP.length})</div>${reviewP.length?makeItems(reviewP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
     <div class="analysis-card"><div class="analysis-card-header red">🛑 建议停止 (${stopP.length})</div>${stopP.length?makeItems(stopP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
   `;
-
   const top15 = [...promos].slice(0, 15);
   if (analysisChartInst) { analysisChartInst.destroy(); analysisChartInst = null; }
   analysisChartInst = new Chart(document.getElementById('analysisChart'), {
-    type: 'bar',
-    data: {
-      labels: top15.map(p => p.name.length>22?p.name.slice(0,22)+'…':p.name),
-      datasets: [{ data: top15.map(p=>p.netProfit), backgroundColor: top15.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'), borderRadius:4 }]
-    },
-    options: {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    type:'bar',
+    data:{ labels:top15.map(p=>p.name.length>22?p.name.slice(0,22)+'…':p.name), datasets:[{data:top15.map(p=>p.netProfit),backgroundColor:top15.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}] },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},
       scales:{
         x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
@@ -946,12 +1003,17 @@ function toggleCategory(id) {
 async function searchPlayer() {
   const login = document.getElementById('playerInput').value.trim();
   if (!login) return;
-
   document.getElementById('playerContent').innerHTML = '<div class="loading-state"><div class="spinner"></div>搜索中...</div>';
 
   try {
-    const rows = await apiFetch('/player?login=' + encodeURIComponent(login));
-    if (!rows.length) {
+    // Fetch promo, deposit, withdraw in parallel
+    const [rows, depositRows, withdrawRows] = await Promise.all([
+      apiFetch('/player?login=' + encodeURIComponent(login)),
+      apiFetch('/deposit?login=' + encodeURIComponent(login)).catch(() => []),
+      apiFetch('/withdraw?login=' + encodeURIComponent(login)).catch(() => []),
+    ]);
+
+    if (!rows.length && !depositRows.length && !withdrawRows.length) {
       document.getElementById('playerContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">找不到玩家「' + login + '」的记录</div>';
       return;
     }
@@ -961,23 +1023,42 @@ async function searchPlayer() {
     const totalBonus   = rows.reduce((s,r) => s+r.bonus, 0);
     const totalWL      = rows.reduce((s,r) => s+r.winloss, 0);
     const totalNP      = -totalWL - totalBonus;
-    const hasMYR = rows.some(r => r.currency === 'MYR');
+    const hasMYR = rows.some(r => r.currency === 'MYR') || depositRows.some(r => r.currency === 'MYR');
     const fmt = hasMYR ? fmtRM : fmtSGD;
 
-    // Group by promo category
+    // ── Build timeline ──
+    const events = [];
+    depositRows.forEach(r => events.push({
+      type: 'deposit', time: r.created_date, amount: r.amount,
+      currency: r.currency, desc: r.merchant_bank || '存款', status: r.status
+    }));
+    rows.forEach(r => events.push({
+      type: 'bonus', time: r.date + ' 00:00:00', amount: r.bonus,
+      currency: r.currency, desc: r.code, status: r.status
+    }));
+    withdrawRows.forEach(r => events.push({
+      type: 'withdraw', time: r.created_date, amount: r.amount,
+      currency: r.currency, desc: r.member_bank || '提款', status: r.status
+    }));
+    events.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    // Total actual deposit & withdraw from transaction data
+    const totalActualDep = depositRows.reduce((s,r) => s + r.amount, 0);
+    const totalActualWD  = withdrawRows.reduce((s,r) => s + r.amount, 0);
+    const netFlow = totalActualDep - totalActualWD;
+
+    // ── Promo categories ──
     const promoMap = {};
     rows.forEach(r => {
-      if (!promoMap[r.code]) promoMap[r.code] = { name: r.code, claims: 0, deposit: 0, bonus: 0, winloss: 0, rows: [] };
+      if (!promoMap[r.code]) promoMap[r.code] = { name:r.code, claims:0, deposit:0, bonus:0, winloss:0, rows:[] };
       promoMap[r.code].claims++;
       promoMap[r.code].deposit += r.transfer;
       promoMap[r.code].bonus   += r.bonus;
       promoMap[r.code].winloss += r.winloss;
       promoMap[r.code].rows.push(r);
     });
-
     const promos = Object.values(promoMap).sort((a,b) => b.claims - a.claims).map(p => ({
-      ...p,
-      netProfit: -p.winloss - p.bonus,
+      ...p, netProfit: -p.winloss - p.bonus,
       rows: p.rows.sort((a,b) => b.date.localeCompare(a.date))
     }));
 
@@ -985,7 +1066,7 @@ async function searchPlayer() {
       const np = p.netProfit;
       const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
       const roi = p.bonus > 0 ? (np/p.bonus*100).toFixed(1)+'%' : '—';
-      const tableRows = p.rows.map(r => {
+      const tableRowsHTML = p.rows.map(r => {
         const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
         const hasDeposit = r.transfer > 0;
         const rnp = -r.winloss - r.bonus;
@@ -998,7 +1079,6 @@ async function searchPlayer() {
           <td style="color:${rnpC};font-weight:bold;text-align:right">${rnp>=0?'+':''}${f(rnp)}</td>
         </tr>`;
       }).join('');
-
       return `<div class="promo-category">
         <div class="promo-category-header" onclick="toggleCategory(${i})">
           <div class="pch-left">
@@ -1006,50 +1086,78 @@ async function searchPlayer() {
             <div class="pch-count">${p.claims} 次</div>
           </div>
           <div class="pch-right">
-            <div class="pch-stat">
-              <div class="lbl">总存款</div>
-              <div class="val" style="color:var(--green)">${fmt(p.deposit)}</div>
-            </div>
-            <div class="pch-stat">
-              <div class="lbl">Bonus</div>
-              <div class="val" style="color:var(--amber)">${fmt(p.bonus)}</div>
-            </div>
-            <div class="pch-stat">
-              <div class="lbl">净利润</div>
-              <div class="val" style="color:${npC}">${np>=0?'+':''}${fmt(np)}</div>
-            </div>
-            <div class="pch-stat">
-              <div class="lbl">ROI</div>
-              <div class="val" style="color:${npC}">${roi}</div>
-            </div>
+            <div class="pch-stat"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(p.deposit)}</div></div>
+            <div class="pch-stat"><div class="lbl">Bonus</div><div class="val" style="color:var(--amber)">${fmt(p.bonus)}</div></div>
+            <div class="pch-stat"><div class="lbl">净利润</div><div class="val" style="color:${npC}">${np>=0?'+':''}${fmt(np)}</div></div>
+            <div class="pch-stat"><div class="lbl">ROI</div><div class="val" style="color:${npC}">${roi}</div></div>
             <div class="pch-arrow" id="cat-arrow-${i}">▼</div>
           </div>
         </div>
         <div class="promo-category-table" id="cat-table-${i}">
-          <table>
-            <thead><tr>
-              <th>日期</th>
-              <th>存款</th>
-              <th>Bonus</th>
-              <th>Win/Loss</th>
-              <th>净利润</th>
-            </tr></thead>
-            <tbody>${tableRows}</tbody>
-          </table>
+          <table><thead><tr>
+            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th>
+          </tr></thead><tbody>${tableRowsHTML}</tbody></table>
         </div>
       </div>`;
     }).join('');
+
+    // ── Timeline HTML ──
+    let timelineHTML = '';
+    if (events.length === 0) {
+      timelineHTML = '<div class="timeline-empty">暂无存款/Bonus/提款记录</div>';
+    } else {
+      const tlItems = events.map((ev, i) => {
+        const f = ev.currency === 'SGD' ? fmtSGD : fmtRM;
+        const prevEv = i > 0 ? events[i-1] : null;
+        const gapStr = prevEv ? timeDiffStr(prevEv.time, ev.time) : null;
+        const gapHTML = gapStr ? `<div class="tl-gap">⏱ ${gapStr}</div>` : '';
+        const typeLabel = ev.type === 'deposit' ? '存款' : ev.type === 'bonus' ? 'Bonus 领取' : '提款';
+        return `${gapHTML}
+          <div class="tl-item">
+            <div class="tl-dot ${ev.type}"></div>
+            <div class="tl-card">
+              <div class="tl-left">
+                <span class="tl-badge ${ev.type}">${typeLabel}</span>
+                <div>
+                  <div class="tl-desc">${ev.desc}</div>
+                  <div class="tl-time">${fmtDateTime(ev.time)}</div>
+                </div>
+              </div>
+              <div class="tl-amount ${ev.type}">${ev.type === 'withdraw' ? '-' : '+'}${f(ev.amount)}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      const netC = netFlow >= 0 ? 'var(--green)' : 'var(--red)';
+      timelineHTML = `
+        <div class="tl-summary">
+          <div class="tl-sum-card"><div class="lbl">存款次数</div><div class="val" style="color:var(--blue)">${depositRows.length}</div></div>
+          <div class="tl-sum-card"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(totalActualDep)}</div></div>
+          <div class="tl-sum-card"><div class="lbl">总提款</div><div class="val" style="color:var(--red)">${fmt(totalActualWD)}</div></div>
+          <div class="tl-sum-card"><div class="lbl">净流入</div><div class="val" style="color:${netC}">${netFlow>=0?'+':''}${fmt(netFlow)}</div></div>
+        </div>
+        <div class="timeline">${tlItems}</div>`;
+    }
 
     document.getElementById('playerContent').innerHTML = `
       <div class="player-card">
         <div class="player-name">👤 ${login}</div>
         <div class="player-stats">
           <div class="player-stat"><div class="lbl">总领取次数</div><div class="val" style="color:var(--blue)">${fmtN(totalClaims)}</div></div>
-          <div class="player-stat"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(totalDeposit)}</div></div>
+          <div class="player-stat"><div class="lbl">总存款(Promo)</div><div class="val" style="color:var(--green)">${fmt(totalDeposit)}</div></div>
           <div class="player-stat"><div class="lbl">总 Bonus</div><div class="val" style="color:var(--amber)">${fmt(totalBonus)}</div></div>
           <div class="player-stat"><div class="lbl">Win/Loss</div><div class="val" style="color:var(--muted2)">${fmt(totalWL)}</div></div>
           <div class="player-stat"><div class="lbl">净利润</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
         </div>
+
+        <!-- Timeline -->
+        <div class="timeline-section">
+          <div class="timeline-title">📅 存款 → Bonus → 提款 时间线</div>
+          ${timelineHTML}
+        </div>
+
+        <hr class="divider" style="margin:1.5rem 0;">
+
         <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">按 Promo 分类 — 点击展开明细</div>
         ${categoriesHTML}
       </div>
@@ -1072,22 +1180,18 @@ function buildChart() {
   const metrics  = [...document.querySelectorAll('#bYAxis input:checked')].map(i => i.value);
   const selPromos = [...document.querySelectorAll('#bPromoList input:checked')].map(i => i.value);
   if (!metrics.length) { alert('请至少选一个 Y 轴'); return; }
-
   let rows = currency === 'ALL' ? allData : allData.filter(r => r.currency === currency);
   rows = rows.filter(r => selPromos.includes(r.code));
-
   const dview = xAxis === 'date_day' ? 'day' : xAxis === 'date_week' ? 'week' : xAxis === 'date_month' ? 'month' : null;
   let grouped;
   if (dview) {
-    grouped = groupByTime(rows, dview).map(r => ({ ...r, label: r.label, netProfit: -r.winloss - r.bonus, roi: r.bonus > 0 ? (-r.winloss-r.bonus)/r.bonus*100 : 0 }));
+    grouped = groupByTime(rows, dview).map(r => ({ ...r, label:r.label, netProfit:-r.winloss-r.bonus, roi:r.bonus>0?(-r.winloss-r.bonus)/r.bonus*100:0 }));
   } else {
     grouped = groupByPromo(rows, currency === 'SGD' ? 'SGD' : 'MYR');
     grouped.forEach(r => r.label = r.name);
   }
-
   const labels = grouped.map(r => (dview ? fmtLabel(r.label, dview) : r.label).slice(0, 20));
   const fmt = currency === 'SGD' ? fmtSGD : fmtRM;
-
   const getVal = (r, m) => {
     if (m === 'claims') return r.claims;
     if (m === 'deposit_ppl') return r.depPpl;
@@ -1097,51 +1201,42 @@ function buildChart() {
     if (m === 'roi') return r.roi || 0;
     return 0;
   };
-
   const isPie = selectedChartType === 'pie' || selectedChartType === 'doughnut';
   const isH   = selectedChartType === 'bar_h';
   const isArea = selectedChartType === 'area';
   const chartType = isPie ? selectedChartType : isH ? 'bar' : isArea ? 'line' : 'bar';
-
   const datasets = isPie && metrics.length === 1
-    ? [{ data: grouped.map(r => getVal(r, metrics[0])), backgroundColor: grouped.map((_,i) => COLORS[i%COLORS.length]), borderWidth: 0 }]
-    : metrics.map((m, i) => ({
-        label: METRIC_LABELS[m],
-        data: grouped.map(r => getVal(r, m)),
-        backgroundColor: COLORS[i%COLORS.length] + 'BB',
-        borderColor: COLORS[i%COLORS.length],
-        borderWidth: isArea ? 2 : 0,
-        borderRadius: !isArea && !isH ? 4 : 0,
-        fill: isArea, tension: isArea ? 0.35 : 0, pointRadius: isArea ? 3 : 0,
+    ? [{ data:grouped.map(r=>getVal(r,metrics[0])), backgroundColor:grouped.map((_,i)=>COLORS[i%COLORS.length]), borderWidth:0 }]
+    : metrics.map((m,i) => ({
+        label:METRIC_LABELS[m], data:grouped.map(r=>getVal(r,m)),
+        backgroundColor:COLORS[i%COLORS.length]+'BB', borderColor:COLORS[i%COLORS.length],
+        borderWidth:isArea?2:0, borderRadius:!isArea&&!isH?4:0,
+        fill:isArea, tension:isArea?0.35:0, pointRadius:isArea?3:0,
       }));
-
   const isMoneyM = metrics.some(m => ['deposit','bonus','netProfit'].includes(m));
   const opts = {
-    responsive: true, maintainAspectRatio: false,
-    indexAxis: isH ? 'y' : 'x',
-    plugins: { legend: { display: datasets.length > 1, labels:{color:'#8A9BAA',font:{size:11,family:'Arial'}} }, tooltip: { callbacks: { label: ctx => { const v = ctx.parsed[isH?'x':'y']??ctx.parsed; const m = metrics[ctx.datasetIndex]||metrics[0]; return (ctx.dataset.label||METRIC_LABELS[m])+': '+((['deposit','bonus','netProfit'].includes(m))?fmt(v):fmtN(v)); }}}},
+    responsive:true, maintainAspectRatio:false, indexAxis:isH?'y':'x',
+    plugins:{ legend:{display:datasets.length>1,labels:{color:'#8A9BAA',font:{size:11,family:'Arial'}}},
+      tooltip:{callbacks:{label:ctx=>{ const v=ctx.parsed[isH?'x':'y']??ctx.parsed; const m=metrics[ctx.datasetIndex]||metrics[0]; return (ctx.dataset.label||METRIC_LABELS[m])+': '+((['deposit','bonus','netProfit'].includes(m))?fmt(v):fmtN(v)); }}} },
   };
   if (!isPie) {
     opts.scales = {
-      x: { ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45}, grid:{display:false}, border:{color:'transparent'} },
-      y: { ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>isMoneyM?fmt(v):fmtN(v)}, grid:{color:'rgba(255,255,255,0.04)'}, border:{color:'transparent'} }
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>isMoneyM?fmt(v):fmtN(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}}
     };
     if (isH) { opts.scales.x.ticks.callback = v=>isMoneyM?fmt(v):fmtN(v); delete opts.scales.y.ticks.callback; }
   }
-
   const title = `${currency} · ${metrics.map(m=>METRIC_LABELS[m]).join(' & ')} · ${xAxis.replace('date_','按').replace('promo','按Promo')}`;
   const id = 'chart_' + chartCounter++;
   const output = document.getElementById('builderOutput');
   const empty = output.querySelector('.empty-builder');
   if (empty) empty.remove();
-
   const card = document.createElement('div');
   card.className = 'built-chart-card'; card.id = 'card_' + id;
   card.innerHTML = `<div class="built-chart-hd"><div class="built-chart-title">${title}</div><button class="remove-btn" onclick="removeChart('${id}')">×</button></div><div style="position:relative;width:100%;height:320px;"><canvas id="${id}"></canvas></div>`;
   output.insertBefore(card, output.firstChild);
-
-  const c = new Chart(document.getElementById(id), { type: chartType, data: { labels, datasets }, options: opts });
-  builtCharts.push({ id, chart: c });
+  const c = new Chart(document.getElementById(id), { type:chartType, data:{ labels, datasets }, options:opts });
+  builtCharts.push({ id, chart:c });
 }
 
 function removeChart(id) {
@@ -1160,38 +1255,21 @@ function generateReport() {
   const sgdRows = allData.filter(r => r.currency === 'SGD');
   const myrPromos = groupByPromo(myrRows, 'MYR');
   const sgdPromos = groupByPromo(sgdRows, 'SGD');
-
   function calcTotals(rows) {
-    const bonus = rows.reduce((s,r) => s+r.bonus, 0);
-    const wl    = rows.reduce((s,r) => s+r.winloss, 0);
-    const np    = -wl - bonus;
+    const bonus=rows.reduce((s,r)=>s+r.bonus,0), wl=rows.reduce((s,r)=>s+r.winloss,0), np=-wl-bonus;
     return { claims:rows.length, depPpl:rows.filter(r=>r.transfer>0).length, deposit:rows.reduce((s,r)=>s+r.transfer,0), bonus, winloss:wl, netProfit:np, roi:bonus>0?np/bonus*100:null };
   }
-
-  const myrT = calcTotals(myrRows);
-  const sgdT = calcTotals(sgdRows);
+  const myrT = calcTotals(myrRows), sgdT = calcTotals(sgdRows);
   const dates = allData.map(r => r.date).sort();
   const monthStr = dates.length > 0 ? new Date(dates[0]).toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-
-  function fmtK(n, cur) {
-    if (!n && n !== 0) return (cur==='SGD'?'S$':'RM')+'0.00';
-    const sym = cur === 'SGD' ? 'S$' : 'RM';
-    const abs = Math.abs(n);
-    const s = sym + abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-    return n < 0 ? '('+s+')' : s;
+  function fmtK(n,cur) {
+    if(!n&&n!==0)return(cur==='SGD'?'S$':'RM')+'0.00';
+    const sym=cur==='SGD'?'S$':'RM',abs=Math.abs(n),s=sym+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return n<0?'('+s+')':s;
   }
-
-  function getStatus(p) {
-    if (p.netProfit > 0) return 'CONTINUE';
-    if (p.netProfit < 0 && p.depPpl > 0) return 'REVIEW';
-    return 'STOP';
-  }
-
-  function kpiCards(t, cur) {
-    const np = t.netProfit||0;
-    const npC = np>=0?'#059669':'#DC2626';
-    const roiStr = t.roi!=null?(t.roi>=0?'+':'')+t.roi.toFixed(1)+'%':'—';
-    const depRate = t.claims>0?Math.round(t.depPpl/t.claims*100):0;
+  function getStatus(p){if(p.netProfit>0)return'CONTINUE';if(p.netProfit<0&&p.depPpl>0)return'REVIEW';return'STOP';}
+  function kpiCards(t,cur){
+    const np=t.netProfit||0,npC=np>=0?'#059669':'#DC2626',roiStr=t.roi!=null?(t.roi>=0?'+':'')+t.roi.toFixed(1)+'%':'—',depRate=t.claims>0?Math.round(t.depPpl/t.claims*100):0;
     return `<div class="kpi-grid">
       <div class="kpi-card blue"><div class="kpi-icon">🎫</div><div class="kpi-val">${t.claims.toLocaleString()}</div><div class="kpi-label">Total Claims</div><div class="kpi-sub">promo redemptions</div></div>
       <div class="kpi-card teal"><div class="kpi-icon">👤</div><div class="kpi-val">${t.depPpl.toLocaleString()}</div><div class="kpi-label">Depositors</div><div class="kpi-sub">${depRate}% of claimants</div></div>
@@ -1200,24 +1278,14 @@ function generateReport() {
       <div class="kpi-card" style="border-top:4px solid ${npC}"><div class="kpi-icon">${np>=0?'📈':'📉'}</div><div class="kpi-val" style="color:${npC}">${np>=0?'+':''}${fmtK(np,cur)}</div><div class="kpi-label">Net Profit</div><div class="kpi-sub">ROI: ${roiStr}</div></div>
     </div>`;
   }
-
-  function promoTable(promos, cur) {
+  function promoTable(promos,cur){
     return `<div class="section"><div class="section-header">Promo Performance (${cur})</div>
-      <table><thead><tr>
-        <th>Promo Name</th><th>Claims</th><th>Dep.</th><th>Total Deposit</th><th>Bonus</th><th>Win/Loss</th><th>Net Profit</th><th>ROI</th><th>Dep%</th><th>Status</th>
-      </tr></thead><tbody>
+      <table><thead><tr><th>Promo Name</th><th>Claims</th><th>Dep.</th><th>Total Deposit</th><th>Bonus</th><th>Win/Loss</th><th>Net Profit</th><th>ROI</th><th>Dep%</th><th>Status</th></tr></thead><tbody>
         ${promos.map((p,i)=>{
-          const s=getStatus(p);
-          const sC=s==='CONTINUE'?'#059669':'#D97706';
-          const sBg=s==='CONTINUE'?'#D1FAE5':'#FEF3C7';
-          const npC=p.netProfit>0?'#059669':p.netProfit<0?'#DC2626':'#64748B';
-          const dr=p.claims>0?Math.round(p.depPpl/p.claims*100):0;
+          const s=getStatus(p),sC=s==='CONTINUE'?'#059669':'#D97706',sBg=s==='CONTINUE'?'#D1FAE5':'#FEF3C7',npC=p.netProfit>0?'#059669':p.netProfit<0?'#DC2626':'#64748B',dr=p.claims>0?Math.round(p.depPpl/p.claims*100):0;
           return `<tr style="background:${i%2===0?'white':'#F8FAFC'}">
-            <td>${p.name}</td>
-            <td style="text-align:center;color:#1A6BB5;font-weight:bold">${p.claims}</td>
-            <td style="text-align:center;color:#028090">${p.depPpl}</td>
-            <td style="text-align:right;color:#059669">${fmtK(p.deposit,cur)}</td>
-            <td style="text-align:right;color:#D97706">${fmtK(p.bonus,cur)}</td>
+            <td>${p.name}</td><td style="text-align:center;color:#1A6BB5;font-weight:bold">${p.claims}</td><td style="text-align:center;color:#028090">${p.depPpl}</td>
+            <td style="text-align:right;color:#059669">${fmtK(p.deposit,cur)}</td><td style="text-align:right;color:#D97706">${fmtK(p.bonus,cur)}</td>
             <td style="text-align:right;color:#64748B">${fmtK(p.winloss,cur)}</td>
             <td style="text-align:right;color:${npC};font-weight:bold">${p.netProfit>=0?'+':''}${fmtK(p.netProfit,cur)}</td>
             <td style="text-align:center;color:${npC};font-weight:bold">${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</td>
@@ -1227,10 +1295,8 @@ function generateReport() {
         }).join('')}
       </tbody></table></div>`;
   }
-
-  function recSection(promos, cur) {
-    const cont = promos.filter(p=>getStatus(p)==='CONTINUE');
-    const rev  = promos.filter(p=>getStatus(p)==='REVIEW');
+  function recSection(promos,cur){
+    const cont=promos.filter(p=>getStatus(p)==='CONTINUE'),rev=promos.filter(p=>getStatus(p)==='REVIEW');
     return `<div class="section"><div class="section-header">Recommendations (${cur})</div>
       <div class="rec-grid">
         <div class="rec-box green-box"><div class="rec-title">✅ Continue</div><div class="rec-sub">High engagement & good conversion</div>
@@ -1241,143 +1307,63 @@ function generateReport() {
         </div>
       </div></div>`;
   }
-
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>PROMO Report ${monthStr}</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PROMO Report ${monthStr}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
 <style>
-  @media print{.no-print{display:none!important}body{margin:0}.section{page-break-inside:avoid}.charts-section{page-break-before:always}}
-  body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#1e293b;}
-  .cover{background:#0F3460;color:white;padding:80px 60px;min-height:380px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
-  .cover::after{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(0,212,170,0.15);border-radius:50%;}
-  .cover h1{font-size:60px;font-weight:900;margin:0 0 8px;color:white;position:relative;z-index:1;}
-  .cover h2{font-size:28px;color:#00D4AA;margin:0 0 24px;position:relative;z-index:1;}
-  .cover .meta{font-size:14px;color:#8899AA;position:relative;z-index:1;}
-  .section{background:white;margin:20px 30px;padding:0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);overflow:hidden;}
-  .section-header{background:#0F3460;color:white;padding:14px 24px;font-size:16px;font-weight:800;}
-  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:20px;}
-  .kpi-card{border-radius:10px;padding:16px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
-  .kpi-card.blue{border-color:#1A6BB5;} .kpi-card.teal{border-color:#028090;} .kpi-card.green{border-color:#059669;} .kpi-card.amber{border-color:#D97706;}
-  .kpi-icon{font-size:22px;margin-bottom:6px;}
-  .kpi-val{font-size:20px;font-weight:900;color:#0F3460;}
-  .kpi-card.blue .kpi-val{color:#1A6BB5;} .kpi-card.teal .kpi-val{color:#028090;} .kpi-card.green .kpi-val{color:#059669;} .kpi-card.amber .kpi-val{color:#D97706;}
-  .kpi-label{font-weight:700;font-size:11px;margin-top:4px;} .kpi-sub{font-size:10px;color:#64748B;}
-  table{width:100%;border-collapse:collapse;font-size:11.5px;}
-  th{background:#0F3460;color:white;padding:9px 12px;text-align:right;font-size:11px;}
-  th:first-child{text-align:left;}
-  td{padding:8px 12px;border-bottom:1px solid #E2E8F0;}
-  .charts-section .section-body{padding:20px;}
-  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
-  .chart-box{background:#F8FAFC;border-radius:10px;padding:14px;}
-  .chart-box h3{font-size:12px;color:#0F3460;margin:0 0 10px;font-weight:700;}
-  .rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
-  .rec-box{padding:16px;border-radius:10px;border:2px solid;}
-  .green-box{background:#D1FAE5;border-color:#059669;} .amber-box{background:#FEF3C7;border-color:#D97706;}
-  .rec-title{font-size:14px;font-weight:800;margin-bottom:3px;}
-  .green-box .rec-title{color:#059669;} .amber-box .rec-title{color:#D97706;}
-  .rec-sub{font-size:10px;font-style:italic;margin-bottom:10px;}
-  .green-box .rec-sub{color:#059669;} .amber-box .rec-sub{color:#D97706;}
-  .rec-item{margin-bottom:7px;font-size:11.5px;padding:7px 9px;background:rgba(255,255,255,0.65);border-radius:6px;line-height:1.5;}
-  .rec-item span{color:#64748B;font-size:10.5px;}
-  .print-btn{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:100;}
-  .footer{background:#0F3460;color:#8899AA;padding:14px 40px;font-size:11px;margin-top:20px;text-align:center;}
-  .divider{height:3px;background:linear-gradient(90deg,#0F3460,#00D4AA);margin:8px 30px;}
-</style>
-</head><body>
+@media print{.no-print{display:none!important}body{margin:0}.section{page-break-inside:avoid}}
+body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#1e293b;}
+.cover{background:#0F3460;color:white;padding:80px 60px;min-height:380px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
+.cover::after{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(0,212,170,0.15);border-radius:50%;}
+.cover h1{font-size:60px;font-weight:900;margin:0 0 8px;color:white;position:relative;z-index:1;}
+.cover h2{font-size:28px;color:#00D4AA;margin:0 0 24px;position:relative;z-index:1;}
+.cover .meta{font-size:14px;color:#8899AA;position:relative;z-index:1;}
+.section{background:white;margin:20px 30px;padding:0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);overflow:hidden;}
+.section-header{background:#0F3460;color:white;padding:14px 24px;font-size:16px;font-weight:800;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:20px;}
+.kpi-card{border-radius:10px;padding:16px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.kpi-card.blue{border-color:#1A6BB5;}.kpi-card.teal{border-color:#028090;}.kpi-card.green{border-color:#059669;}.kpi-card.amber{border-color:#D97706;}
+.kpi-icon{font-size:22px;margin-bottom:6px;}.kpi-val{font-size:20px;font-weight:900;color:#0F3460;}
+.kpi-card.blue .kpi-val{color:#1A6BB5;}.kpi-card.teal .kpi-val{color:#028090;}.kpi-card.green .kpi-val{color:#059669;}.kpi-card.amber .kpi-val{color:#D97706;}
+.kpi-label{font-weight:700;font-size:11px;margin-top:4px;}.kpi-sub{font-size:10px;color:#64748B;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;}
+th{background:#0F3460;color:white;padding:9px 12px;text-align:right;font-size:11px;}th:first-child{text-align:left;}
+td{padding:8px 12px;border-bottom:1px solid #E2E8F0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
+.chart-box{background:#F8FAFC;border-radius:10px;padding:14px;}.chart-box h3{font-size:12px;color:#0F3460;margin:0 0 10px;font-weight:700;}
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
+.rec-box{padding:16px;border-radius:10px;border:2px solid;}
+.green-box{background:#D1FAE5;border-color:#059669;}.amber-box{background:#FEF3C7;border-color:#D97706;}
+.rec-title{font-size:14px;font-weight:800;margin-bottom:3px;}.green-box .rec-title{color:#059669;}.amber-box .rec-title{color:#D97706;}
+.rec-sub{font-size:10px;font-style:italic;margin-bottom:10px;}.green-box .rec-sub{color:#059669;}.amber-box .rec-sub{color:#D97706;}
+.rec-item{margin-bottom:7px;font-size:11.5px;padding:7px 9px;background:rgba(255,255,255,0.65);border-radius:6px;line-height:1.5;}
+.rec-item span{color:#64748B;font-size:10.5px;}
+.print-btn{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:100;}
+.footer{background:#0F3460;color:#8899AA;padding:14px 40px;font-size:11px;margin-top:20px;text-align:center;}
+.divider{height:3px;background:linear-gradient(90deg,#0F3460,#00D4AA);margin:8px 30px;}
+</style></head><body>
 <button class="print-btn no-print" onclick="window.print()">🖨️ 打印 / 另存 PDF</button>
-<div class="cover">
-  <h1>PROMO</h1>
-  <h2>Performance Report</h2>
-  <div class="meta">${monthStr} &nbsp;|&nbsp; MYR & SGD</div>
-  <div class="meta" style="margin-top:8px">Prepared by: PROMO Department &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div>
-</div>
-${myrRows.length?`
-<div class="divider"></div>
-<div class="section"><div class="section-header">Monthly Overview — ${monthStr} (MYR)</div>${kpiCards(myrT,'MYR')}</div>
-${promoTable(myrPromos,'MYR')}
-<div class="section charts-section"><div class="section-header">Charts (MYR)</div>
-<div class="chart-grid">
-  <div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="myrC1" height="220"></canvas></div>
-  <div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="myrC2" height="220"></canvas></div>
-  <div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="myrC3" height="220"></canvas></div>
-  <div class="chart-box"><h3>Bonus Distribution</h3><canvas id="myrC4" height="220"></canvas></div>
-</div></div>
-${recSection(myrPromos,'MYR')}
-`:''}
-${sgdRows.length?`
-<div class="divider"></div>
-<div class="section"><div class="section-header">Monthly Overview — ${monthStr} (SGD)</div>${kpiCards(sgdT,'SGD')}</div>
-${promoTable(sgdPromos,'SGD')}
-<div class="section charts-section"><div class="section-header">Charts (SGD)</div>
-<div class="chart-grid">
-  <div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="sgdC1" height="220"></canvas></div>
-  <div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="sgdC2" height="220"></canvas></div>
-  <div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="sgdC3" height="220"></canvas></div>
-  <div class="chart-box"><h3>Bonus Distribution</h3><canvas id="sgdC4" height="220"></canvas></div>
-</div></div>
-${recSection(sgdPromos,'SGD')}
-`:''}
-<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential  <!-- ── COMPARISON PAGE ── -->
-  <div id="comparisonPage" class="hidden">
-    <div class="cur-toggle" style="margin-bottom:1rem;">
-      <button class="cur-tab active" onclick="setCompCur('MYR',this)">🇲🇾 MYR</button>
-      <button class="cur-tab" onclick="setCompCur('SGD',this)">🇸🇬 SGD</button>
-    </div>
-    <div id="compMonthTabs" class="month-tabs"></div>
-    <div id="comparisonContent">
-      <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>
-    </div>
-  </div>
-
-  <!-- ── PROVIDER PAGE ── -->
-  <div id="providerPage" class="hidden">
-    <div class="cur-toggle" style="margin-bottom:1rem;">
-      <button class="cur-tab active" onclick="setProviderCur('MYR',this)">🇲🇾 MYR</button>
-      <button class="cur-tab" onclick="setProviderCur('SGD',this)">🇸🇬 SGD</button>
-      <button class="cur-tab" onclick="setProviderCur('ALL',this)">全部</button>
-    </div>
-    <div id="providerGrid" class="provider-grid"></div>
-    <div class="chart-card" style="margin-bottom:14px;">
-      <div class="chart-hd"><div class="chart-title" id="providerChartTitle">供应商净利润对比</div></div>
-      <div style="position:relative;width:100%;height:300px;"><canvas id="providerChart"></canvas></div>
-    </div>
-    <div class="table-card">
-      <div class="table-hd" id="providerTableTitle">供应商明细</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>供应商</th><th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th>
-          </tr></thead>
-          <tbody id="providerTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
+<div class="cover"><h1>PROMO</h1><h2>Performance Report</h2>
+<div class="meta">${monthStr} &nbsp;|&nbsp; MYR & SGD</div>
+<div class="meta" style="margin-top:8px">Prepared by: PROMO Department &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+${myrRows.length?`<div class="divider"></div><div class="section"><div class="section-header">Monthly Overview — ${monthStr} (MYR)</div>${kpiCards(myrT,'MYR')}</div>${promoTable(myrPromos,'MYR')}<div class="section"><div class="section-header">Charts (MYR)</div><div class="chart-grid"><div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="myrC1" height="220"></canvas></div><div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="myrC2" height="220"></canvas></div><div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="myrC3" height="220"></canvas></div><div class="chart-box"><h3>Bonus Distribution</h3><canvas id="myrC4" height="220"></canvas></div></div></div>${recSection(myrPromos,'MYR')}`:''}
+${sgdRows.length?`<div class="divider"></div><div class="section"><div class="section-header">Monthly Overview — ${monthStr} (SGD)</div>${kpiCards(sgdT,'SGD')}</div>${promoTable(sgdPromos,'SGD')}<div class="section"><div class="section-header">Charts (SGD)</div><div class="chart-grid"><div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="sgdC1" height="220"></canvas></div><div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="sgdC2" height="220"></canvas></div><div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="sgdC3" height="220"></canvas></div><div class="chart-box"><h3>Bonus Distribution</h3><canvas id="sgdC4" height="220"></canvas></div></div></div>${recSection(sgdPromos,'SGD')}`:''}
+<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential</div>
 <script>
-function mkCharts(promos, prefix, fmtFn) {
-  const top8 = promos.slice(0,8);
-  const labels = top8.map(p=>p.name.length>18?p.name.slice(0,18)+'…':p.name);
-  const C = ['#1A6BB5','#028090','#059669','#D97706','#7C3AED','#DB2777','#EA580C','#0891B2'];
-  const opts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#64748B'},grid:{color:'#E2E8F0'}}}};
-  new Chart(document.getElementById(prefix+'C1'),{type:'bar',data:{labels,datasets:[{data:top8.map(p=>p.claims),backgroundColor:C,borderRadius:3}]},options:{...opts,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Claims: '+c.parsed.y}}}}});
+function mkCharts(promos,prefix,fmtFn){
+  const top8=promos.slice(0,8),labels=top8.map(p=>p.name.length>18?p.name.slice(0,18)+'…':p.name),C=['#1A6BB5','#028090','#059669','#D97706','#7C3AED','#DB2777','#EA580C','#0891B2'];
+  const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#64748B'},grid:{color:'#E2E8F0'}}}};
+  new Chart(document.getElementById(prefix+'C1'),{type:'bar',data:{labels,datasets:[{data:top8.map(p=>p.claims),backgroundColor:C,borderRadius:3}]},options:{...opts}});
   new Chart(document.getElementById(prefix+'C2'),{type:'bar',data:{labels,datasets:[{label:'Deposit',data:top8.map(p=>p.deposit),backgroundColor:'#1A6BB5',borderRadius:2},{label:'Bonus',data:top8.map(p=>p.bonus),backgroundColor:'#D97706',borderRadius:2}]},options:{...opts,plugins:{legend:{position:'bottom',labels:{font:{size:9}}},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+fmtFn(c.parsed.y)}}},scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#64748B',callback:v=>fmtFn(v)},grid:{color:'#E2E8F0'}}}}});
-  const sortedNP = [...promos].sort((a,b)=>b.netProfit-a.netProfit).slice(0,8);
+  const sortedNP=[...promos].sort((a,b)=>b.netProfit-a.netProfit).slice(0,8);
   new Chart(document.getElementById(prefix+'C3'),{type:'bar',data:{labels:sortedNP.map(p=>p.name.length>18?p.name.slice(0,18)+'…':p.name),datasets:[{data:sortedNP.map(p=>p.netProfit),backgroundColor:sortedNP.map(p=>p.netProfit>=0?'#059669':'#DC2626'),borderRadius:3}]},options:{...opts,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'NP: '+fmtFn(c.parsed.x)}}},scales:{x:{ticks:{font:{size:9},color:'#64748B',callback:v=>fmtFn(v)},grid:{color:'#E2E8F0'}},y:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}}}}});
   new Chart(document.getElementById(prefix+'C4'),{type:'pie',data:{labels:top8.map(p=>p.name.length>16?p.name.slice(0,16)+'…':p.name),datasets:[{data:top8.map(p=>p.bonus),backgroundColor:C,borderWidth:1,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:8},boxWidth:10}},tooltip:{callbacks:{label:c=>c.label+': '+fmtFn(c.parsed)}}}}});
 }
 ${myrPromos.length?`mkCharts(${JSON.stringify(myrPromos.slice(0,8))},'myr',n=>{const abs=Math.abs(n);const s='RM'+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;});`:''}
 ${sgdPromos.length?`mkCharts(${JSON.stringify(sgdPromos.slice(0,8))},'sgd',n=>{const abs=Math.abs(n);const s='S$'+abs.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;});`:''}
-<\/script>
-</body></html>`;
-
-  const blob = new Blob([html], { type: 'text/html' });
+<\/script></body></html>`;
+  const blob = new Blob([html], { type:'text/html' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `PROMO_Report_${monthStr.replace(' ','_')}.html`;
-  a.click();
+  const a = document.createElement('a'); a.href=url; a.download=`PROMO_Report_${monthStr.replace(' ','_')}.html`; a.click();
   URL.revokeObjectURL(url);
   setTimeout(() => alert('✅ 报告已下载！\n打开 HTML 文件后点右下角「打印」→「另存为 PDF」'), 500);
 }
@@ -1390,30 +1376,20 @@ function setCompCur(cur, btn) {
   btn.classList.add('active');
   renderComparison();
 }
-
 function renderComparison() {
   const rows = compCur === 'ALL' ? allDataFull : allDataFull.filter(r => r.currency === compCur);
   const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
-
-  // Get unique months
   const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
   if (months.length < 2) {
     document.getElementById('comparisonContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>';
-    document.getElementById('compMonthTabs').innerHTML = '';
-    return;
+    document.getElementById('compMonthTabs').innerHTML = ''; return;
   }
-
-  // Month tabs — show last 6 months
   const recentMonths = months.slice(-6);
   document.getElementById('compMonthTabs').innerHTML = recentMonths.map((m,i) =>
     `<button class="month-tab ${i===recentMonths.length-1?'active':''}" onclick="selectCompMonth('${m}',this)">${m}</button>`
   ).join('');
-
-  const latestMonth = recentMonths[recentMonths.length-1];
-  const prevMonth   = recentMonths[recentMonths.length-2];
-  renderCompMonths(latestMonth, prevMonth, rows, fmt);
+  renderCompMonths(recentMonths[recentMonths.length-1], recentMonths[recentMonths.length-2], rows, fmt);
 }
-
 function selectCompMonth(month, btn) {
   document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -1421,51 +1397,26 @@ function selectCompMonth(month, btn) {
   const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
   const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
   const idx = months.indexOf(month);
-  const prev = idx > 0 ? months[idx-1] : null;
-  renderCompMonths(month, prev, rows, fmt);
+  renderCompMonths(month, idx > 0 ? months[idx-1] : null, rows, fmt);
 }
-
 function renderCompMonths(curMonth, prevMonth, rows, fmt) {
   function calcMonth(m) {
-    const r = rows.filter(r => r.date.slice(0,7) === m);
-    const bonus = r.reduce((s,x)=>s+x.bonus,0);
-    const wl    = r.reduce((s,x)=>s+x.winloss,0);
-    const np    = -wl - bonus;
-    return {
-      claims:  r.length,
-      depPpl:  r.filter(x=>x.transfer>0).length,
-      deposit: r.reduce((s,x)=>s+x.transfer,0),
-      bonus, winloss: wl, netProfit: np,
-      roi: bonus > 0 ? np/bonus*100 : null,
-    };
+    const r=rows.filter(r=>r.date.slice(0,7)===m);
+    const bonus=r.reduce((s,x)=>s+x.bonus,0),wl=r.reduce((s,x)=>s+x.winloss,0),np=-wl-bonus;
+    return { claims:r.length, depPpl:r.filter(x=>x.transfer>0).length, deposit:r.reduce((s,x)=>s+x.transfer,0), bonus, winloss:wl, netProfit:np, roi:bonus>0?np/bonus*100:null };
   }
-
-  const cur  = calcMonth(curMonth);
-  const prev = prevMonth ? calcMonth(prevMonth) : null;
-
-  function chg(a, b, isPercent=false) {
-    if (!b || b === 0) return '';
-    const pct = ((a - b) / Math.abs(b) * 100).toFixed(1);
-    const up = a >= b;
-    const cls = up ? 'change-up' : 'change-down';
-    return `<span class="comparison-change ${cls}">${up?'▲':'▼'} ${Math.abs(pct)}%</span>`;
+  const cur=calcMonth(curMonth), prev=prevMonth?calcMonth(prevMonth):null;
+  function chg(a,b) {
+    if(!b||b===0)return'';
+    const pct=((a-b)/Math.abs(b)*100).toFixed(1),up=a>=b;
+    return `<span class="comparison-change ${up?'change-up':'change-down'}">${up?'▲':'▼'} ${Math.abs(pct)}%</span>`;
   }
-
-  function row(label, curVal, prevVal, fmtFn, invertColor=false) {
-    const curFmt  = fmtFn(curVal);
-    const prevFmt = prevVal !== null ? fmtFn(prevVal) : '—';
-    const change  = prevVal !== null ? chg(curVal, prevVal) : '';
-    const curColor = invertColor ? (curVal>=0?'var(--green)':'var(--red)') : 'var(--text)';
-    return `<div class="comparison-row">
-      <div class="comparison-label">${label}</div>
-      <div class="comparison-vals">
-        <div class="comparison-val" style="color:var(--muted2)">${prevFmt}</div>
-        <div class="comparison-val" style="color:${curColor}">${curFmt}</div>
-        ${change}
-      </div>
-    </div>`;
+  function row(label,curVal,prevVal,fmtFn,invertColor=false) {
+    const curFmt=fmtFn(curVal),prevFmt=prevVal!==null?fmtFn(prevVal):'—',change=prevVal!==null?chg(curVal,prevVal):'';
+    const curColor=invertColor?(curVal>=0?'var(--green)':'var(--red)'):'var(--text)';
+    return `<div class="comparison-row"><div class="comparison-label">${label}</div>
+      <div class="comparison-vals"><div class="comparison-val" style="color:var(--muted2)">${prevFmt}</div><div class="comparison-val" style="color:${curColor}">${curFmt}</div>${change}</div></div>`;
   }
-
   document.getElementById('comparisonContent').innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:1rem;font-size:0.75rem;">
       <span style="color:var(--muted2);min-width:200px;">指标</span>
@@ -1474,15 +1425,14 @@ function renderCompMonths(curMonth, prevMonth, rows, fmt) {
       <span style="color:var(--muted2)">变化</span>
     </div>
     <div class="comparison-card">
-      ${row('领取人次', cur.claims, prev?.claims, fmtN)}
-      ${row('存款人数', cur.depPpl, prev?.depPpl, fmtN)}
-      ${row('总存款', cur.deposit, prev?.deposit, fmt)}
-      ${row('派发 Bonus', cur.bonus, prev?.bonus, fmt)}
-      ${row('Win/Loss', cur.winloss, prev?.winloss, fmt)}
-      ${row('净利润', cur.netProfit, prev?.netProfit, fmt, true)}
-      ${row('ROI', cur.roi||0, prev?.roi||0, v=>(v>=0?'+':'')+v.toFixed(1)+'%', true)}
-    </div>
-  `;
+      ${row('领取人次',cur.claims,prev?.claims,fmtN)}
+      ${row('存款人数',cur.depPpl,prev?.depPpl,fmtN)}
+      ${row('总存款',cur.deposit,prev?.deposit,fmt)}
+      ${row('派发 Bonus',cur.bonus,prev?.bonus,fmt)}
+      ${row('Win/Loss',cur.winloss,prev?.winloss,fmt)}
+      ${row('净利润',cur.netProfit,prev?.netProfit,fmt,true)}
+      ${row('ROI',cur.roi||0,prev?.roi||0,v=>(v>=0?'+':'')+v.toFixed(1)+'%',true)}
+    </div>`;
 }
 
 // ── Provider ──
@@ -1493,78 +1443,31 @@ function setProviderCur(cur, btn) {
   btn.classList.add('active');
   renderProvider();
 }
-
 function renderProvider() {
   const rows = providerCur === 'ALL' ? allData : allData.filter(r => r.currency === providerCur);
   const fmt  = providerCur === 'SGD' ? fmtSGD : fmtRM;
-  const currency = providerCur;
-
-  // Group by provider
   const map = {};
   rows.forEach(r => {
-    const p = r.provider || 'Unknown';
-    if (!map[p]) map[p] = { name:p, claims:0, depPpl:0, deposit:0, bonus:0, winloss:0 };
-    map[p].claims++;
-    map[p].depPpl  += r.transfer > 0 ? 1 : 0;
-    map[p].deposit += r.transfer;
-    map[p].bonus   += r.bonus;
-    map[p].winloss += r.winloss;
+    const p=r.provider||'Unknown';
+    if(!map[p])map[p]={name:p,claims:0,depPpl:0,deposit:0,bonus:0,winloss:0};
+    map[p].claims++;map[p].depPpl+=r.transfer>0?1:0;map[p].deposit+=r.transfer;map[p].bonus+=r.bonus;map[p].winloss+=r.winloss;
   });
-
-  const providers = Object.values(map).map(p => ({
-    ...p,
-    netProfit: -p.winloss - p.bonus,
-    roi: p.bonus > 0 ? (-p.winloss - p.bonus) / p.bonus * 100 : null,
-  })).sort((a,b) => b.claims - a.claims);
-
-  // Provider cards
+  const providers = Object.values(map).map(p=>({...p,netProfit:-p.winloss-p.bonus,roi:p.bonus>0?(-p.winloss-p.bonus)/p.bonus*100:null})).sort((a,b)=>b.claims-a.claims);
   document.getElementById('providerGrid').innerHTML = providers.slice(0,9).map(p => {
-    const np = p.netProfit;
-    const npC = np > 0 ? 'var(--green)' : 'var(--red)';
-    return `<div class="provider-card">
-      <div class="provider-name">${p.name}</div>
+    const np=p.netProfit,npC=np>0?'var(--green)':'var(--red)';
+    return `<div class="provider-card"><div class="provider-name">${p.name}</div>
       <div class="provider-stats">
         <span class="provider-stat">领取 <b style="color:var(--blue)">${fmtN(p.claims)}</b></span>
         <span class="provider-stat">净利润 <b style="color:${npC}">${np>=0?'+':''}${fmt(np)}</b></span>
         <span class="provider-stat">ROI <b style="color:${npC}">${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</b></span>
-      </div>
-    </div>`;
+      </div></div>`;
   }).join('');
-
-  // Chart
-  if (providerChartInst) { providerChartInst.destroy(); providerChartInst = null; }
-  const top10 = [...providers].sort((a,b) => b.netProfit - a.netProfit).slice(0,10);
-  providerChartInst = new Chart(document.getElementById('providerChart'), {
-    type: 'bar',
-    data: {
-      labels: top10.map(p => p.name),
-      datasets: [{ data: top10.map(p => p.netProfit), backgroundColor: top10.map(p => p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'), borderRadius:4 }]
-    },
-    options: {
-      indexAxis: 'y', responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},
-      scales:{
-        x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
-        y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}
-      }
-    }
-  });
-
-  // Table
-  document.getElementById('providerTableBody').innerHTML = providers.map((p,i) => {
-    const np = p.netProfit;
-    const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
-    const roi = p.roi != null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
-    return `<tr>
-      <td>${p.name}</td>
-      <td class="myr-v">${fmtN(p.claims)}</td>
-      <td class="myr-v">${fmtN(p.depPpl)}</td>
-      <td style="text-align:right;color:var(--green)">${fmt(p.deposit)}</td>
-      <td style="text-align:right;color:var(--amber)">${fmt(p.bonus)}</td>
-      <td style="text-align:right;color:var(--muted2)">${fmt(p.winloss)}</td>
-      <td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td>
-      <td style="text-align:right;color:${npC};font-weight:bold">${roi}</td>
-    </tr>`;
+  if (providerChartInst) { providerChartInst.destroy(); providerChartInst=null; }
+  const top10=[...providers].sort((a,b)=>b.netProfit-a.netProfit).slice(0,10);
+  providerChartInst = new Chart(document.getElementById('providerChart'),{type:'bar',data:{labels:top10.map(p=>p.name),datasets:[{data:top10.map(p=>p.netProfit),backgroundColor:top10.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}}}});
+  document.getElementById('providerTableBody').innerHTML = providers.map((p,i)=>{
+    const np=p.netProfit,npC=np>0?'var(--green)':np<0?'var(--red)':'var(--muted)',roi=p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—';
+    return `<tr><td>${p.name}</td><td class="myr-v">${fmtN(p.claims)}</td><td class="myr-v">${fmtN(p.depPpl)}</td><td style="text-align:right;color:var(--green)">${fmt(p.deposit)}</td><td style="text-align:right;color:var(--amber)">${fmt(p.bonus)}</td><td style="text-align:right;color:var(--muted2)">${fmt(p.winloss)}</td><td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td><td style="text-align:right;color:${npC};font-weight:bold">${roi}</td></tr>`;
   }).join('');
 }
 
