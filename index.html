@@ -559,25 +559,178 @@ function setStatus(type, text) {
   document.getElementById('statusText').textContent = text;
 }
 
+// ── CSV Parser (frontend) ──
+function parseCSVFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iLogin=idx('Login'), iProvider=idx('Provider'), iCode=idx('Code'), iStatus=idx('Status');
+  const iStart=idx('Start Time'), iTransfer=idx('Transfer'), iBonus=idx('Bonus'), iWL=idx('Current Win Loss');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login    = (r[iLogin]    ||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const provider = (r[iProvider] ||'').replace(/"/g,'').trim();
+    const code     = (r[iCode]     ||'').replace(/"/g,'').trim();
+    const status   = (r[iStatus]   ||'').replace(/"/g,'').trim();
+    const startRaw = (r[iStart]    ||'').replace(/"/g,'').trim();
+    const transfer = parseFloat((r[iTransfer]||'0').replace(/"/g,'').trim()) || 0;
+    const bonus    = parseFloat((r[iBonus]   ||'0').replace(/"/g,'').trim()) || 0;
+    const winloss  = parseFloat((r[iWL>=0?iWL:15]||'0').replace(/"/g,'').trim()) || 0;
+    if (!login || !code || !startRaw) continue;
+    rows.push({ login, currency, provider, code, status, date: startRaw.slice(0,10), transfer, bonus, winloss });
+  }
+  return rows;
+}
+
+function parseDepositFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iId=idx('ID'), iLogin=idx('Login'), iAmount=idx('Amount'), iStatus=idx('Status');
+  const iGroup=idx('Member Group'), iMerchant=idx('Merchant Bank');
+  const iCreated=idx('Created Date'), iProcessing=idx('Processing Time');
+  const iRef=idx('Reference ID'), iAffiliate=idx('Affiliate Login');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login = (r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const createdRaw = (r[iCreated]||'').replace(/"/g,'').trim();
+    if (!login || !createdRaw) continue;
+    rows.push({
+      id:              parseInt((r[iId]||'').replace(/"/g,'').trim()) || null,
+      login, currency,
+      amount:          parseFloat((r[iAmount]||'0').replace(/"/g,'').trim()) || 0,
+      status:          (r[iStatus]   ||'').replace(/"/g,'').trim(),
+      member_group:    (r[iGroup]    ||'').replace(/"/g,'').trim(),
+      merchant_bank:   (r[iMerchant] ||'').replace(/"/g,'').trim(),
+      created_date:    createdRaw,
+      processing_time: (r[iProcessing]||'').replace(/"/g,'').trim() || null,
+      reference_id:    (r[iRef]      ||'').replace(/"/g,'').trim(),
+      affiliate_login: (r[iAffiliate]||'').replace(/^="?(.*?)"?$/,'$1').trim(),
+    });
+  }
+  return rows;
+}
+
+function parseWithdrawFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iId=idx('ID'), iLogin=idx('Login'), iAmount=idx('Amount'), iStatus=idx('Status');
+  const iGroup=idx('Member Group'), iBank=idx('Member Bank');
+  const iCreated=idx('Created Date'), iProcessing=idx('Processing Time');
+  const iRef=idx('Reference ID'), iAffiliate=idx('Affiliate Login'), iPayout=idx('Payout Status');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login = (r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const createdRaw = (r[iCreated]||'').replace(/"/g,'').trim();
+    if (!login || !createdRaw) continue;
+    rows.push({
+      id:              parseInt((r[iId]||'').replace(/"/g,'').trim()) || null,
+      login, currency,
+      amount:          parseFloat((r[iAmount]||'0').replace(/"/g,'').trim()) || 0,
+      status:          (r[iStatus]   ||'').replace(/"/g,'').trim(),
+      member_group:    (r[iGroup]    ||'').replace(/"/g,'').trim(),
+      member_bank:     (r[iBank]     ||'').replace(/"/g,'').trim(),
+      created_date:    createdRaw,
+      processing_time: (r[iProcessing]||'').replace(/"/g,'').trim() || null,
+      reference_id:    (r[iRef]      ||'').replace(/"/g,'').trim(),
+      affiliate_login: (r[iAffiliate]||'').replace(/^="?(.*?)"?$/,'$1').trim(),
+      payout_status:   (r[iPayout]   ||'').replace(/"/g,'').trim(),
+    });
+  }
+  return rows;
+}
+
+// ── Batch POST helper ──
+async function batchUpload(endpoint, rows, currency, dateField, batchSize = 500) {
+  const dates = rows.map(r => (r[dateField]||'').slice(0,10)).filter(Boolean).sort();
+  const minDate = dates[0];
+  const maxDate = dates[dates.length-1];
+  let totalInserted = 0;
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const isFirst = i === 0;
+    setStatus('', `上传中... ${i+batch.length}/${rows.length}`);
+    const res = await fetch(API + endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: batch, currency, minDate, maxDate, isFirst })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    totalInserted += data.inserted;
+  }
+  return totalInserted;
+}
+
 // ── Upload Promo CSV ──
 async function uploadCSV(currency, input) {
   const file = input.files[0]; if (!file) return;
   const btn = document.getElementById('btn' + currency);
   btn.className = 'upload-btn uploading';
-  setStatus('', '上传中...');
+  setStatus('', '解析中...');
   try {
     const text = await file.text();
-    const res = await fetch(API + '/upload', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csv: text, currency })
-    });
-    const data = await res.json();
-    if (data.success) {
-      btn.className = 'upload-btn done';
-      btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadCSV('${currency}',this)" /> ✅ ${currency} (${data.inserted})`;
-      setStatus('live', '上传成功');
-      await loadData();
-    } else throw new Error(data.error);
+    const rows = parseCSVFrontend(text, currency);
+    if (!rows.length) throw new Error('找不到有效数据');
+    const total = await batchUpload('/upload', rows, currency, 'date');
+    btn.className = 'upload-btn done';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadCSV('${currency}',this)" /> ✅ ${currency} (${total})`;
+    setStatus('live', `${currency} 上传成功 · ${total} 条`);
+    await loadData();
   } catch(e) {
     btn.className = 'upload-btn';
     setStatus('error', '上传失败: ' + e.message);
@@ -593,23 +746,20 @@ async function uploadDepositWithdraw(type, currency, input) {
     : (currency === 'MYR' ? 'btnWdMYR'  : 'btnWdSGD');
   const btn = document.getElementById(btnId);
   btn.className = 'upload-btn uploading';
-  setStatus('', '上传中...');
+  setStatus('', '解析中...');
   try {
     const text = await file.text();
+    const rows = type === 'deposit'
+      ? parseDepositFrontend(text, currency)
+      : parseWithdrawFrontend(text, currency);
+    if (!rows.length) throw new Error('找不到有效数据');
     const endpoint = type === 'deposit' ? '/upload-deposit' : '/upload-withdraw';
-    const res = await fetch(API + endpoint, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csv: text, currency })
-    });
-    const data = await res.json();
-    if (data.success) {
-      const doneClass = type === 'deposit' ? 'upload-btn done-dep' : 'upload-btn done-wd';
-      btn.className = doneClass;
-      const icon = type === 'deposit' ? '💰' : '💸';
-      const label = type === 'deposit' ? 'Dep' : 'WD';
-      btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadDepositWithdraw('${type}','${currency}',this)" /> ✅ ${label} ${currency} (${data.inserted})`;
-      setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功`);
-    } else throw new Error(data.error);
+    const total = await batchUpload(endpoint, rows, currency, 'created_date');
+    const doneClass = type === 'deposit' ? 'upload-btn done-dep' : 'upload-btn done-wd';
+    btn.className = doneClass;
+    const label = type === 'deposit' ? 'Dep' : 'WD';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadDepositWithdraw('${type}','${currency}',this)" /> ✅ ${label} ${currency} (${total})`;
+    setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功 · ${total} 条`);
   } catch(e) {
     btn.className = 'upload-btn';
     setStatus('error', '上传失败: ' + e.message);
