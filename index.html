@@ -898,7 +898,7 @@ async function loadRealProfit() {
   }
 }
 
-// Aggregate real-profit rows by promo code (for Analysis page) or overall (for Overview)
+// Aggregate real-profit rows by promo code+currency (for Analysis page) or overall (for Overview)
 function aggregateRealProfit(currency) {
   if (!realProfitData) return null;
   const rows = currency === 'ALL' ? realProfitData : realProfitData.filter(r => r.currency === currency);
@@ -909,12 +909,13 @@ function aggregateRealProfit(currency) {
     totalWd  += r.withdraw_window;
     totalBonus += r.bonus;
     totalRealProfit += r.real_profit;
-    if (!byCode[r.code]) byCode[r.code] = { deposit:0, withdraw:0, bonus:0, realProfit:0, count:0 };
-    byCode[r.code].deposit    += r.deposit_window;
-    byCode[r.code].withdraw   += r.withdraw_window;
-    byCode[r.code].bonus      += r.bonus;
-    byCode[r.code].realProfit += r.real_profit;
-    byCode[r.code].count++;
+    const key = r.code + '||' + r.currency; // never merge different currencies under the same code name
+    if (!byCode[key]) byCode[key] = { deposit:0, withdraw:0, bonus:0, realProfit:0, count:0 };
+    byCode[key].deposit    += r.deposit_window;
+    byCode[key].withdraw   += r.withdraw_window;
+    byCode[key].bonus      += r.bonus;
+    byCode[key].realProfit += r.real_profit;
+    byCode[key].count++;
   });
   return { totalDep, totalWd, totalBonus, totalRealProfit, byCode, count: rows.length };
 }
@@ -979,19 +980,20 @@ function groupByTime(rows, v) {
 function groupByPromo(rows, currency) {
   const map = {};
   rows.forEach(r => {
-    if (!map[r.code]) map[r.code] = { name: r.code, claims: 0, depPpl: 0, deposit: 0, bonus: 0, winloss: 0, dayMap: {} };
-    map[r.code].claims++;
-    map[r.code].depPpl  += r.transfer > 0 ? 1 : 0;
-    map[r.code].deposit += r.transfer;
-    map[r.code].bonus   += r.bonus;
-    map[r.code].winloss += r.winloss;
-    if (!map[r.code].dayMap[r.date]) map[r.code].dayMap[r.date] = 0;
-    map[r.code].dayMap[r.date]++;
+    const key = r.code + '||' + r.currency; // never merge different currencies under the same code name
+    if (!map[key]) map[key] = { name: r.code, currency: r.currency, claims: 0, depPpl: 0, deposit: 0, bonus: 0, winloss: 0, dayMap: {} };
+    map[key].claims++;
+    map[key].depPpl  += r.transfer > 0 ? 1 : 0;
+    map[key].deposit += r.transfer;
+    map[key].bonus   += r.bonus;
+    map[key].winloss += r.winloss;
+    if (!map[key].dayMap[r.date]) map[key].dayMap[r.date] = 0;
+    map[key].dayMap[r.date]++;
   });
-  const apKey = currency === 'SGD' ? 'sgd' : 'myr';
   return Object.values(map).sort((a, b) => b.claims - a.claims).map(p => {
     p.netProfit = -p.winloss - p.bonus;
     p.roi = p.bonus > 0 ? p.netProfit / p.bonus * 100 : null;
+    const apKey = p.currency === 'SGD' ? 'sgd' : 'myr';
     let totalRate = 0, dayCount = 0;
     Object.entries(p.dayMap).forEach(([date, cnt]) => {
       const ap = activeData[date] ? activeData[date][apKey] : 0;
@@ -1195,13 +1197,12 @@ function setAnalysisCur(cur, btn) {
 
 function renderAnalysis() {
   const rows = analysisCur === 'ALL' ? allData : allData.filter(r => r.currency === analysisCur);
-  const currency = analysisCur === 'SGD' ? 'SGD' : 'MYR';
-  const fmt = analysisCur === 'SGD' ? fmtSGD : fmtRM;
-  const promos = groupByPromo(rows, currency);
+  const fmtDefault = analysisCur === 'SGD' ? fmtSGD : fmtRM; // used only for ALL-currency aggregate totals
+  const promos = groupByPromo(rows, analysisCur === 'SGD' ? 'SGD' : 'MYR');
   const rpAgg = aggregateRealProfit(analysisCur);
-  // Attach real-profit numbers to each promo by code
+  // Attach real-profit numbers to each promo by code+currency (avoids mixing MYR/SGD that share a code name)
   promos.forEach(p => {
-    const rp = rpAgg?.byCode?.[p.name];
+    const rp = rpAgg?.byCode?.[p.name + '||' + p.currency];
     p.realProfit = rp ? rp.realProfit : null;
     p.realDeposit = rp ? rp.deposit : null;
     p.realWithdraw = rp ? rp.withdraw : null;
@@ -1210,24 +1211,34 @@ function renderAnalysis() {
   const reviewP   = promos.filter(p => p.status === 'review');
   const stopP     = promos.filter(p => p.status === 'stop');
   const totalClaims = promos.reduce((s,p) => s+p.claims, 0);
-  const totalProfit = promos.reduce((s,p) => s+p.netProfit, 0);
-  const totalBonus  = promos.reduce((s,p) => s+p.bonus, 0);
-  const overallROI  = totalBonus > 0 ? totalProfit/totalBonus*100 : 0;
+  // Sum profit/bonus per-currency separately, then format with the right symbol per currency
+  const totalsByCur = {};
+  promos.forEach(p => {
+    if (!totalsByCur[p.currency]) totalsByCur[p.currency] = { profit: 0, bonus: 0 };
+    totalsByCur[p.currency].profit += p.netProfit;
+    totalsByCur[p.currency].bonus  += p.bonus;
+  });
+  const totalSummaryHTML = Object.entries(totalsByCur).map(([cur, t]) => {
+    const f = cur === 'SGD' ? fmtSGD : fmtRM;
+    const roi = t.bonus > 0 ? t.profit/t.bonus*100 : 0;
+    return `<div>${t.profit>=0?'+':''}${f(t.profit)} <span style="color:var(--muted);font-size:0.7rem;">(${cur} ROI ${roi>=0?'+':''}${roi.toFixed(1)}%)</span></div>`;
+  }).join('');
   document.getElementById('analysisSummary').innerHTML = `
     <div class="metric"><div class="lbl">总 Promo</div><div class="val" style="color:var(--blue)">${promos.length}</div><div class="sub">${fmtN(totalClaims)} 次领取</div></div>
-    <div class="metric"><div class="lbl">总净利润 (Win/Loss)</div><div class="val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${fmt(totalProfit)}</div><div class="sub">ROI: ${overallROI>=0?'+':''}${overallROI.toFixed(1)}%</div></div>
+    <div class="metric"><div class="lbl">总净利润 (Win/Loss)</div><div class="val" style="font-size:1.1rem;">${totalSummaryHTML}</div></div>
     <div class="metric"><div class="lbl">✅ 建议继续</div><div class="val" style="color:var(--green)">${continueP.length}</div><div class="sub">净利润为正</div></div>
     <div class="metric"><div class="lbl">🛑 建议停止</div><div class="val" style="color:var(--red)">${stopP.length}</div><div class="sub">净亏且无存款</div></div>
   `;
   function makeItems(list) {
     return list.map(p => {
+      const fmt = p.currency === 'SGD' ? fmtSGD : fmtRM;
       const npC = p.netProfit > 0 ? 'var(--green)' : 'var(--red)';
       const roiStr = p.roi !== null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
       const rpLine = p.realProfit !== null
         ? `<div class="analysis-item-stats" style="color:${p.realProfit>=0?'var(--green)':'var(--red)'}">真实盈亏: ${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</div>`
         : '';
       return `<div class="analysis-item">
-        <div class="analysis-item-name">${p.name}</div>
+        <div class="analysis-item-name">${p.name} <span style="color:var(--muted);font-size:0.68rem;">[${p.currency}]</span></div>
         <div style="text-align:right">
           <div class="analysis-item-profit" style="color:${npC}">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</div>
           <div class="analysis-item-stats">ROI ${roiStr} | 领取 ${p.claims}</div>
@@ -1245,12 +1256,12 @@ function renderAnalysis() {
   if (analysisChartInst) { analysisChartInst.destroy(); analysisChartInst = null; }
   analysisChartInst = new Chart(document.getElementById('analysisChart'), {
     type:'bar',
-    data:{ labels:top15.map(p=>p.name.length>22?p.name.slice(0,22)+'…':p.name), datasets:[{data:top15.map(p=>p.netProfit),backgroundColor:top15.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}] },
+    data:{ labels:top15.map(p=>(p.name.length>20?p.name.slice(0,20)+'…':p.name)+' ['+p.currency+']'), datasets:[{data:top15.map(p=>p.netProfit),backgroundColor:top15.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}] },
     options:{
       indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{ const p=top15[ctx.dataIndex]; const f=p.currency==='SGD'?fmtSGD:fmtRM; return '净利润: '+f(ctx.parsed.x); }}}},
       scales:{
-        x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+        x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmtDefault(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
         y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}
       }
     }
@@ -1262,16 +1273,19 @@ function renderAnalysis() {
       <div class="table-hd">真实盈亏对比（基于存款/提款，30天独立窗口） — Win/Loss净利润 vs 真实盈亏 · 点击行展开明细</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Promo</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
+          <thead><tr><th>Promo</th><th>货币</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
           <tbody>
             ${promos.filter(p=>p.realProfit!==null).sort((a,b)=>(a.realProfit-a.netProfit)-(b.realProfit-b.netProfit)).map((p, idx) => {
+              const fmt = p.currency === 'SGD' ? fmtSGD : fmtRM;
               const diff = p.realProfit - p.netProfit;
               const diffC = Math.abs(diff) < 0.01 ? 'var(--muted)' : diff > 0 ? 'var(--green)' : 'var(--red)';
               const npC = p.netProfit >= 0 ? 'var(--green)' : 'var(--red)';
               const rpC = p.realProfit >= 0 ? 'var(--green)' : 'var(--red)';
               const safeCode = p.name.replace(/'/g, "\\'");
-              return `<tr style="cursor:pointer;" onclick="toggleRpDrilldown('rp-dd-${idx}','${safeCode}')">
+              const tagStyle = p.currency === 'SGD' ? 'background:var(--green-dim);color:var(--green)' : '';
+              return `<tr style="cursor:pointer;" onclick="toggleRpDrilldown('rp-dd-${idx}','${safeCode}','${p.currency}')">
                 <td>▸ ${p.name}</td>
+                <td><span class="type-tag" style="${tagStyle}">${p.currency}</span></td>
                 <td class="myr-v">${fmtN(p.claims)}</td>
                 <td style="color:var(--amber)">${fmt(p.bonus)}</td>
                 <td style="color:var(--blue)">${fmt(p.realDeposit)}</td>
@@ -1280,7 +1294,7 @@ function renderAnalysis() {
                 <td style="color:${rpC};font-weight:bold">${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</td>
                 <td style="color:${diffC}">${diff>=0?'+':''}${fmt(diff)}</td>
               </tr>
-              <tr id="rp-dd-${idx}" class="hidden"><td colspan="8" style="padding:0;background:var(--surface2);"><div id="rp-dd-content-${idx}" style="padding:1rem 1.4rem;"></div></td></tr>`;
+              <tr id="rp-dd-${idx}" class="hidden"><td colspan="9" style="padding:0;background:var(--surface2);"><div id="rp-dd-content-${idx}" style="padding:1rem 1.4rem;"></div></td></tr>`;
             }).join('')}
           </tbody>
         </table>
@@ -1298,7 +1312,7 @@ function renderAnalysis() {
 }
 
 // ── Drill-down: expand a promo row into per-player, per-transaction timelines ──
-function toggleRpDrilldown(rowId, code) {
+function toggleRpDrilldown(rowId, code, currency) {
   const row = document.getElementById(rowId);
   if (!row) return;
   const wasHidden = row.classList.contains('hidden');
@@ -1308,7 +1322,9 @@ function toggleRpDrilldown(rowId, code) {
   const contentEl = document.getElementById(rowId.replace('rp-dd-', 'rp-dd-content-'));
   if (!realProfitData) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">真实盈亏数据未加载</div>'; return; }
 
-  const claims = realProfitData.filter(r => r.code === code).sort((a,b) => a.login.localeCompare(b.login) || a.claim_date.localeCompare(b.claim_date));
+  const claims = realProfitData
+    .filter(r => r.code === code && r.currency === currency)
+    .sort((a,b) => a.login.localeCompare(b.login) || a.claim_date.localeCompare(b.claim_date));
   if (!claims.length) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">无明细数据</div>'; return; }
 
   const html = claims.map(c => {
@@ -1556,7 +1572,7 @@ function buildChart() {
     grouped = groupByTime(rows, dview).map(r => ({ ...r, label:r.label, netProfit:-r.winloss-r.bonus, roi:r.bonus>0?(-r.winloss-r.bonus)/r.bonus*100:0 }));
   } else {
     grouped = groupByPromo(rows, currency === 'SGD' ? 'SGD' : 'MYR');
-    grouped.forEach(r => r.label = r.name);
+    grouped.forEach(r => r.label = currency === 'ALL' ? `${r.name} [${r.currency}]` : r.name);
   }
   const labels = grouped.map(r => (dview ? fmtLabel(r.label, dview) : r.label).slice(0, 20));
   const fmt = currency === 'SGD' ? fmtSGD : fmtRM;
