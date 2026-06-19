@@ -881,7 +881,7 @@ async function loadRealProfit() {
   realProfitKey = key;
   realProfitLoading = true;
   try {
-    let q = '/real-profit?window_days=30';
+    let q = '/real-profit?lookahead_days=60';
     if (from) q += '&from=' + from;
     if (to)   q += '&to='   + to;
     const data = await apiFetch(q);
@@ -899,12 +899,15 @@ async function loadRealProfit() {
 }
 
 // Aggregate real-profit rows by promo code+currency (for Analysis page) or overall (for Overview)
+// Claims with an still-open window (no deposit/withdraw happened yet) are excluded from the
+// profit totals since there's no concluded result yet, but counted separately as "pending".
 function aggregateRealProfit(currency) {
   if (!realProfitData) return null;
   const rows = currency === 'ALL' ? realProfitData : realProfitData.filter(r => r.currency === currency);
   const byCode = {};
-  let totalDep = 0, totalWd = 0, totalBonus = 0, totalRealProfit = 0;
+  let totalDep = 0, totalWd = 0, totalBonus = 0, totalRealProfit = 0, pendingCount = 0;
   rows.forEach(r => {
+    if (r.window_open || r.real_profit === null) { pendingCount++; return; }
     totalDep += r.deposit_window;
     totalWd  += r.withdraw_window;
     totalBonus += r.bonus;
@@ -917,7 +920,7 @@ function aggregateRealProfit(currency) {
     byCode[key].realProfit += r.real_profit;
     byCode[key].count++;
   });
-  return { totalDep, totalWd, totalBonus, totalRealProfit, byCode, count: rows.length };
+  return { totalDep, totalWd, totalBonus, totalRealProfit, byCode, count: rows.length, pendingCount };
 }
 
 function resetDates() {
@@ -1082,15 +1085,17 @@ function renderOverview() {
     }
     const rpC = rp.totalRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
     const roi = rp.totalBonus > 0 ? (rp.totalRealProfit/rp.totalBonus*100) : null;
+    const pendingNote = rp.pendingCount > 0 ? `<div class="sub" style="margin-top:6px;color:var(--muted);">${rp.pendingCount} 笔领取尚无后续存款/提款，暂未结算</div>` : '';
     return `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;">
-      <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">💵 真实盈亏（基于存款/提款，30天独立窗口）</div>
+      <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">💵 真实盈亏（窗口至下一次存款或提款为止）</div>
       <div class="metrics" style="margin-bottom:0;">
         <div class="metric"><div class="lbl">窗口内存款</div><div class="val" style="color:var(--blue)">${fmt(rp.totalDep)}</div></div>
         <div class="metric"><div class="lbl">窗口内提款</div><div class="val" style="color:var(--red)">${fmt(rp.totalWd)}</div></div>
         <div class="metric"><div class="lbl">净流入</div><div class="val" style="color:var(--muted2)">${fmt(rp.totalDep-rp.totalWd)}</div></div>
         <div class="metric"><div class="lbl">真实盈亏</div><div class="val" style="color:${rpC}">${rp.totalRealProfit>=0?'+':''}${fmt(rp.totalRealProfit)}</div><div class="sub">${roi!=null?('真实ROI: '+(roi>=0?'+':'')+roi.toFixed(1)+'%'):''}</div></div>
       </div>
+      ${pendingNote}
     </div>`;
   }
 
@@ -1270,7 +1275,7 @@ function renderAnalysis() {
   // ── Real profit comparison table (click a row to drill down per-player, per-transaction) ──
   const rpTableHTML = rpAgg ? `
     <div class="table-card" style="margin-top:14px;">
-      <div class="table-hd">真实盈亏对比（基于存款/提款，30天独立窗口） — Win/Loss净利润 vs 真实盈亏 · 点击行展开明细</div>
+      <div class="table-hd">真实盈亏对比（窗口至下一次存款/提款为止） — Win/Loss净利润 vs 真实盈亏 · 点击行展开明细</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Promo</th><th>货币</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
@@ -1329,7 +1334,10 @@ function toggleRpDrilldown(rowId, code, currency) {
 
   const html = claims.map(c => {
     const fmt = c.currency === 'SGD' ? fmtSGD : fmtRM;
-    const rpC = c.real_profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const isOpen = c.window_open || c.real_profit === null;
+    const rpC = isOpen ? 'var(--muted)' : (c.real_profit >= 0 ? 'var(--green)' : 'var(--red)');
+    const rpLabel = isOpen ? '待结算（尚无后续存/提款）' : `真实盈亏 ${c.real_profit>=0?'+':''}${fmt(c.real_profit)}`;
+    const windowEndLabel = isOpen ? '尚未结束' : fmtDateTime(c.window_end);
 
     // Merge deposit & withdraw details into one chronological timeline
     const events = [
@@ -1344,14 +1352,14 @@ function toggleRpDrilldown(rowId, code, currency) {
           <span style="color:var(--muted2)">${fmtDateTime(ev.time)}</span>
         </div>
         <span style="font-weight:bold;color:${ev.type==='deposit'?'var(--blue)':'var(--red)'}">${ev.type==='withdraw'?'-':'+'}${fmt(ev.amount)}</span>
-      </div>`).join('') : '<div style="padding:8px 10px;color:var(--muted);font-size:0.78rem;">窗口期内无存款/提款记录</div>';
+      </div>`).join('') : '<div style="padding:8px 10px;color:var(--muted);font-size:0.78rem;">尚无后续存款/提款记录</div>';
 
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface3);">
-        <div style="font-size:0.82rem;font-weight:700;">👤 ${c.login} <span style="color:var(--muted);font-weight:400;font-size:0.72rem;">领取 ${c.claim_date} · 窗口至 ${c.window_end}</span></div>
+        <div style="font-size:0.82rem;font-weight:700;">👤 ${c.login} <span style="color:var(--muted);font-weight:400;font-size:0.72rem;">领取 ${c.claim_date} · 窗口至 ${windowEndLabel}</span></div>
         <div style="display:flex;gap:14px;font-size:0.75rem;">
           <span style="color:var(--amber)">Bonus ${fmt(c.bonus)}</span>
-          <span style="color:${rpC};font-weight:bold">真实盈亏 ${c.real_profit>=0?'+':''}${fmt(c.real_profit)}</span>
+          <span style="color:${rpC};font-weight:bold">${rpLabel}</span>
         </div>
       </div>
       <div>${eventsHTML}</div>
@@ -1380,7 +1388,7 @@ async function searchPlayer() {
       apiFetch('/player?login=' + encodeURIComponent(login)),
       apiFetch('/deposit?login=' + encodeURIComponent(login)).catch(() => []),
       apiFetch('/withdraw?login=' + encodeURIComponent(login)).catch(() => []),
-      apiFetch('/real-profit?login=' + encodeURIComponent(login) + '&window_days=30').catch(() => []),
+      apiFetch('/real-profit?login=' + encodeURIComponent(login) + '&lookahead_days=60').catch(() => []),
     ]);
 
     if (!rows.length && !depositRows.length && !withdrawRows.length) {
@@ -1435,13 +1443,16 @@ async function searchPlayer() {
     // Index real-profit rows by code+date for quick lookup
     const rpByKey = {};
     (realProfitRows||[]).forEach(rp => { rpByKey[rp.code + '||' + rp.claim_date] = rp; });
-    let totalRealProfit = (realProfitRows||[]).reduce((s,r) => s + r.real_profit, 0);
+    let totalRealProfit = (realProfitRows||[]).reduce((s,r) => s + (r.real_profit ?? 0), 0);
+    let pendingRpCount = (realProfitRows||[]).filter(r => r.window_open || r.real_profit === null).length;
 
     const categoriesHTML = promos.map((p, i) => {
       const np = p.netProfit;
       const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
       const roi = p.bonus > 0 ? (np/p.bonus*100).toFixed(1)+'%' : '—';
-      const codeRealProfit = (realProfitRows||[]).filter(rp => rp.code === p.name).reduce((s,r) => s + r.real_profit, 0);
+      const codeRpRows = (realProfitRows||[]).filter(rp => rp.code === p.name);
+      const codeRealProfit = codeRpRows.reduce((s,r) => s + (r.real_profit ?? 0), 0);
+      const codeHasPending = codeRpRows.some(r => r.window_open || r.real_profit === null);
       const codeRpC = codeRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
       const tableRowsHTML = p.rows.map(r => {
         const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
@@ -1449,9 +1460,9 @@ async function searchPlayer() {
         const rnp = -r.winloss - r.bonus;
         const rnpC = rnp > 0 ? 'var(--green)' : rnp < 0 ? 'var(--red)' : 'var(--muted)';
         const rpRow = rpByKey[r.code + '||' + r.date];
-        const rpCell = rpRow
+        const rpCell = (rpRow && !rpRow.window_open && rpRow.real_profit !== null)
           ? `<span style="color:${rpRow.real_profit>=0?'var(--green)':'var(--red)'};font-weight:bold">${rpRow.real_profit>=0?'+':''}${f(rpRow.real_profit)}</span>`
-          : '<span style="color:var(--muted)">—</span>';
+          : (rpRow ? '<span style="color:var(--muted);font-size:0.72rem;">待结算</span>' : '<span style="color:var(--muted)">—</span>');
         return `<tr>
           <td>${r.date}</td>
           <td style="color:${hasDeposit?'var(--green)':'var(--muted)'};">${hasDeposit ? '✅ '+f(r.transfer) : '❌ 无存款'}</td>
@@ -1464,7 +1475,7 @@ async function searchPlayer() {
       return `<div class="promo-category">
         <div class="promo-category-header" onclick="toggleCategory(${i})">
           <div class="pch-left">
-            <div class="pch-name">${p.name}</div>
+            <div class="pch-name">${p.name}${codeHasPending ? ' <span style="color:var(--muted);font-size:0.65rem;">(含待结算)</span>' : ''}</div>
             <div class="pch-count">${p.claims} 次</div>
           </div>
           <div class="pch-right">
@@ -1478,7 +1489,7 @@ async function searchPlayer() {
         </div>
         <div class="promo-category-table" id="cat-table-${i}">
           <table><thead><tr>
-            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th><th>真实盈亏(30天窗口)</th>
+            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th><th>真实盈亏(至下次存提款)</th>
           </tr></thead><tbody>${tableRowsHTML}</tbody></table>
         </div>
       </div>`;
@@ -1531,7 +1542,7 @@ async function searchPlayer() {
           <div class="player-stat"><div class="lbl">总 Bonus</div><div class="val" style="color:var(--amber)">${fmt(totalBonus)}</div></div>
           <div class="player-stat"><div class="lbl">Win/Loss</div><div class="val" style="color:var(--muted2)">${fmt(totalWL)}</div></div>
           <div class="player-stat"><div class="lbl">净利润(Win/Loss)</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
-          <div class="player-stat"><div class="lbl">真实盈亏(存提款)</div><div class="val" style="color:${totalRealProfit>=0?'var(--green)':'var(--red)'}">${totalRealProfit>=0?'+':''}${fmt(totalRealProfit)}</div></div>
+          <div class="player-stat"><div class="lbl">真实盈亏(存提款)</div><div class="val" style="color:${totalRealProfit>=0?'var(--green)':'var(--red)'}">${totalRealProfit>=0?'+':''}${fmt(totalRealProfit)}</div>${pendingRpCount>0?`<div class="lbl" style="margin-top:4px;color:var(--muted);">${pendingRpCount}笔待结算</div>`:''}</div>
         </div>
 
         <!-- Timeline -->
