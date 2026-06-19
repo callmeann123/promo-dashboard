@@ -750,17 +750,47 @@ async function uploadDepositWithdraw(type, currency, input) {
   setStatus('', '解析中...');
   try {
     const text = await file.text();
-    const rows = type === 'deposit'
+    const allRows = type === 'deposit'
       ? parseDepositFrontend(text, currency)
       : parseWithdrawFrontend(text, currency);
-    if (!rows.length) throw new Error('找不到有效数据');
+    if (!allRows.length) throw new Error('找不到有效数据');
+
+    // Determine the date range covered by this CSV, then fetch the set of
+    // logins who claimed a promo in that same range+currency, and filter
+    // rows down to only those logins BEFORE uploading. This keeps
+    // deposit_data/withdraw_data small (only promo-claiming players) and
+    // avoids Cloudflare's per-invocation subrequest limit later when
+    // computing real profit.
+    const dates = allRows.map(r => r.created_date.slice(0,10)).filter(Boolean).sort();
+    const rangeFrom = dates[0];
+    const rangeTo   = dates[dates.length-1];
+
+    setStatus('', '筛选 Promo 玩家中...');
+    let rows = allRows;
+    let skipped = 0;
+    try {
+      const lg = await apiFetch(`/promo-logins?currency=${currency}&from=${rangeFrom}&to=${rangeTo}`);
+      const loginSet = new Set(lg.logins || []);
+      rows = allRows.filter(r => loginSet.has(r.login));
+      skipped = allRows.length - rows.length;
+    } catch(e) {
+      console.warn('promo-logins lookup failed, uploading unfiltered:', e.message);
+    }
+
+    if (!rows.length) {
+      btn.className = 'upload-btn';
+      setStatus('error', '没有玩家匹配 Promo 名单');
+      alert(`该文件的 ${allRows.length} 条记录中，没有任何玩家在 ${rangeFrom} ~ ${rangeTo} (${currency}) 领过 Promo，已跳过上传。`);
+      return;
+    }
+
     const endpoint = type === 'deposit' ? '/upload-deposit' : '/upload-withdraw';
     const total = await batchUpload(endpoint, rows, currency, 'created_date');
     const doneClass = type === 'deposit' ? 'upload-btn done-dep' : 'upload-btn done-wd';
     btn.className = doneClass;
     const label = type === 'deposit' ? 'Dep' : 'WD';
     btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadDepositWithdraw('${type}','${currency}',this)" /> ✅ ${label} ${currency} (${total})`;
-    setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功 · ${total} 条`);
+    setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功 · ${total} 条（已过滤 ${skipped} 条非Promo玩家）`);
   } catch(e) {
     btn.className = 'upload-btn';
     setStatus('error', '上传失败: ' + e.message);
