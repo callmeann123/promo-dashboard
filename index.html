@@ -1256,21 +1256,22 @@ function renderAnalysis() {
     }
   });
 
-  // ── Real profit comparison table ──
+  // ── Real profit comparison table (click a row to drill down per-player, per-transaction) ──
   const rpTableHTML = rpAgg ? `
     <div class="table-card" style="margin-top:14px;">
-      <div class="table-hd">真实盈亏对比（基于存款/提款，30天独立窗口） — Win/Loss净利润 vs 真实盈亏</div>
+      <div class="table-hd">真实盈亏对比（基于存款/提款，30天独立窗口） — Win/Loss净利润 vs 真实盈亏 · 点击行展开明细</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Promo</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
           <tbody>
-            ${promos.filter(p=>p.realProfit!==null).sort((a,b)=>(a.realProfit-a.netProfit)-(b.realProfit-b.netProfit)).map(p => {
+            ${promos.filter(p=>p.realProfit!==null).sort((a,b)=>(a.realProfit-a.netProfit)-(b.realProfit-b.netProfit)).map((p, idx) => {
               const diff = p.realProfit - p.netProfit;
               const diffC = Math.abs(diff) < 0.01 ? 'var(--muted)' : diff > 0 ? 'var(--green)' : 'var(--red)';
               const npC = p.netProfit >= 0 ? 'var(--green)' : 'var(--red)';
               const rpC = p.realProfit >= 0 ? 'var(--green)' : 'var(--red)';
-              return `<tr>
-                <td>${p.name}</td>
+              const safeCode = p.name.replace(/'/g, "\\'");
+              return `<tr style="cursor:pointer;" onclick="toggleRpDrilldown('rp-dd-${idx}','${safeCode}')">
+                <td>▸ ${p.name}</td>
                 <td class="myr-v">${fmtN(p.claims)}</td>
                 <td style="color:var(--amber)">${fmt(p.bonus)}</td>
                 <td style="color:var(--blue)">${fmt(p.realDeposit)}</td>
@@ -1278,7 +1279,8 @@ function renderAnalysis() {
                 <td style="color:${npC};font-weight:bold">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</td>
                 <td style="color:${rpC};font-weight:bold">${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</td>
                 <td style="color:${diffC}">${diff>=0?'+':''}${fmt(diff)}</td>
-              </tr>`;
+              </tr>
+              <tr id="rp-dd-${idx}" class="hidden"><td colspan="8" style="padding:0;background:var(--surface2);"><div id="rp-dd-content-${idx}" style="padding:1rem 1.4rem;"></div></td></tr>`;
             }).join('')}
           </tbody>
         </table>
@@ -1293,6 +1295,54 @@ function renderAnalysis() {
     document.getElementById('analysisChart').closest('.chart-card').insertAdjacentElement('afterend', rpContainer);
   }
   rpContainer.innerHTML = rpTableHTML;
+}
+
+// ── Drill-down: expand a promo row into per-player, per-transaction timelines ──
+function toggleRpDrilldown(rowId, code) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const wasHidden = row.classList.contains('hidden');
+  row.classList.toggle('hidden');
+  if (!wasHidden) return; // closing, nothing more to do
+
+  const contentEl = document.getElementById(rowId.replace('rp-dd-', 'rp-dd-content-'));
+  if (!realProfitData) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">真实盈亏数据未加载</div>'; return; }
+
+  const claims = realProfitData.filter(r => r.code === code).sort((a,b) => a.login.localeCompare(b.login) || a.claim_date.localeCompare(b.claim_date));
+  if (!claims.length) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">无明细数据</div>'; return; }
+
+  const html = claims.map(c => {
+    const fmt = c.currency === 'SGD' ? fmtSGD : fmtRM;
+    const rpC = c.real_profit >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Merge deposit & withdraw details into one chronological timeline
+    const events = [
+      ...(c.deposit_details||[]).map(d => ({ type:'deposit', time:d.time, amount:d.amount })),
+      ...(c.withdraw_details||[]).map(w => ({ type:'withdraw', time:w.time, amount:w.amount })),
+    ].sort((a,b) => a.time.localeCompare(b.time));
+
+    const eventsHTML = events.length ? events.map(ev => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:0.78rem;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="tl-badge ${ev.type}" style="font-size:0.65rem;">${ev.type==='deposit'?'存款':'提款'}</span>
+          <span style="color:var(--muted2)">${fmtDateTime(ev.time)}</span>
+        </div>
+        <span style="font-weight:bold;color:${ev.type==='deposit'?'var(--blue)':'var(--red)'}">${ev.type==='withdraw'?'-':'+'}${fmt(ev.amount)}</span>
+      </div>`).join('') : '<div style="padding:8px 10px;color:var(--muted);font-size:0.78rem;">窗口期内无存款/提款记录</div>';
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface3);">
+        <div style="font-size:0.82rem;font-weight:700;">👤 ${c.login} <span style="color:var(--muted);font-weight:400;font-size:0.72rem;">领取 ${c.claim_date} · 窗口至 ${c.window_end}</span></div>
+        <div style="display:flex;gap:14px;font-size:0.75rem;">
+          <span style="color:var(--amber)">Bonus ${fmt(c.bonus)}</span>
+          <span style="color:${rpC};font-weight:bold">真实盈亏 ${c.real_profit>=0?'+':''}${fmt(c.real_profit)}</span>
+        </div>
+      </div>
+      <div>${eventsHTML}</div>
+    </div>`;
+  }).join('');
+
+  contentEl.innerHTML = html;
 }
 
 // ── Player ──
