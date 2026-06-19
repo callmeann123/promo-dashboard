@@ -441,6 +441,7 @@ const METRIC_LABELS = { claims:'领取人次', deposit_ppl:'存款人数', depos
 const COLORS = ['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
 
 let allData = [], allDataFull = [], activeData = {}, view = 'day', ovCharts = {}, builtCharts = [], chartCounter = 0;
+let realProfitData = null, realProfitLoading = false, realProfitKey = '';
 let analysisCur = 'MYR', analysisChartInst = null, selectedChartType = 'bar';
 
 // ── Load Config ──
@@ -834,10 +835,58 @@ async function loadData() {
     document.getElementById('pptBtn').disabled = false;
     renderOverview();
     if (!document.getElementById('analysisPage').classList.contains('hidden')) renderAnalysis();
+    loadRealProfit(); // fire-and-forget, re-renders overview/analysis when ready
   } catch(e) {
     setStatus('error', '加载失败');
     console.error(e);
   }
+}
+
+// ── Real Profit (deposit/withdraw based, independent-window) ──
+async function loadRealProfit() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  const key = from + '|' + to;
+  if (realProfitLoading) return;
+  realProfitKey = key;
+  realProfitLoading = true;
+  try {
+    let q = '/real-profit?window_days=30';
+    if (from) q += '&from=' + from;
+    if (to)   q += '&to='   + to;
+    const data = await apiFetch(q);
+    if (realProfitKey !== key) return; // stale response, date range changed meanwhile
+    realProfitData = data;
+  } catch(e) {
+    console.warn('Real profit unavailable:', e.message);
+    realProfitData = [];
+  } finally {
+    realProfitLoading = false;
+    // Re-render currently visible pages with the new data
+    renderOverview();
+    if (!document.getElementById('analysisPage').classList.contains('hidden')) renderAnalysis();
+  }
+}
+
+// Aggregate real-profit rows by promo code (for Analysis page) or overall (for Overview)
+function aggregateRealProfit(currency) {
+  if (!realProfitData) return null;
+  const rows = currency === 'ALL' ? realProfitData : realProfitData.filter(r => r.currency === currency);
+  const byCode = {};
+  let totalDep = 0, totalWd = 0, totalBonus = 0, totalRealProfit = 0;
+  rows.forEach(r => {
+    totalDep += r.deposit_window;
+    totalWd  += r.withdraw_window;
+    totalBonus += r.bonus;
+    totalRealProfit += r.real_profit;
+    if (!byCode[r.code]) byCode[r.code] = { deposit:0, withdraw:0, bonus:0, realProfit:0, count:0 };
+    byCode[r.code].deposit    += r.deposit_window;
+    byCode[r.code].withdraw   += r.withdraw_window;
+    byCode[r.code].bonus      += r.bonus;
+    byCode[r.code].realProfit += r.real_profit;
+    byCode[r.code].count++;
+  });
+  return { totalDep, totalWd, totalBonus, totalRealProfit, byCode, count: rows.length };
 }
 
 function resetDates() {
@@ -991,6 +1040,28 @@ function renderOverview() {
   const myrG = groupByTime(myrRows);
   const sgdG = groupByTime(sgdRows);
   const gc = 'rgba(255,255,255,0.04)';
+
+  // ── Real profit (deposit/withdraw based) summary ──
+  const myrRP = aggregateRealProfit('MYR');
+  const sgdRP = aggregateRealProfit('SGD');
+  function realProfitBlock(rp, fmt) {
+    if (!rp) {
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;color:var(--muted);font-size:0.82rem;text-align:center;">真实盈亏（基于存款/提款）加载中...</div>`;
+    }
+    const rpC = rp.totalRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    const roi = rp.totalBonus > 0 ? (rp.totalRealProfit/rp.totalBonus*100) : null;
+    return `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">💵 真实盈亏（基于存款/提款，30天独立窗口）</div>
+      <div class="metrics" style="margin-bottom:0;">
+        <div class="metric"><div class="lbl">窗口内存款</div><div class="val" style="color:var(--blue)">${fmt(rp.totalDep)}</div></div>
+        <div class="metric"><div class="lbl">窗口内提款</div><div class="val" style="color:var(--red)">${fmt(rp.totalWd)}</div></div>
+        <div class="metric"><div class="lbl">净流入</div><div class="val" style="color:var(--muted2)">${fmt(rp.totalDep-rp.totalWd)}</div></div>
+        <div class="metric"><div class="lbl">真实盈亏</div><div class="val" style="color:${rpC}">${rp.totalRealProfit>=0?'+':''}${fmt(rp.totalRealProfit)}</div><div class="sub">${roi!=null?('真实ROI: '+(roi>=0?'+':'')+roi.toFixed(1)+'%'):''}</div></div>
+      </div>
+    </div>`;
+  }
+
   document.getElementById('overviewContent').innerHTML = `
     <div class="currency-section">
       <div class="currency-header myr"><span class="currency-label myr">🇲🇾 MYR</span></div>
@@ -1000,6 +1071,7 @@ function renderOverview() {
         <div class="metric myr-card"><div class="lbl">总存款</div><div class="val myr-val">${fmtRM(myrDeposit)}</div><div class="sub">人均: ${fmtRM(myrPPA)}</div></div>
         <div class="metric myr-card"><div class="lbl">派发 Bonus</div><div class="val myr-val">${fmtRM(myrBonus)}</div><div class="sub" style="color:${myrNP>=0?'var(--green)':'var(--red)'}">净利润: ${myrNP>=0?'+':''}${fmtRM(myrNP)}</div></div>
       </div>
+      ${realProfitBlock(myrRP, fmtRM)}
       <div class="charts-grid">
         <div class="chart-card"><div class="chart-hd"><div class="chart-title">领取人次趋势 (MYR)</div></div><div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-hd"><div class="chart-title">存款 vs Bonus (MYR)</div><div class="legend"><span><span class="leg" style="background:var(--blue)"></span>存款</span><span><span class="leg" style="background:var(--amber)"></span>Bonus</span></div></div><div class="chart-wrap"><canvas id="myrDepBonusChart"></canvas></div></div>
@@ -1014,6 +1086,7 @@ function renderOverview() {
         <div class="metric sgd-card"><div class="lbl">总存款</div><div class="val sgd-val">${fmtSGD(sgdDeposit)}</div><div class="sub">人均: ${fmtSGD(sgdPPA)}</div></div>
         <div class="metric sgd-card"><div class="lbl">派发 Bonus</div><div class="val sgd-val">${fmtSGD(sgdBonus)}</div><div class="sub" style="color:${sgdNP>=0?'var(--green)':'var(--red)'}">净利润: ${sgdNP>=0?'+':''}${fmtSGD(sgdNP)}</div></div>
       </div>
+      ${realProfitBlock(sgdRP, fmtSGD)}
       <div class="charts-grid">
         <div class="chart-card"><div class="chart-hd"><div class="chart-title">领取人次趋势 (SGD)</div></div><div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-hd"><div class="chart-title">存款 vs Bonus (SGD)</div><div class="legend"><span><span class="leg" style="background:var(--green)"></span>存款</span><span><span class="leg" style="background:var(--amber)"></span>Bonus</span></div></div><div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div></div>
@@ -1095,6 +1168,14 @@ function renderAnalysis() {
   const currency = analysisCur === 'SGD' ? 'SGD' : 'MYR';
   const fmt = analysisCur === 'SGD' ? fmtSGD : fmtRM;
   const promos = groupByPromo(rows, currency);
+  const rpAgg = aggregateRealProfit(analysisCur);
+  // Attach real-profit numbers to each promo by code
+  promos.forEach(p => {
+    const rp = rpAgg?.byCode?.[p.name];
+    p.realProfit = rp ? rp.realProfit : null;
+    p.realDeposit = rp ? rp.deposit : null;
+    p.realWithdraw = rp ? rp.withdraw : null;
+  });
   const continueP = promos.filter(p => p.status === 'continue');
   const reviewP   = promos.filter(p => p.status === 'review');
   const stopP     = promos.filter(p => p.status === 'stop');
@@ -1104,7 +1185,7 @@ function renderAnalysis() {
   const overallROI  = totalBonus > 0 ? totalProfit/totalBonus*100 : 0;
   document.getElementById('analysisSummary').innerHTML = `
     <div class="metric"><div class="lbl">总 Promo</div><div class="val" style="color:var(--blue)">${promos.length}</div><div class="sub">${fmtN(totalClaims)} 次领取</div></div>
-    <div class="metric"><div class="lbl">总净利润</div><div class="val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${fmt(totalProfit)}</div><div class="sub">ROI: ${overallROI>=0?'+':''}${overallROI.toFixed(1)}%</div></div>
+    <div class="metric"><div class="lbl">总净利润 (Win/Loss)</div><div class="val" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">${totalProfit>=0?'+':''}${fmt(totalProfit)}</div><div class="sub">ROI: ${overallROI>=0?'+':''}${overallROI.toFixed(1)}%</div></div>
     <div class="metric"><div class="lbl">✅ 建议继续</div><div class="val" style="color:var(--green)">${continueP.length}</div><div class="sub">净利润为正</div></div>
     <div class="metric"><div class="lbl">🛑 建议停止</div><div class="val" style="color:var(--red)">${stopP.length}</div><div class="sub">净亏且无存款</div></div>
   `;
@@ -1112,11 +1193,15 @@ function renderAnalysis() {
     return list.map(p => {
       const npC = p.netProfit > 0 ? 'var(--green)' : 'var(--red)';
       const roiStr = p.roi !== null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
+      const rpLine = p.realProfit !== null
+        ? `<div class="analysis-item-stats" style="color:${p.realProfit>=0?'var(--green)':'var(--red)'}">真实盈亏: ${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</div>`
+        : '';
       return `<div class="analysis-item">
         <div class="analysis-item-name">${p.name}</div>
         <div style="text-align:right">
           <div class="analysis-item-profit" style="color:${npC}">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</div>
           <div class="analysis-item-stats">ROI ${roiStr} | 领取 ${p.claims}</div>
+          ${rpLine}
         </div>
       </div>`;
     }).join('');
@@ -1140,6 +1225,44 @@ function renderAnalysis() {
       }
     }
   });
+
+  // ── Real profit comparison table ──
+  const rpTableHTML = rpAgg ? `
+    <div class="table-card" style="margin-top:14px;">
+      <div class="table-hd">真实盈亏对比（基于存款/提款，30天独立窗口） — Win/Loss净利润 vs 真实盈亏</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Promo</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
+          <tbody>
+            ${promos.filter(p=>p.realProfit!==null).sort((a,b)=>(a.realProfit-a.netProfit)-(b.realProfit-b.netProfit)).map(p => {
+              const diff = p.realProfit - p.netProfit;
+              const diffC = Math.abs(diff) < 0.01 ? 'var(--muted)' : diff > 0 ? 'var(--green)' : 'var(--red)';
+              const npC = p.netProfit >= 0 ? 'var(--green)' : 'var(--red)';
+              const rpC = p.realProfit >= 0 ? 'var(--green)' : 'var(--red)';
+              return `<tr>
+                <td>${p.name}</td>
+                <td class="myr-v">${fmtN(p.claims)}</td>
+                <td style="color:var(--amber)">${fmt(p.bonus)}</td>
+                <td style="color:var(--blue)">${fmt(p.realDeposit)}</td>
+                <td style="color:var(--red)">${fmt(p.realWithdraw)}</td>
+                <td style="color:${npC};font-weight:bold">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</td>
+                <td style="color:${rpC};font-weight:bold">${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</td>
+                <td style="color:${diffC}">${diff>=0?'+':''}${fmt(diff)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.82rem;">真实盈亏数据加载中...</div>`;
+
+  // Insert after analysisChart's chart-card, replacing any previous instance
+  let rpContainer = document.getElementById('rpTableContainer');
+  if (!rpContainer) {
+    rpContainer = document.createElement('div');
+    rpContainer.id = 'rpTableContainer';
+    document.getElementById('analysisChart').closest('.chart-card').insertAdjacentElement('afterend', rpContainer);
+  }
+  rpContainer.innerHTML = rpTableHTML;
 }
 
 // ── Player ──
@@ -1156,11 +1279,12 @@ async function searchPlayer() {
   document.getElementById('playerContent').innerHTML = '<div class="loading-state"><div class="spinner"></div>搜索中...</div>';
 
   try {
-    // Fetch promo, deposit, withdraw in parallel
-    const [rows, depositRows, withdrawRows] = await Promise.all([
+    // Fetch promo, deposit, withdraw, real-profit in parallel
+    const [rows, depositRows, withdrawRows, realProfitRows] = await Promise.all([
       apiFetch('/player?login=' + encodeURIComponent(login)),
       apiFetch('/deposit?login=' + encodeURIComponent(login)).catch(() => []),
       apiFetch('/withdraw?login=' + encodeURIComponent(login)).catch(() => []),
+      apiFetch('/real-profit?login=' + encodeURIComponent(login) + '&window_days=30').catch(() => []),
     ]);
 
     if (!rows.length && !depositRows.length && !withdrawRows.length) {
@@ -1212,21 +1336,33 @@ async function searchPlayer() {
       rows: p.rows.sort((a,b) => b.date.localeCompare(a.date))
     }));
 
+    // Index real-profit rows by code+date for quick lookup
+    const rpByKey = {};
+    (realProfitRows||[]).forEach(rp => { rpByKey[rp.code + '||' + rp.claim_date] = rp; });
+    let totalRealProfit = (realProfitRows||[]).reduce((s,r) => s + r.real_profit, 0);
+
     const categoriesHTML = promos.map((p, i) => {
       const np = p.netProfit;
       const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
       const roi = p.bonus > 0 ? (np/p.bonus*100).toFixed(1)+'%' : '—';
+      const codeRealProfit = (realProfitRows||[]).filter(rp => rp.code === p.name).reduce((s,r) => s + r.real_profit, 0);
+      const codeRpC = codeRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
       const tableRowsHTML = p.rows.map(r => {
         const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
         const hasDeposit = r.transfer > 0;
         const rnp = -r.winloss - r.bonus;
         const rnpC = rnp > 0 ? 'var(--green)' : rnp < 0 ? 'var(--red)' : 'var(--muted)';
+        const rpRow = rpByKey[r.code + '||' + r.date];
+        const rpCell = rpRow
+          ? `<span style="color:${rpRow.real_profit>=0?'var(--green)':'var(--red)'};font-weight:bold">${rpRow.real_profit>=0?'+':''}${f(rpRow.real_profit)}</span>`
+          : '<span style="color:var(--muted)">—</span>';
         return `<tr>
           <td>${r.date}</td>
           <td style="color:${hasDeposit?'var(--green)':'var(--muted)'};">${hasDeposit ? '✅ '+f(r.transfer) : '❌ 无存款'}</td>
           <td style="color:var(--amber);text-align:right">${f(r.bonus)}</td>
           <td style="color:var(--muted2);text-align:right">${f(r.winloss)}</td>
           <td style="color:${rnpC};font-weight:bold;text-align:right">${rnp>=0?'+':''}${f(rnp)}</td>
+          <td style="text-align:right">${rpCell}</td>
         </tr>`;
       }).join('');
       return `<div class="promo-category">
@@ -1239,13 +1375,14 @@ async function searchPlayer() {
             <div class="pch-stat"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(p.deposit)}</div></div>
             <div class="pch-stat"><div class="lbl">Bonus</div><div class="val" style="color:var(--amber)">${fmt(p.bonus)}</div></div>
             <div class="pch-stat"><div class="lbl">净利润</div><div class="val" style="color:${npC}">${np>=0?'+':''}${fmt(np)}</div></div>
+            <div class="pch-stat"><div class="lbl">真实盈亏</div><div class="val" style="color:${codeRpC}">${codeRealProfit>=0?'+':''}${fmt(codeRealProfit)}</div></div>
             <div class="pch-stat"><div class="lbl">ROI</div><div class="val" style="color:${npC}">${roi}</div></div>
             <div class="pch-arrow" id="cat-arrow-${i}">▼</div>
           </div>
         </div>
         <div class="promo-category-table" id="cat-table-${i}">
           <table><thead><tr>
-            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th>
+            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th><th>真实盈亏(30天窗口)</th>
           </tr></thead><tbody>${tableRowsHTML}</tbody></table>
         </div>
       </div>`;
@@ -1292,12 +1429,13 @@ async function searchPlayer() {
     document.getElementById('playerContent').innerHTML = `
       <div class="player-card">
         <div class="player-name">👤 ${login}</div>
-        <div class="player-stats">
+        <div class="player-stats" style="grid-template-columns:repeat(6,1fr);">
           <div class="player-stat"><div class="lbl">总领取次数</div><div class="val" style="color:var(--blue)">${fmtN(totalClaims)}</div></div>
           <div class="player-stat"><div class="lbl">总存款(Promo)</div><div class="val" style="color:var(--green)">${fmt(totalDeposit)}</div></div>
           <div class="player-stat"><div class="lbl">总 Bonus</div><div class="val" style="color:var(--amber)">${fmt(totalBonus)}</div></div>
           <div class="player-stat"><div class="lbl">Win/Loss</div><div class="val" style="color:var(--muted2)">${fmt(totalWL)}</div></div>
-          <div class="player-stat"><div class="lbl">净利润</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
+          <div class="player-stat"><div class="lbl">净利润(Win/Loss)</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
+          <div class="player-stat"><div class="lbl">真实盈亏(存提款)</div><div class="val" style="color:${totalRealProfit>=0?'var(--green)':'var(--red)'}">${totalRealProfit>=0?'+':''}${fmt(totalRealProfit)}</div></div>
         </div>
 
         <!-- Timeline -->
