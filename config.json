@@ -1,58 +1,2121 @@
-{
-  "api": {
-    "worker_url": "https://promo-api.annann5653.workers.dev"
-  },
-  "dashboard": {
-    "title": "PROMO Dashboard",
-    "subtitle": "MYR & SGD  |  实时数据分析",
-    "company": "PROMO Department"
-  },
-  "currencies": {
-    "MYR": { "symbol": "RM", "flag": "🇲🇾", "color": "#4D9FFF", "locale": "en-MY" },
-    "SGD": { "symbol": "S$", "flag": "🇸🇬", "color": "#00E5A0", "locale": "en-SG" }
-  },
-  "pages": {
-    "overview":       { "enabled": true,  "label": "📊 总览" },
-    "analysis":       { "enabled": true,  "label": "🔍 Promo 分析" },
-    "player":         { "enabled": true,  "label": "👤 玩家行为" },
-    "comparison":     { "enabled": true,  "label": "📅 月份对比" },
-    "provider":       { "enabled": true,  "label": "🎮 供应商分析" },
-    "builder":        { "enabled": true,  "label": "🎨 图表构建器" }
-  },
-  "upload": {
-    "promo": {
-      "myr":          { "enabled": true,  "label": "📂 MYR CSV" },
-      "sgd":          { "enabled": true,  "label": "📂 SGD CSV" },
-      "active_player":{ "enabled": true,  "label": "📅 Active Player" }
-    },
-    "deposit": {
-      "myr":          { "enabled": true,  "label": "💰 Dep MYR" },
-      "sgd":          { "enabled": true,  "label": "💰 Dep SGD" }
-    },
-    "withdraw": {
-      "myr":          { "enabled": true,  "label": "💸 WD MYR" },
-      "sgd":          { "enabled": true,  "label": "💸 WD SGD" }
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROMO Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#080B0F; --surface:#0E1318; --surface2:#141B22; --surface3:#1A2330;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.1);
+  --text:#E2EAF0; --muted:#5A6A78; --muted2:#8A9BAA;
+  --green:#00E5A0; --green-dim:rgba(0,229,160,0.12);
+  --red:#FF3D5A; --red-dim:rgba(255,61,90,0.12);
+  --blue:#4D9FFF; --blue-dim:rgba(77,159,255,0.12);
+  --amber:#FFB020; --amber-dim:rgba(255,176,32,0.12);
+  --purple:#A78BFA; --purple-dim:rgba(167,139,250,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:18px;}
+body{background:var(--bg);color:var(--text);font-family:Arial,sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(77,159,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,159,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:2.5rem;}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.logo{display:flex;align-items:center;gap:16px;}
+.logo-mark{width:52px;height:52px;background:linear-gradient(135deg,#4D9FFF,#00E5A0);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#080B0F;}
+.logo h1{font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;}
+.logo h1 span{color:var(--blue);}
+.logo p{font-size:0.75rem;color:var(--muted);margin-top:3px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.status-chip{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;font-size:0.78rem;color:var(--muted2);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite;}
+.dot.error{background:var(--red);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Nav */
+.nav{display:flex;gap:4px;margin-bottom:2rem;background:var(--surface2);border-radius:12px;padding:4px;width:fit-content;flex-wrap:wrap;}
+.nav-tab{padding:10px 20px;border-radius:9px;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.nav-tab.active{background:var(--blue);color:#080B0F;}
+
+/* Upload section */
+.upload-bar{display:flex;align-items:center;gap:10px;padding:1rem 1.4rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:1.5rem;flex-wrap:wrap;}
+.upload-bar-title{font-size:0.78rem;color:var(--muted2);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-right:8px;}
+.upload-bar-sep{width:1px;height:28px;background:var(--border2);margin:0 4px;}
+.upload-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;transition:all 0.15s;}
+.upload-btn:hover{border-color:var(--blue);color:var(--blue);}
+.upload-btn.uploading{opacity:0.6;cursor:wait;}
+.upload-btn.done{border-color:var(--green);color:var(--green);}
+.upload-btn.done-dep{border-color:var(--amber);color:var(--amber);}
+.upload-btn.done-wd{border-color:var(--purple);color:var(--purple);}
+.upload-btn input{display:none;}
+.ppt-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#E63946,#C1121F);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;margin-left:auto;}
+.ppt-btn:hover{opacity:0.85;}
+.ppt-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Controls */
+.controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;}
+.tabs{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;}
+.tab{padding:8px 20px;border-radius:7px;font-size:0.85rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.tab.active{background:var(--blue);color:#080B0F;}
+.filter-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.date-input{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;}
+.date-sep{color:var(--muted);font-size:0.8rem;}
+.date-reset{font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:Arial,sans-serif;}
+.date-reset:hover{background:var(--surface2);}
+.sel{font-size:0.8rem;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;min-width:140px;}
+
+/* Currency sections */
+.currency-section{margin-bottom:1.5rem;}
+.currency-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:10px 16px;border-radius:10px;}
+.currency-header.myr{background:rgba(77,159,255,0.08);border:1px solid rgba(77,159,255,0.2);}
+.currency-header.sgd{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);}
+.currency-label{font-size:1rem;font-weight:700;}
+.currency-label.myr{color:var(--blue);}
+.currency-label.sgd{color:var(--green);}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;}
+.metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.metric.myr-card::after{background:var(--blue);}
+.metric.sgd-card::after{background:var(--green);}
+.metric .lbl{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.metric .val{font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;line-height:1;}
+.metric .val.myr-val{color:var(--blue);}
+.metric .val.sgd-val{color:var(--green);}
+.metric .sub{font-size:0.7rem;color:var(--muted);margin-top:6px;}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.chart-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;}
+.legend span{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--muted2);}
+.leg{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.chart-wrap{position:relative;width:100%;height:240px;}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
+
+/* Table */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.table-hd{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
+.table-wrap{overflow-x:auto;max-height:500px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.72rem;color:var(--muted);font-weight:400;text-align:right;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;position:sticky;top:0;background:var(--surface);}
+th:first-child,th:nth-child(2),th:nth-child(3){text-align:left;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;white-space:nowrap;color:var(--muted2);}
+td:first-child{text-align:left;color:var(--muted);font-size:0.75rem;}
+td:nth-child(2),td:nth-child(3){text-align:left;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;background:var(--blue-dim);color:var(--blue);}
+.myr-v{color:var(--blue);}
+.sgd-v{color:var(--green);}
+
+/* Analysis page */
+.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.5rem;}
+.analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.analysis-card-header{padding:12px 16px;font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+.analysis-card-header.green{background:var(--green-dim);color:var(--green);}
+.analysis-card-header.red{background:var(--red-dim);color:var(--red);}
+.analysis-card-header.amber{background:var(--amber-dim);color:var(--amber);}
+.analysis-item{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.analysis-item:last-child{border-bottom:none;}
+.analysis-item-name{font-size:0.82rem;color:var(--text);flex:1;}
+.analysis-item-profit{font-size:0.82rem;font-weight:700;white-space:nowrap;}
+.analysis-item-stats{font-size:0.72rem;color:var(--muted);text-align:right;}
+.cur-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:1.5rem;width:fit-content;}
+.cur-tab{padding:7px 20px;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted2);transition:all 0.15s;font-family:Arial,sans-serif;}
+.cur-tab.active{background:var(--blue);color:#080B0F;}
+.analysis-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+
+/* Player page */
+.player-search{display:flex;gap:10px;margin-bottom:1.5rem;}
+.player-input{flex:1;padding:12px 16px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:0.9rem;font-family:Arial,sans-serif;}
+.player-input:focus{outline:none;border-color:var(--blue);}
+.search-btn{padding:12px 20px;border-radius:10px;border:none;background:var(--blue);color:#080B0F;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;}
+.search-btn:hover{opacity:0.85;}
+.player-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:14px;}
+.player-name{font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;}
+.player-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.4rem;}
+.player-stat{background:var(--surface2);border-radius:10px;padding:1rem;text-align:center;}
+.player-stat .lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.player-stat .val{font-size:1.2rem;font-weight:700;}
+.promo-category{background:var(--surface2);border-radius:12px;overflow:hidden;margin-bottom:8px;}
+.promo-category-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;transition:background 0.15s;}
+.promo-category-header:hover{background:var(--surface3);}
+.pch-left{display:flex;align-items:center;gap:12px;}
+.pch-name{font-size:0.9rem;font-weight:700;color:var(--text);}
+.pch-count{font-size:0.72rem;color:var(--muted);background:var(--surface3);padding:2px 8px;border-radius:10px;}
+.pch-right{display:flex;align-items:center;gap:16px;}
+.pch-stat{text-align:right;}
+.pch-stat .lbl{font-size:0.65rem;color:var(--muted);text-transform:uppercase;}
+.pch-stat .val{font-size:0.82rem;font-weight:700;}
+.pch-arrow{color:var(--muted);font-size:0.85rem;transition:transform 0.2s;}
+.pch-arrow.open{transform:rotate(180deg);}
+.promo-category-table{display:none;border-top:1px solid var(--border);}
+.promo-category-table.open{display:block;}
+.promo-category-table table{width:100%;border-collapse:collapse;}
+.promo-category-table th{font-size:0.7rem;color:var(--muted);font-weight:400;text-align:right;padding:8px 14px;border-bottom:1px solid var(--border);text-transform:uppercase;background:var(--surface);}
+.promo-category-table th:first-child{text-align:left;}
+.promo-category-table td{padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:0.82rem;color:var(--muted2);}
+.promo-category-table td:first-child{text-align:left;color:var(--muted);}
+.promo-category-table tr:last-child td{border-bottom:none;}
+.promo-category-table tr:hover td{background:rgba(255,255,255,0.02);}
+
+/* ── Timeline ── */
+.timeline-section{margin-top:1.5rem;}
+.timeline-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+.timeline{position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border2);}
+.tl-item{position:relative;margin-bottom:10px;}
+.tl-dot{position:absolute;left:-22px;top:12px;width:12px;height:12px;border-radius:50%;border:2px solid;}
+.tl-dot.deposit{background:rgba(77,159,255,0.3);border-color:var(--blue);}
+.tl-dot.bonus{background:rgba(255,176,32,0.3);border-color:var(--amber);}
+.tl-dot.withdraw{background:rgba(255,61,90,0.3);border-color:var(--red);}
+.tl-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.tl-card:hover{border-color:var(--border2);}
+.tl-left{display:flex;align-items:center;gap:10px;}
+.tl-badge{font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;}
+.tl-badge.deposit{background:var(--blue-dim);color:var(--blue);}
+.tl-badge.bonus{background:var(--amber-dim);color:var(--amber);}
+.tl-badge.withdraw{background:var(--red-dim);color:var(--red);}
+.tl-time{font-size:0.72rem;color:var(--muted);}
+.tl-desc{font-size:0.78rem;color:var(--muted2);}
+.tl-amount{font-size:0.88rem;font-weight:700;white-space:nowrap;}
+.tl-amount.deposit{color:var(--blue);}
+.tl-amount.bonus{color:var(--amber);}
+.tl-amount.withdraw{color:var(--red);}
+.tl-gap{display:inline-block;margin:4px 0 4px 0;padding:3px 10px;border-radius:5px;font-size:0.7rem;color:var(--muted);background:var(--surface3);border:1px dashed var(--border2);}
+.timeline-empty{padding:1.2rem;text-align:center;color:var(--muted);font-size:0.82rem;background:var(--surface2);border-radius:10px;}
+.tl-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.2rem;}
+.tl-sum-card{background:var(--surface2);border-radius:10px;padding:0.9rem;text-align:center;}
+.tl-sum-card .lbl{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;}
+.tl-sum-card .val{font-size:1rem;font-weight:700;}
+
+/* Builder */
+.builder-layout{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;}
+.builder-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:sticky;top:1rem;}
+.builder-panel h3{font-size:0.85rem;font-weight:700;margin-bottom:1.25rem;}
+.field-group{margin-bottom:1.25rem;}
+.field-group label{display:block;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.field-group select,.field-group input[type=date]{width:100%;font-size:0.82rem;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:Arial,sans-serif;}
+.multi-select{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;}
+.multi-select label{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;padding:5px 8px;border-radius:6px;}
+.multi-select label:hover{background:var(--surface2);}
+.multi-select input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;}
+.chart-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.ct-btn{padding:10px 6px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:0.7rem;font-family:Arial,sans-serif;text-align:center;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ct-btn:hover,.ct-btn.active{border-color:var(--blue);background:var(--blue-dim);color:var(--blue);font-weight:700;}
+.ct-icon{font-size:1.2rem;}
+.build-btn{width:100%;padding:12px;border-radius:10px;border:none;background:var(--blue);color:#080B0F;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;margin-top:0.5rem;}
+.builder-output{display:flex;flex-direction:column;gap:14px;}
+.built-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
+.built-chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.built-chart-title{font-size:0.9rem;font-weight:700;}
+.remove-btn{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0 4px;}
+.remove-btn:hover{color:var(--red);}
+.empty-builder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--muted);font-size:0.85rem;gap:1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+.empty-icon{font-size:3rem;opacity:0.3;}
+
+.loading-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:0.85rem;gap:10px;}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+
+/* Comparison page */
+.comparison-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem;}
+.comparison-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;}
+.comparison-header{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;}
+.comparison-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.comparison-row:last-child{border-bottom:none;}
+.comparison-label{font-size:0.82rem;color:var(--muted2);}
+.comparison-vals{display:flex;gap:16px;align-items:center;}
+.comparison-val{font-size:0.85rem;font-weight:700;text-align:right;min-width:100px;}
+.comparison-change{font-size:0.75rem;font-weight:700;padding:2px 7px;border-radius:5px;}
+.change-up{background:var(--green-dim);color:var(--green);}
+.change-down{background:var(--red-dim);color:var(--red);}
+.change-flat{background:var(--border);color:var(--muted);}
+.month-tabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;}
+.month-tab{padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-size:0.78rem;cursor:pointer;font-family:Arial,sans-serif;}
+.month-tab.active{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+
+/* Provider page */
+.provider-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;}
+
+/* ── Daily Mission ── */
+:root { --teal:#00C9FF; --teal-dim:rgba(0,201,255,0.12); }
+.mission-kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:1.5rem;}
+.metric.teal-card::after{background:var(--teal);}
+.metric .val.teal-val{color:var(--teal);}
+.mission-funnel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.mission-funnel-hd{padding:1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mission-funnel-title{font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;}
+.mission-day-row{display:grid;grid-template-columns:80px 1fr 1fr 100px 110px 110px;align-items:center;gap:12px;padding:10px 1.4rem;border-bottom:1px solid var(--border);}
+.mission-day-row:last-child{border-bottom:none;}
+.mission-day-row:hover{background:rgba(255,255,255,0.02);}
+.mission-day-label{font-size:0.82rem;font-weight:700;color:var(--teal);}
+.mission-bar-wrap{position:relative;height:20px;background:var(--surface3);border-radius:4px;overflow:hidden;}
+.mission-bar-claimed{position:absolute;left:0;top:0;height:100%;background:var(--teal);border-radius:4px;}
+.mission-bar-expired{position:absolute;top:0;height:100%;background:var(--red);opacity:0.7;}
+.mission-bar-label{font-size:0.7rem;color:var(--muted2);white-space:nowrap;}
+.mission-stat-cell{text-align:right;font-size:0.78rem;color:var(--muted2);}
+.mission-group-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.5rem;}
+.mission-group-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
+.mission-group-name{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
+.mission-group-val{font-size:1.4rem;font-weight:700;}
+.mission-group-sub{font-size:0.7rem;color:var(--muted);margin-top:4px;}
+.provider-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem;cursor:pointer;transition:border-color 0.15s;}
+.provider-card:hover{border-color:var(--blue);}
+.provider-card.active{border-color:var(--blue);background:var(--blue-dim);}
+.provider-name{font-size:0.85rem;font-weight:700;margin-bottom:8px;}
+.provider-stats{display:flex;gap:10px;flex-wrap:wrap;}
+.provider-stat{font-size:0.72rem;color:var(--muted2);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">P</div>
+    <div>
+      <h1>PROMO <span>Dashboard</span></h1>
+      <p>MYR & SGD  |  实时数据分析</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="ppt-btn" id="pptBtn" onclick="generateReport()" disabled>📊 生成报告</button>
+    <div class="status-chip">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">加载中...</span>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Bar (dynamically built from config.json) -->
+<div class="upload-bar" id="uploadBar">
+  <span class="upload-bar-title">上传数据</span>
+</div>
+
+<!-- Nav -->
+<div class="nav" id="mainNav">
+  <button class="nav-tab active" onclick="switchPage('overview',this)">📊 总览</button>
+  <button class="nav-tab" onclick="switchPage('analysis',this)">🔍 Promo 分析</button>
+  <button class="nav-tab" onclick="switchPage('player',this)">👤 玩家行为</button>
+  <button class="nav-tab" onclick="switchPage('comparison',this)">📅 月份对比</button>
+  <button class="nav-tab" onclick="switchPage('provider',this)">🎮 供应商分析</button>
+  <button class="nav-tab" onclick="switchPage('builder',this)">🎨 图表构建器</button>
+  <button class="nav-tab" onclick="switchPage('mission',this)">🎯 Daily Mission</button>
+</div>
+
+<!-- ── OVERVIEW PAGE ── -->
+<div id="overviewPage">
+  <div class="controls">
+    <div class="tabs">
+      <button class="tab active" onclick="setView('day',this)">日</button>
+      <button class="tab" onclick="setView('week',this)">周</button>
+      <button class="tab" onclick="setView('month',this)">月</button>
+    </div>
+    <div class="filter-wrap">
+      <input type="date" class="date-input" id="dateFrom" onchange="loadData()" />
+      <span class="date-sep">至</span>
+      <input type="date" class="date-input" id="dateTo" onchange="loadData()" />
+      <button class="date-reset" onclick="resetDates()">重置</button>
+      <select class="sel" id="promoFilter" onchange="renderOverview()"><option value="all">全部 Promo</option></select>
+    </div>
+  </div>
+
+  <div id="overviewContent">
+    <div class="loading-state"><div class="spinner"></div>等待数据...</div>
+  </div>
+</div>
+
+<!-- ── ANALYSIS PAGE ── -->
+<div id="analysisPage" class="hidden">
+  <div class="cur-toggle">
+    <button class="cur-tab active" onclick="setAnalysisCur('MYR',this)">🇲🇾 MYR</button>
+    <button class="cur-tab" onclick="setAnalysisCur('SGD',this)">🇸🇬 SGD</button>
+    <button class="cur-tab" onclick="setAnalysisCur('ALL',this)">全部</button>
+  </div>
+  <div class="analysis-summary" id="analysisSummary"></div>
+  <div style="margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;">
+    <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;margin-bottom:0.75rem;">判断标准</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.82rem;">
+      <span style="color:var(--green)">✅ 继续 — 净利润 &gt; 0</span>
+      <span style="color:var(--amber)">⚠️ 检讨 — 净利润 &lt; 0 但有存款</span>
+      <span style="color:var(--red)">🛑 停止 — 净利润 &lt; 0 且无存款</span>
+    </div>
+  </div>
+  <div class="analysis-grid" id="analysisGrid"></div>
+  <div class="chart-card">
+    <div class="chart-hd"><div class="chart-title">净利润排名</div></div>
+    <div style="position:relative;width:100%;height:350px;"><canvas id="analysisChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ── PLAYER PAGE ── -->
+<div id="playerPage" class="hidden">
+  <div class="player-search">
+    <input type="text" class="player-input" id="playerInput" placeholder="输入玩家账号（Login），按 Enter 搜索" onkeydown="if(event.key==='Enter')searchPlayer()" />
+    <button class="search-btn" onclick="searchPlayer()">🔍 搜索</button>
+  </div>
+  <div id="playerContent">
+    <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">输入玩家账号来查看他的领取记录和行为分析</div>
+  </div>
+</div>
+
+<!-- ── BUILDER PAGE ── -->
+<div id="builderPage" class="hidden">
+  <div class="builder-layout">
+    <div class="builder-panel">
+      <h3>🎨 图表构建器</h3>
+      <div class="field-group">
+        <label>货币</label>
+        <select id="bCurrency"><option value="MYR">🇲🇾 MYR</option><option value="SGD">🇸🇬 SGD</option><option value="ALL">全部</option></select>
+      </div>
+      <div class="field-group">
+        <label>X 轴 / 分组</label>
+        <select id="bXAxis">
+          <option value="date_day">按日期（日）</option>
+          <option value="date_week">按日期（周）</option>
+          <option value="date_month">按日期（月）</option>
+          <option value="promo">按 Promo 名称</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Y 轴（可多选）</label>
+        <div class="multi-select" id="bYAxis">
+          <label><input type="checkbox" value="claims" checked /> 领取人次</label>
+          <label><input type="checkbox" value="deposit_ppl" /> 存款人数</label>
+          <label><input type="checkbox" value="deposit" /> 存款金额</label>
+          <label><input type="checkbox" value="bonus" /> 派发 Bonus</label>
+          <label><input type="checkbox" value="netProfit" /> 净利润</label>
+          <label><input type="checkbox" value="roi" /> ROI %</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>图表类型</label>
+        <div class="chart-type-grid">
+          <button class="ct-btn active" data-type="bar" onclick="selectChartType(this)"><span class="ct-icon">📊</span>柱状图</button>
+          <button class="ct-btn" data-type="line" onclick="selectChartType(this)"><span class="ct-icon">📈</span>折线图</button>
+          <button class="ct-btn" data-type="bar_h" onclick="selectChartType(this)"><span class="ct-icon">📉</span>横向柱</button>
+          <button class="ct-btn" data-type="pie" onclick="selectChartType(this)"><span class="ct-icon">🥧</span>饼图</button>
+          <button class="ct-btn" data-type="doughnut" onclick="selectChartType(this)"><span class="ct-icon">🍩</span>环形图</button>
+          <button class="ct-btn" data-type="area" onclick="selectChartType(this)"><span class="ct-icon">🏔️</span>面积图</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Promo 筛选</label>
+        <div class="multi-select" id="bPromoList"></div>
+      </div>
+      <button class="build-btn" onclick="buildChart()">生成图表 →</button>
+    </div>
+    <div class="builder-output" id="builderOutput">
+      <div class="empty-builder"><div class="empty-icon">🎨</div><div>选择数据和图表类型，点击生成图表</div></div>
+    </div>
+  </div>
+</div>
+
+  <!-- ── COMPARISON PAGE ── -->
+  <div id="comparisonPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setCompCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setCompCur('SGD',this)">🇸🇬 SGD</button>
+    </div>
+    <div id="compMonthTabs" class="month-tabs"></div>
+    <div id="comparisonContent">
+      <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>
+    </div>
+  </div>
+
+  <!-- ── PROVIDER PAGE ── -->
+  <div id="providerPage" class="hidden">
+    <div class="cur-toggle" style="margin-bottom:1rem;">
+      <button class="cur-tab active" onclick="setProviderCur('MYR',this)">🇲🇾 MYR</button>
+      <button class="cur-tab" onclick="setProviderCur('SGD',this)">🇸🇬 SGD</button>
+      <button class="cur-tab" onclick="setProviderCur('ALL',this)">全部</button>
+    </div>
+    <div id="providerGrid" class="provider-grid"></div>
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-hd"><div class="chart-title" id="providerChartTitle">供应商净利润对比</div></div>
+      <div style="position:relative;width:100%;height:300px;"><canvas id="providerChart"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-hd" id="providerTableTitle">供应商明细</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>供应商</th><th>领取人次</th><th>存款人数</th><th>总存款</th><th>派发 Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th>
+          </tr></thead>
+          <tbody id="providerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<!-- ── DAILY MISSION PAGE ── -->
+<div id="missionPage" class="hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;">
+    <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;">📅 数据范围</div>
+    <div class="filter-wrap">
+      <input type="date" class="date-input" id="missionFrom" onchange="renderMission()" />
+      <span class="date-sep">至</span>
+      <input type="date" class="date-input" id="missionTo" onchange="renderMission()" />
+      <button class="date-reset" onclick="resetMissionDates()">重置</button>
+    </div>
+  </div>
+  <div id="missionContent">
+    <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">请上传 Daily Mission CSV 数据</div>
+  </div>
+</div>
+
+</div>
+<script>
+let API = 'https://promo-api.annann5653.workers.dev';
+let CONFIG = {};
+const METRIC_LABELS = { claims:'领取人次', deposit_ppl:'存款人数', deposit:'存款金额', bonus:'派发 Bonus', netProfit:'净利润', roi:'ROI %' };
+const COLORS = ['#4D9FFF','#00E5A0','#FFB020','#A78BFA','#FF3D5A','#00C9FF','#FFE45E','#FF6B6B'];
+
+let allData = [], allDataFull = [], activeData = {}, view = 'day', ovCharts = {}, builtCharts = [], chartCounter = 0;
+let realProfitData = null, realProfitLoading = false, realProfitKey = '';
+let analysisCur = 'MYR', analysisChartInst = null, selectedChartType = 'bar';
+let missionChartInst = null;
+
+// ── Load Config ──
+async function loadConfig() {
+  try {
+    const res = await fetch('./config.json?t=' + Date.now());
+    if (res.ok) {
+      CONFIG = await res.json();
+      if (CONFIG.api?.worker_url) API = CONFIG.api.worker_url;
+
+      // Build nav from config
+      if (CONFIG.pages) {
+        const pageMap = {
+          overview:   { fn: "switchPage('overview',this)",   label: '📊 总览' },
+          analysis:   { fn: "switchPage('analysis',this)",   label: '🔍 Promo 分析' },
+          player:     { fn: "switchPage('player',this)",     label: '👤 玩家行为' },
+          comparison: { fn: "switchPage('comparison',this)", label: '📅 月份对比' },
+          provider:   { fn: "switchPage('provider',this)",   label: '🎮 供应商分析' },
+          builder:    { fn: "switchPage('builder',this)",    label: '🎨 图表构建器' },
+        };
+        const nav = document.getElementById('mainNav');
+        nav.innerHTML = '';
+        let first = true;
+        Object.entries(CONFIG.pages).forEach(([key, cfg]) => {
+          if (!cfg.enabled) return;
+          const btn = document.createElement('button');
+          btn.className = 'nav-tab' + (first ? ' active' : '');
+          btn.setAttribute('onclick', pageMap[key].fn);
+          btn.textContent = cfg.label || pageMap[key].label;
+          nav.appendChild(btn);
+          first = false;
+        });
+      }
+
+      // Build upload bar from config
+      if (CONFIG.upload) {
+        const bar = document.getElementById('uploadBar');
+        bar.innerHTML = '';
+
+        const addTitle = (text) => {
+          const t = document.createElement('span');
+          t.className = 'upload-bar-title';
+          t.textContent = text;
+          bar.appendChild(t);
+        };
+        const addSep = () => {
+          const sep = document.createElement('div');
+          sep.className = 'upload-bar-sep';
+          bar.appendChild(sep);
+        };
+        const addBtn = (id, label, accept, onchange) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'upload-btn';
+          lbl.id = id;
+          lbl.innerHTML = `<input type="file" accept="${accept}" onchange="${onchange}" />${label}`;
+          bar.appendChild(lbl);
+        };
+
+        // Promo
+        const p = CONFIG.upload.promo || {};
+        const hasPromo = p.myr?.enabled || p.sgd?.enabled || p.active_player?.enabled;
+        if (hasPromo) addTitle('Promo');
+        if (p.myr?.enabled)           addBtn('btnMYR',    p.myr.label,           '.csv',       "uploadCSV('MYR',this)");
+        if (p.sgd?.enabled)           addBtn('btnSGD',    p.sgd.label,           '.csv',       "uploadCSV('SGD',this)");
+        if (p.active_player?.enabled) addBtn('btnAP',     p.active_player.label, '.xlsx,.xls', "uploadActivePlayer(this)");
+
+        // Deposit
+        const d = CONFIG.upload.deposit || {};
+        const hasDep = d.myr?.enabled || d.sgd?.enabled;
+        if (hasDep) { addSep(); addTitle('Deposit'); }
+        if (d.myr?.enabled) addBtn('btnDepMYR', d.myr.label, '.csv', "uploadDepositWithdraw('deposit','MYR',this)");
+        if (d.sgd?.enabled) addBtn('btnDepSGD', d.sgd.label, '.csv', "uploadDepositWithdraw('deposit','SGD',this)");
+
+        // Withdraw
+        const w = CONFIG.upload.withdraw || {};
+        const hasWD = w.myr?.enabled || w.sgd?.enabled;
+        if (hasWD) { addSep(); addTitle('Withdraw'); }
+        if (w.myr?.enabled) addBtn('btnWdMYR', w.myr.label, '.csv', "uploadDepositWithdraw('withdraw','MYR',this)");
+        if (w.sgd?.enabled) addBtn('btnWdSGD', w.sgd.label, '.csv', "uploadDepositWithdraw('withdraw','SGD',this)");
+
+        // Mission upload button
+        const m = CONFIG.upload?.mission || {};
+        if (m.enabled !== false) {
+          addSep(); addTitle('Mission');
+          addBtn('btnMission', m.label || '🎯 Daily Mission', '.csv', "uploadMission(this)");
+        }
+      }
     }
-  },
-  "metrics": {
-    "claims":           { "enabled": true,  "label": "领取人次" },
-    "deposit_ppl":      { "enabled": true,  "label": "存款人数" },
-    "deposit":          { "enabled": true,  "label": "总存款" },
-    "bonus":            { "enabled": true,  "label": "派发 Bonus" },
-    "winloss":          { "enabled": true,  "label": "Win/Loss" },
-    "net_profit":       { "enabled": true,  "label": "净利润" },
-    "roi":              { "enabled": true,  "label": "ROI" },
-    "participation":    { "enabled": true,  "label": "参与率" },
-    "deposit_rate":     { "enabled": true,  "label": "存款转化率" },
-    "avg_deposit":      { "enabled": true,  "label": "人均存款" }
-  },
-  "analysis": {
-    "continue_threshold": 0,
-    "review_condition": "has_deposit",
-    "stop_condition": "no_deposit"
-  },
-  "report": {
-    "html_report":    { "enabled": true },
-    "email_format":   { "enabled": false }
+  } catch(e) { console.warn('Config not found, using defaults'); }
+}
+
+// ── Init ──
+async function init() {
+  await loadConfig();
+  try {
+    const dates = await apiFetch('/dates');
+    if (dates.myr?.from || dates.sgd?.from) {
+      const from = dates.myr?.from || dates.sgd?.from;
+      const to   = dates.myr?.to   || dates.sgd?.to;
+      document.getElementById('dateFrom').value = from;
+      document.getElementById('dateTo').value   = to;
+      setStatus('live', '已连接');
+      document.getElementById('pptBtn').disabled = false;
+      await loadData();
+    } else {
+      setStatus('live', '暂无数据，请上传 CSV');
+    }
+  } catch(e) {
+    setStatus('error', '连接失败');
+    console.error(e);
   }
 }
+
+async function apiFetch(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error('API error: ' + res.status);
+  return res.json();
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'dot' + (type === 'live' ? ' live' : type === 'error' ? ' error' : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+// ── CSV Parser (frontend) ──
+function parseCSVFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iLogin=idx('Login'), iProvider=idx('Provider'), iCode=idx('Code'), iStatus=idx('Status');
+  const iStart=idx('Start Time'), iTransfer=idx('Transfer'), iBonus=idx('Bonus'), iWL=idx('Current Win Loss');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login    = (r[iLogin]    ||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const provider = (r[iProvider] ||'').replace(/"/g,'').trim();
+    const code     = (r[iCode]     ||'').replace(/"/g,'').trim();
+    const status   = (r[iStatus]   ||'').replace(/"/g,'').trim();
+    const startRaw = (r[iStart]    ||'').replace(/"/g,'').trim();
+    const transfer = parseFloat((r[iTransfer]||'0').replace(/"/g,'').trim()) || 0;
+    const bonus    = parseFloat((r[iBonus]   ||'0').replace(/"/g,'').trim()) || 0;
+    const winloss  = parseFloat((r[iWL>=0?iWL:15]||'0').replace(/"/g,'').trim()) || 0;
+    if (!login || !code || !startRaw) continue;
+    rows.push({ login, currency, provider, code, status, date: startRaw.slice(0,10), transfer, bonus, winloss });
+  }
+  return rows;
+}
+
+function parseDepositFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iId=idx('ID'), iLogin=idx('Login'), iAmount=idx('Amount'), iStatus=idx('Status');
+  const iGroup=idx('Member Group'), iMerchant=idx('Merchant Bank');
+  const iCreated=idx('Created Date'), iProcessing=idx('Processing Time');
+  const iRef=idx('Reference ID'), iAffiliate=idx('Affiliate Login');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login = (r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const createdRaw = (r[iCreated]||'').replace(/"/g,'').trim();
+    if (!login || !createdRaw) continue;
+    rows.push({
+      id:              parseInt((r[iId]||'').replace(/"/g,'').trim()) || null,
+      login, currency,
+      amount:          parseFloat((r[iAmount]||'0').replace(/"/g,'').trim()) || 0,
+      status:          (r[iStatus]   ||'').replace(/"/g,'').trim(),
+      member_group:    (r[iGroup]    ||'').replace(/"/g,'').trim(),
+      merchant_bank:   (r[iMerchant] ||'').replace(/"/g,'').trim(),
+      created_date:    createdRaw,
+      processing_time: (r[iProcessing]||'').replace(/"/g,'').trim() || null,
+      reference_id:    (r[iRef]      ||'').replace(/"/g,'').trim(),
+      affiliate_login: (r[iAffiliate]||'').replace(/^="?(.*?)"?$/,'$1').trim(),
+    });
+  }
+  return rows;
+}
+
+function parseWithdrawFrontend(text, currency) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim() === 'Login')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iId=idx('ID'), iLogin=idx('Login'), iAmount=idx('Amount'), iStatus=idx('Status');
+  const iGroup=idx('Member Group'), iBank=idx('Member Bank');
+  const iCreated=idx('Created Date'), iProcessing=idx('Processing Time');
+  const iRef=idx('Reference ID'), iAffiliate=idx('Affiliate Login'), iPayout=idx('Payout Status');
+  const rows = [];
+  for (let i = hRow+1; i < lines.length; i++) {
+    const r = lines[i]; if (!r || r.length < 5) continue;
+    const login = (r[iLogin]||'').replace(/^="?(.*?)"?$/,'$1').trim();
+    const createdRaw = (r[iCreated]||'').replace(/"/g,'').trim();
+    if (!login || !createdRaw) continue;
+    rows.push({
+      id:              parseInt((r[iId]||'').replace(/"/g,'').trim()) || null,
+      login, currency,
+      amount:          parseFloat((r[iAmount]||'0').replace(/"/g,'').trim()) || 0,
+      status:          (r[iStatus]   ||'').replace(/"/g,'').trim(),
+      member_group:    (r[iGroup]    ||'').replace(/"/g,'').trim(),
+      member_bank:     (r[iBank]     ||'').replace(/"/g,'').trim(),
+      created_date:    createdRaw,
+      processing_time: (r[iProcessing]||'').replace(/"/g,'').trim() || null,
+      reference_id:    (r[iRef]      ||'').replace(/"/g,'').trim(),
+      affiliate_login: (r[iAffiliate]||'').replace(/^="?(.*?)"?$/,'$1').trim(),
+      payout_status:   (r[iPayout]   ||'').replace(/"/g,'').trim(),
+    });
+  }
+  return rows;
+}
+
+// ── Batch POST helper ──
+async function batchUpload(endpoint, rows, currency, dateField, batchSize = 500) {
+  const dates = rows.map(r => (r[dateField]||'').slice(0,10)).filter(Boolean).sort();
+  const minDate = dates[0];
+  const maxDate = dates[dates.length-1];
+  let totalInserted = 0;
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const isFirst = i === 0;
+    setStatus('', `上传中... ${i+batch.length}/${rows.length}`);
+    const res = await fetch(API + endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: batch, currency, minDate, maxDate, isFirst })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    totalInserted += data.inserted;
+  }
+  return totalInserted;
+}
+
+// ── Upload Promo CSV ──
+async function uploadCSV(currency, input) {
+  const file = input.files[0]; if (!file) return;
+  const btn = document.getElementById('btn' + currency);
+  btn.className = 'upload-btn uploading';
+  setStatus('', '解析中...');
+  try {
+    const text = await file.text();
+    const rows = parseCSVFrontend(text, currency);
+    if (!rows.length) throw new Error('找不到有效数据');
+    const total = await batchUpload('/upload', rows, currency, 'date');
+    btn.className = 'upload-btn done';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadCSV('${currency}',this)" /> ✅ ${currency} (${total})`;
+    setStatus('live', `${currency} 上传成功 · ${total} 条`);
+    await loadData();
+  } catch(e) {
+    btn.className = 'upload-btn';
+    setStatus('error', '上传失败: ' + e.message);
+    alert('上传失败: ' + e.message);
+  }
+}
+
+// ── Upload Deposit / Withdraw CSV ──
+async function uploadDepositWithdraw(type, currency, input) {
+  const file = input.files[0]; if (!file) return;
+  const btnId = type === 'deposit'
+    ? (currency === 'MYR' ? 'btnDepMYR' : 'btnDepSGD')
+    : (currency === 'MYR' ? 'btnWdMYR'  : 'btnWdSGD');
+  const btn = document.getElementById(btnId);
+  btn.className = 'upload-btn uploading';
+  setStatus('', '解析中...');
+  try {
+    const text = await file.text();
+    const allRows = type === 'deposit'
+      ? parseDepositFrontend(text, currency)
+      : parseWithdrawFrontend(text, currency);
+    if (!allRows.length) throw new Error('找不到有效数据');
+
+    // Determine the date range covered by this CSV, then fetch the set of
+    // logins who claimed a promo in that same range+currency, and filter
+    // rows down to only those logins BEFORE uploading. This keeps
+    // deposit_data/withdraw_data small (only promo-claiming players) and
+    // avoids Cloudflare's per-invocation subrequest limit later when
+    // computing real profit.
+    const dates = allRows.map(r => r.created_date.slice(0,10)).filter(Boolean).sort();
+    const rangeFrom = dates[0];
+    const rangeTo   = dates[dates.length-1];
+
+    setStatus('', '筛选 Promo 玩家中...');
+    let rows = allRows;
+    let skipped = 0;
+    try {
+      const lg = await apiFetch(`/promo-logins?currency=${currency}&from=${rangeFrom}&to=${rangeTo}`);
+      const loginSet = new Set(lg.logins || []);
+      rows = allRows.filter(r => loginSet.has(r.login));
+      skipped = allRows.length - rows.length;
+    } catch(e) {
+      console.warn('promo-logins lookup failed, uploading unfiltered:', e.message);
+    }
+
+    if (!rows.length) {
+      btn.className = 'upload-btn';
+      setStatus('error', '没有玩家匹配 Promo 名单');
+      alert(`该文件的 ${allRows.length} 条记录中，没有任何玩家在 ${rangeFrom} ~ ${rangeTo} (${currency}) 领过 Promo，已跳过上传。`);
+      return;
+    }
+
+    const endpoint = type === 'deposit' ? '/upload-deposit' : '/upload-withdraw';
+    const total = await batchUpload(endpoint, rows, currency, 'created_date');
+    const doneClass = type === 'deposit' ? 'upload-btn done-dep' : 'upload-btn done-wd';
+    btn.className = doneClass;
+    const label = type === 'deposit' ? 'Dep' : 'WD';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadDepositWithdraw('${type}','${currency}',this)" /> ✅ ${label} ${currency} (${total})`;
+    setStatus('live', `${type === 'deposit' ? '存款' : '提款'} ${currency} 上传成功 · ${total} 条（已过滤 ${skipped} 条非Promo玩家）`);
+  } catch(e) {
+    btn.className = 'upload-btn';
+    setStatus('error', '上传失败: ' + e.message);
+    alert('上传失败: ' + e.message);
+  }
+}
+
+// ── Upload Active Players ──
+async function uploadActivePlayer(input) {
+  const file = input.files[0]; if (!file) return;
+  const btn = document.getElementById('btnAP');
+  btn.className = 'upload-btn uploading';
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    let hRow = -1;
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] && raw[i].some(c => String(c).includes('日期') || String(c).toLowerCase().includes('date'))) { hRow = i; break; }
+    }
+    if (hRow < 0) throw new Error('找不到表头');
+    const records = [];
+    for (let i = hRow + 1; i < raw.length; i++) {
+      const r = raw[i]; if (!r || !r[0]) continue;
+      let dateStr = '';
+      const dateVal = r[0];
+      if (typeof dateVal === 'number' && dateVal > 40000) {
+        const d = new Date((dateVal - 25569) * 86400 * 1000);
+        dateStr = d.toISOString().slice(0, 10);
+      } else { dateStr = String(dateVal).slice(0, 10); }
+      if (!dateStr) continue;
+      records.push({ date: dateStr, myr_count: parseInt(r[1]) || 0, sgd_count: parseInt(r[2]) || 0 });
+    }
+    const res = await fetch(API + '/upload-active', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records })
+    });
+    const data = await res.json();
+    if (data.success) {
+      btn.className = 'upload-btn done';
+      btn.innerHTML = `<input type="file" accept=".xlsx,.xls" onchange="uploadActivePlayer(this)" /> ✅ Active (${data.inserted}天)`;
+      await loadData();
+    } else throw new Error(data.error);
+  } catch(e) {
+    btn.className = 'upload-btn';
+    alert('上传失败: ' + e.message);
+  }
+}
+
+// ── Load Data ──
+async function loadData() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  setStatus('', '加载中...');
+  try {
+    let q = '/records?limit=50000';
+    if (from) q += '&from=' + from;
+    if (to)   q += '&to='   + to;
+    allData = await apiFetch(q);
+    try { allDataFull = await apiFetch('/records?limit=10000'); } catch(e) { allDataFull = allData; }
+    let aq = '/active?';
+    if (from) aq += 'from=' + from + '&';
+    if (to)   aq += 'to='   + to;
+    const apRows = await apiFetch(aq);
+    activeData = {};
+    apRows.forEach(r => { activeData[r.date] = { myr: r.myr_count, sgd: r.sgd_count }; });
+    const promos = [...new Set(allData.map(r => r.code).filter(Boolean))].sort();
+    document.getElementById('promoFilter').innerHTML = '<option value="all">全部 Promo</option>' + promos.map(p => `<option value="${p}">${p}</option>`).join('');
+    document.getElementById('bPromoList').innerHTML = promos.map(p => `<label><input type="checkbox" value="${p}" checked /> ${p}</label>`).join('');
+    setStatus('live', `已同步 · ${allData.length.toLocaleString()} 条记录`);
+    document.getElementById('pptBtn').disabled = false;
+    renderOverview();
+    if (!document.getElementById('analysisPage').classList.contains('hidden')) renderAnalysis();
+    loadRealProfit(); // fire-and-forget, re-renders overview/analysis when ready
+  } catch(e) {
+    setStatus('error', '加载失败');
+    console.error(e);
+  }
+}
+
+// ── Real Profit (deposit/withdraw based, independent-window) ──
+async function loadRealProfit() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  const key = from + '|' + to;
+  if (realProfitLoading) return;
+  realProfitKey = key;
+  realProfitLoading = true;
+  try {
+    let q = '/real-profit?lookahead_days=60';
+    if (from) q += '&from=' + from;
+    if (to)   q += '&to='   + to;
+    const data = await apiFetch(q);
+    if (realProfitKey !== key) return; // stale response, date range changed meanwhile
+    realProfitData = data;
+  } catch(e) {
+    console.warn('Real profit unavailable:', e.message);
+    realProfitData = [];
+  } finally {
+    realProfitLoading = false;
+    // Re-render currently visible pages with the new data
+    renderOverview();
+    if (!document.getElementById('analysisPage').classList.contains('hidden')) renderAnalysis();
+  }
+}
+
+// Aggregate real-profit rows by promo code+currency (for Analysis page) or overall (for Overview)
+// Claims with an still-open window (no deposit/withdraw happened yet) are excluded from the
+// profit totals since there's no concluded result yet, but counted separately as "pending".
+function aggregateRealProfit(currency) {
+  if (!realProfitData) return null;
+  const rows = currency === 'ALL' ? realProfitData : realProfitData.filter(r => r.currency === currency);
+  const byCode = {};
+  let totalDep = 0, totalWd = 0, totalBonus = 0, totalRealProfit = 0, pendingCount = 0;
+  rows.forEach(r => {
+    if (r.window_open || r.real_profit === null) { pendingCount++; return; }
+    totalDep += r.deposit_window;
+    totalWd  += r.withdraw_window;
+    totalBonus += r.bonus;
+    totalRealProfit += r.real_profit;
+    const key = r.code + '||' + r.currency; // never merge different currencies under the same code name
+    if (!byCode[key]) byCode[key] = { deposit:0, withdraw:0, bonus:0, realProfit:0, count:0 };
+    byCode[key].deposit    += r.deposit_window;
+    byCode[key].withdraw   += r.withdraw_window;
+    byCode[key].bonus      += r.bonus;
+    byCode[key].realProfit += r.real_profit;
+    byCode[key].count++;
+  });
+  return { totalDep, totalWd, totalBonus, totalRealProfit, byCode, count: rows.length, pendingCount };
+}
+
+function resetDates() {
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  loadData();
+}
+
+// ── Page switching ──
+function switchPage(page, btn) {
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['overviewPage','analysisPage','playerPage','comparisonPage','providerPage','builderPage','missionPage'].forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', !id.startsWith(page));
+  });
+  if (page === 'analysis')   renderAnalysis();
+  if (page === 'comparison') renderComparison();
+  if (page === 'provider')   renderProvider();
+  if (page === 'mission')    renderMission();
+}
+
+function setView(v, btn) {
+  view = v;
+  document.querySelectorAll('#overviewPage .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOverview();
+}
+
+// ── Data helpers ──
+function getFiltered(currency) {
+  const promo = document.getElementById('promoFilter').value;
+  return allData.filter(r => {
+    if (currency !== 'ALL' && r.currency !== currency) return false;
+    if (promo !== 'all' && r.code !== promo) return false;
+    return true;
+  });
+}
+
+function groupByTime(rows, v) {
+  v = v || view;
+  const map = {};
+  rows.forEach(r => {
+    let key;
+    const d = new Date(r.date);
+    if (v === 'day') { key = r.date; }
+    else if (v === 'week') {
+      const jan1 = new Date(d.getFullYear(), 0, 1);
+      const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+      key = `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+    } else { key = r.date.slice(0, 7); }
+    if (!map[key]) map[key] = { label: key, claims: 0, depPpl: 0, deposit: 0, bonus: 0, winloss: 0 };
+    map[key].claims++;
+    map[key].depPpl  += r.transfer > 0 ? 1 : 0;
+    map[key].deposit += r.transfer;
+    map[key].bonus   += r.bonus;
+    map[key].winloss += r.winloss;
+  });
+  return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function groupByPromo(rows, currency) {
+  const map = {};
+  rows.forEach(r => {
+    const key = r.code + '||' + r.currency; // never merge different currencies under the same code name
+    if (!map[key]) map[key] = { name: r.code, currency: r.currency, claims: 0, depPpl: 0, deposit: 0, bonus: 0, winloss: 0, dayMap: {} };
+    map[key].claims++;
+    map[key].depPpl  += r.transfer > 0 ? 1 : 0;
+    map[key].deposit += r.transfer;
+    map[key].bonus   += r.bonus;
+    map[key].winloss += r.winloss;
+    if (!map[key].dayMap[r.date]) map[key].dayMap[r.date] = 0;
+    map[key].dayMap[r.date]++;
+  });
+  return Object.values(map).sort((a, b) => b.claims - a.claims).map(p => {
+    p.netProfit = -p.winloss - p.bonus;
+    p.roi = p.bonus > 0 ? p.netProfit / p.bonus * 100 : null;
+    const apKey = p.currency === 'SGD' ? 'sgd' : 'myr';
+    let totalRate = 0, dayCount = 0;
+    Object.entries(p.dayMap).forEach(([date, cnt]) => {
+      const ap = activeData[date] ? activeData[date][apKey] : 0;
+      if (ap > 0) { totalRate += cnt / ap; dayCount++; }
+    });
+    p.partRate = dayCount > 0 ? totalRate / dayCount : null;
+    if (p.netProfit > 0) p.status = 'continue';
+    else if (p.netProfit < 0 && p.depPpl > 0) p.status = 'review';
+    else p.status = 'stop';
+    return p;
+  });
+}
+
+// ── Format ──
+function fmtRM(n)  { if (!n && n !== 0) return '—'; const abs = Math.abs(n); const s = 'RM' + abs.toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2}); return n < 0 ? '('+s+')' : s; }
+function fmtSGD(n) { if (!n && n !== 0) return '—'; const abs = Math.abs(n); const s = 'S$' + abs.toLocaleString('en-SG', {minimumFractionDigits:2,maximumFractionDigits:2}); return n < 0 ? '('+s+')' : s; }
+function fmtAuto(n, cur) { return cur === 'SGD' ? fmtSGD(n) : fmtRM(n); }
+function fmtN(n) { return n ? n.toLocaleString('en-MY') : '—'; }
+function fmtLabel(label, v) {
+  v = v || view;
+  const d = new Date(label); if (isNaN(d)) return label;
+  if (v === 'day')   return d.toLocaleDateString('en-MY', { day: '2-digit', month: 'short' });
+  if (v === 'month') return d.toLocaleDateString('en-MY', { month: 'short', year: 'numeric' });
+  return label;
+}
+function fmtDateTime(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function timeDiffStr(a, b) {
+  if (!a || !b) return null;
+  const diff = Math.abs(new Date(b) - new Date(a));
+  const hrs  = Math.floor(diff / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (hrs >= 24) return Math.floor(hrs/24) + '天' + (hrs%24) + '小时后';
+  if (hrs > 0)   return hrs + '小时' + mins + '分后';
+  return mins + '分钟后';
+}
+
+// ── Overview ──
+function renderOverview() {
+  const myrRows = getFiltered('MYR');
+  const sgdRows = getFiltered('SGD');
+  const myrClaims  = myrRows.length;
+  const myrDepPpl  = myrRows.filter(r => r.transfer > 0).length;
+  const myrDeposit = myrRows.reduce((s,r) => s + r.transfer, 0);
+  const myrBonus   = myrRows.reduce((s,r) => s + r.bonus, 0);
+  const myrWL      = myrRows.reduce((s,r) => s + r.winloss, 0);
+  const myrNP      = -myrWL - myrBonus;
+  const myrPPA     = myrDepPpl > 0 ? myrDeposit / myrDepPpl : 0;
+  const myrTotalAP = Object.values(activeData).reduce((s,d) => s + (d.myr||0), 0);
+  const myrPart    = myrTotalAP > 0 ? (myrClaims / myrTotalAP * 100).toFixed(1) + '%' : null;
+  const sgdClaims  = sgdRows.length;
+  const sgdDepPpl  = sgdRows.filter(r => r.transfer > 0).length;
+  const sgdDeposit = sgdRows.reduce((s,r) => s + r.transfer, 0);
+  const sgdBonus   = sgdRows.reduce((s,r) => s + r.bonus, 0);
+  const sgdWL      = sgdRows.reduce((s,r) => s + r.winloss, 0);
+  const sgdNP      = -sgdWL - sgdBonus;
+  const sgdPPA     = sgdDepPpl > 0 ? sgdDeposit / sgdDepPpl : 0;
+  const sgdTotalAP = Object.values(activeData).reduce((s,d) => s + (d.sgd||0), 0);
+  const sgdPart    = sgdTotalAP > 0 ? (sgdClaims / sgdTotalAP * 100).toFixed(1) + '%' : null;
+  const tableMap = {};
+  [...myrRows.map(r=>({...r,cur:'MYR'})), ...sgdRows.map(r=>({...r,cur:'SGD'}))].forEach(r => {
+    const key = r.date + '||' + r.code + '||' + r.cur;
+    if (!tableMap[key]) tableMap[key] = { date:r.date, code:r.code, cur:r.cur, claims:0, depPpl:0, deposit:0, bonus:0, winloss:0 };
+    tableMap[key].claims++;
+    tableMap[key].depPpl  += r.transfer > 0 ? 1 : 0;
+    tableMap[key].deposit += r.transfer;
+    tableMap[key].bonus   += r.bonus;
+    tableMap[key].winloss += r.winloss;
+  });
+  const tableRows = Object.values(tableMap).sort((a,b) => b.date.localeCompare(a.date) || a.code.localeCompare(b.code));
+  const myrG = groupByTime(myrRows);
+  const sgdG = groupByTime(sgdRows);
+  const gc = 'rgba(255,255,255,0.04)';
+
+  // ── Real profit (deposit/withdraw based) summary ──
+  const myrRP = aggregateRealProfit('MYR');
+  const sgdRP = aggregateRealProfit('SGD');
+  function realProfitBlock(rp, fmt) {
+    if (!rp) {
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;color:var(--muted);font-size:0.82rem;text-align:center;">真实盈亏（基于存款/提款）加载中...</div>`;
+    }
+    const rpC = rp.totalRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    const roi = rp.totalBonus > 0 ? (rp.totalRealProfit/rp.totalBonus*100) : null;
+    const pendingNote = rp.pendingCount > 0 ? `<div class="sub" style="margin-top:6px;color:var(--muted);">${rp.pendingCount} 笔领取尚无后续存款/提款，暂未结算</div>` : '';
+    return `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">💵 真实盈亏（窗口至下一次存款或提款为止）</div>
+      <div class="metrics" style="margin-bottom:0;">
+        <div class="metric"><div class="lbl">窗口内存款</div><div class="val" style="color:var(--blue)">${fmt(rp.totalDep)}</div></div>
+        <div class="metric"><div class="lbl">窗口内提款</div><div class="val" style="color:var(--red)">${fmt(rp.totalWd)}</div></div>
+        <div class="metric"><div class="lbl">净流入</div><div class="val" style="color:var(--muted2)">${fmt(rp.totalDep-rp.totalWd)}</div></div>
+        <div class="metric"><div class="lbl">真实盈亏</div><div class="val" style="color:${rpC}">${rp.totalRealProfit>=0?'+':''}${fmt(rp.totalRealProfit)}</div><div class="sub">${roi!=null?('真实ROI: '+(roi>=0?'+':'')+roi.toFixed(1)+'%'):''}</div></div>
+      </div>
+      ${pendingNote}
+    </div>`;
+  }
+
+  document.getElementById('overviewContent').innerHTML = `
+    <div class="currency-section">
+      <div class="currency-header myr"><span class="currency-label myr">🇲🇾 MYR</span></div>
+      <div class="metrics">
+        <div class="metric myr-card"><div class="lbl">领取人次</div><div class="val myr-val">${fmtN(myrClaims)}</div><div class="sub">${myrPart?'参与率: '+myrPart:myrClaims+' 条记录'}</div></div>
+        <div class="metric myr-card"><div class="lbl">存款人数</div><div class="val myr-val">${fmtN(myrDepPpl)}</div><div class="sub">${myrClaims>0?Math.round(myrDepPpl/myrClaims*100)+'% 有存款':'—'}</div></div>
+        <div class="metric myr-card"><div class="lbl">总存款</div><div class="val myr-val">${fmtRM(myrDeposit)}</div><div class="sub">人均: ${fmtRM(myrPPA)}</div></div>
+        <div class="metric myr-card"><div class="lbl">派发 Bonus</div><div class="val myr-val">${fmtRM(myrBonus)}</div><div class="sub" style="color:${myrNP>=0?'var(--green)':'var(--red)'}">净利润: ${myrNP>=0?'+':''}${fmtRM(myrNP)}</div></div>
+      </div>
+      ${realProfitBlock(myrRP, fmtRM)}
+      <div class="charts-grid">
+        <div class="chart-card"><div class="chart-hd"><div class="chart-title">领取人次趋势 (MYR)</div></div><div class="chart-wrap"><canvas id="myrClaimChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-hd"><div class="chart-title">存款 vs Bonus (MYR)</div><div class="legend"><span><span class="leg" style="background:var(--blue)"></span>存款</span><span><span class="leg" style="background:var(--amber)"></span>Bonus</span></div></div><div class="chart-wrap"><canvas id="myrDepBonusChart"></canvas></div></div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="currency-section">
+      <div class="currency-header sgd"><span class="currency-label sgd">🇸🇬 SGD</span></div>
+      <div class="metrics">
+        <div class="metric sgd-card"><div class="lbl">领取人次</div><div class="val sgd-val">${fmtN(sgdClaims)}</div><div class="sub">${sgdPart?'参与率: '+sgdPart:sgdClaims+' 条记录'}</div></div>
+        <div class="metric sgd-card"><div class="lbl">存款人数</div><div class="val sgd-val">${fmtN(sgdDepPpl)}</div><div class="sub">${sgdClaims>0?Math.round(sgdDepPpl/sgdClaims*100)+'% 有存款':'—'}</div></div>
+        <div class="metric sgd-card"><div class="lbl">总存款</div><div class="val sgd-val">${fmtSGD(sgdDeposit)}</div><div class="sub">人均: ${fmtSGD(sgdPPA)}</div></div>
+        <div class="metric sgd-card"><div class="lbl">派发 Bonus</div><div class="val sgd-val">${fmtSGD(sgdBonus)}</div><div class="sub" style="color:${sgdNP>=0?'var(--green)':'var(--red)'}">净利润: ${sgdNP>=0?'+':''}${fmtSGD(sgdNP)}</div></div>
+      </div>
+      ${realProfitBlock(sgdRP, fmtSGD)}
+      <div class="charts-grid">
+        <div class="chart-card"><div class="chart-hd"><div class="chart-title">领取人次趋势 (SGD)</div></div><div class="chart-wrap"><canvas id="sgdClaimChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-hd"><div class="chart-title">存款 vs Bonus (SGD)</div><div class="legend"><span><span class="leg" style="background:var(--green)"></span>存款</span><span><span class="leg" style="background:var(--amber)"></span>Bonus</span></div></div><div class="chart-wrap"><canvas id="sgdDepBonusChart"></canvas></div></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-hd">明细数据</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>日期</th><th>Promo</th><th>货币</th>
+            <th>领取</th><th>存款人数</th><th>总存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th><th>ROI</th><th>人均存款</th>
+          </tr></thead>
+          <tbody>
+            ${tableRows.map(r => {
+              const isMYR = r.cur === 'MYR';
+              const fmt = isMYR ? fmtRM : fmtSGD;
+              const np = -r.winloss - r.bonus;
+              const roi = r.bonus > 0 ? (np/r.bonus*100).toFixed(1)+'%' : '—';
+              const ppa = r.depPpl > 0 ? fmt(r.deposit/r.depPpl) : '—';
+              const cls = isMYR ? 'myr-v' : 'sgd-v';
+              const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
+              const tagStyle = isMYR ? '' : 'background:var(--green-dim);color:var(--green)';
+              return `<tr>
+                <td>${r.date}</td><td>${r.code}</td>
+                <td><span class="type-tag" style="${tagStyle}">${r.cur}</span></td>
+                <td class="${cls}">${fmtN(r.claims)}</td>
+                <td class="${cls}">${fmtN(r.depPpl)}</td>
+                <td class="${cls}">${fmt(r.deposit)}</td>
+                <td class="${cls}">${fmt(r.bonus)}</td>
+                <td style="color:var(--muted2)">${fmt(r.winloss)}</td>
+                <td style="color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td>
+                <td style="color:${npC};font-weight:bold">${roi}</td>
+                <td class="${cls}">${ppa}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  const mkOpts = (yCb) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:yCb},grid:{color:gc},border:{color:'transparent'}}
+    }
+  });
+  const mkC = (id, type, labels, datasets, opts) => {
+    if (ovCharts[id]) { ovCharts[id].destroy(); delete ovCharts[id]; }
+    const el = document.getElementById(id);
+    if (el) ovCharts[id] = new Chart(el, { type, data:{ labels, datasets }, options:opts });
+  };
+  const myrL = myrG.map(r => fmtLabel(r.label));
+  const sgdL = sgdG.map(r => fmtLabel(r.label));
+  mkC('myrClaimChart','bar',myrL,[{data:myrG.map(r=>r.claims),backgroundColor:'rgba(77,159,255,0.7)',borderRadius:4}],mkOpts(v=>fmtN(v)));
+  mkC('myrDepBonusChart','bar',myrL,[
+    {label:'存款',data:myrG.map(r=>r.deposit),backgroundColor:'rgba(77,159,255,0.7)',borderRadius:3},
+    {label:'Bonus',data:myrG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',borderRadius:3}
+  ],{...mkOpts(v=>fmtRM(v)),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtRM(ctx.parsed.y)}}}});
+  mkC('sgdClaimChart','bar',sgdL,[{data:sgdG.map(r=>r.claims),backgroundColor:'rgba(0,229,160,0.7)',borderRadius:4}],mkOpts(v=>fmtN(v)));
+  mkC('sgdDepBonusChart','bar',sgdL,[
+    {label:'存款',data:sgdG.map(r=>r.deposit),backgroundColor:'rgba(0,229,160,0.7)',borderRadius:3},
+    {label:'Bonus',data:sgdG.map(r=>r.bonus),backgroundColor:'rgba(255,176,32,0.7)',borderRadius:3}
+  ],{...mkOpts(v=>fmtSGD(v)),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+fmtSGD(ctx.parsed.y)}}}});
+}
+
+// ── Analysis ──
+function setAnalysisCur(cur, btn) {
+  analysisCur = cur;
+  document.querySelectorAll('.cur-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAnalysis();
+}
+
+function renderAnalysis() {
+  const rows = analysisCur === 'ALL' ? allData : allData.filter(r => r.currency === analysisCur);
+  const fmtDefault = analysisCur === 'SGD' ? fmtSGD : fmtRM; // used only for ALL-currency aggregate totals
+  const promos = groupByPromo(rows, analysisCur === 'SGD' ? 'SGD' : 'MYR');
+  const rpAgg = aggregateRealProfit(analysisCur);
+  // Attach real-profit numbers to each promo by code+currency (avoids mixing MYR/SGD that share a code name)
+  promos.forEach(p => {
+    const rp = rpAgg?.byCode?.[p.name + '||' + p.currency];
+    p.realProfit = rp ? rp.realProfit : null;
+    p.realDeposit = rp ? rp.deposit : null;
+    p.realWithdraw = rp ? rp.withdraw : null;
+  });
+  const continueP = promos.filter(p => p.status === 'continue');
+  const reviewP   = promos.filter(p => p.status === 'review');
+  const stopP     = promos.filter(p => p.status === 'stop');
+  const totalClaims = promos.reduce((s,p) => s+p.claims, 0);
+  // Sum profit/bonus per-currency separately, then format with the right symbol per currency
+  const totalsByCur = {};
+  promos.forEach(p => {
+    if (!totalsByCur[p.currency]) totalsByCur[p.currency] = { profit: 0, bonus: 0 };
+    totalsByCur[p.currency].profit += p.netProfit;
+    totalsByCur[p.currency].bonus  += p.bonus;
+  });
+  const totalSummaryHTML = Object.entries(totalsByCur).map(([cur, t]) => {
+    const f = cur === 'SGD' ? fmtSGD : fmtRM;
+    const roi = t.bonus > 0 ? t.profit/t.bonus*100 : 0;
+    return `<div>${t.profit>=0?'+':''}${f(t.profit)} <span style="color:var(--muted);font-size:0.7rem;">(${cur} ROI ${roi>=0?'+':''}${roi.toFixed(1)}%)</span></div>`;
+  }).join('');
+  document.getElementById('analysisSummary').innerHTML = `
+    <div class="metric"><div class="lbl">总 Promo</div><div class="val" style="color:var(--blue)">${promos.length}</div><div class="sub">${fmtN(totalClaims)} 次领取</div></div>
+    <div class="metric"><div class="lbl">总净利润 (Win/Loss)</div><div class="val" style="font-size:1.1rem;">${totalSummaryHTML}</div></div>
+    <div class="metric"><div class="lbl">✅ 建议继续</div><div class="val" style="color:var(--green)">${continueP.length}</div><div class="sub">净利润为正</div></div>
+    <div class="metric"><div class="lbl">🛑 建议停止</div><div class="val" style="color:var(--red)">${stopP.length}</div><div class="sub">净亏且无存款</div></div>
+  `;
+  function makeItems(list) {
+    return list.map(p => {
+      const fmt = p.currency === 'SGD' ? fmtSGD : fmtRM;
+      const npC = p.netProfit > 0 ? 'var(--green)' : 'var(--red)';
+      const roiStr = p.roi !== null ? (p.roi>=0?'+':'')+p.roi.toFixed(1)+'%' : '—';
+      const rpLine = p.realProfit !== null
+        ? `<div class="analysis-item-stats" style="color:${p.realProfit>=0?'var(--green)':'var(--red)'}">真实盈亏: ${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</div>`
+        : '';
+      return `<div class="analysis-item">
+        <div class="analysis-item-name">${p.name} <span style="color:var(--muted);font-size:0.68rem;">[${p.currency}]</span></div>
+        <div style="text-align:right">
+          <div class="analysis-item-profit" style="color:${npC}">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</div>
+          <div class="analysis-item-stats">ROI ${roiStr} | 领取 ${p.claims}</div>
+          ${rpLine}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('analysisGrid').innerHTML = `
+    <div class="analysis-card"><div class="analysis-card-header green">✅ 继续跑 (${continueP.length})</div>${continueP.length?makeItems(continueP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
+    <div class="analysis-card"><div class="analysis-card-header amber">⚠️ 需检讨 (${reviewP.length})</div>${reviewP.length?makeItems(reviewP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
+    <div class="analysis-card"><div class="analysis-card-header red">🛑 建议停止 (${stopP.length})</div>${stopP.length?makeItems(stopP):'<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center">暂无</div>'}</div>
+  `;
+  const top15 = [...promos].slice(0, 15);
+  if (analysisChartInst) { analysisChartInst.destroy(); analysisChartInst = null; }
+  analysisChartInst = new Chart(document.getElementById('analysisChart'), {
+    type:'bar',
+    data:{ labels:top15.map(p=>(p.name.length>20?p.name.slice(0,20)+'…':p.name)+' ['+p.currency+']'), datasets:[{data:top15.map(p=>p.netProfit),backgroundColor:top15.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}] },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{ const p=top15[ctx.dataIndex]; const f=p.currency==='SGD'?fmtSGD:fmtRM; return '净利润: '+f(ctx.parsed.x); }}}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmtDefault(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+        y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}
+      }
+    }
+  });
+
+  // ── Real profit comparison table (click a row to drill down per-player, per-transaction) ──
+  const rpTableHTML = rpAgg ? `
+    <div class="table-card" style="margin-top:14px;">
+      <div class="table-hd">真实盈亏对比（窗口至下一次存款/提款为止） — Win/Loss净利润 vs 真实盈亏 · 点击行展开明细</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Promo</th><th>货币</th><th>领取</th><th>Bonus</th><th>窗口存款</th><th>窗口提款</th><th>Win/Loss净利润</th><th>真实盈亏</th><th>差异</th></tr></thead>
+          <tbody>
+            ${promos.filter(p=>p.realProfit!==null).sort((a,b)=>(a.realProfit-a.netProfit)-(b.realProfit-b.netProfit)).map((p, idx) => {
+              const fmt = p.currency === 'SGD' ? fmtSGD : fmtRM;
+              const diff = p.realProfit - p.netProfit;
+              const diffC = Math.abs(diff) < 0.01 ? 'var(--muted)' : diff > 0 ? 'var(--green)' : 'var(--red)';
+              const npC = p.netProfit >= 0 ? 'var(--green)' : 'var(--red)';
+              const rpC = p.realProfit >= 0 ? 'var(--green)' : 'var(--red)';
+              const safeCode = p.name.replace(/'/g, "\\'");
+              const tagStyle = p.currency === 'SGD' ? 'background:var(--green-dim);color:var(--green)' : '';
+              return `<tr style="cursor:pointer;" onclick="toggleRpDrilldown('rp-dd-${idx}','${safeCode}','${p.currency}')">
+                <td>▸ ${p.name}</td>
+                <td><span class="type-tag" style="${tagStyle}">${p.currency}</span></td>
+                <td class="myr-v">${fmtN(p.claims)}</td>
+                <td style="color:var(--amber)">${fmt(p.bonus)}</td>
+                <td style="color:var(--blue)">${fmt(p.realDeposit)}</td>
+                <td style="color:var(--red)">${fmt(p.realWithdraw)}</td>
+                <td style="color:${npC};font-weight:bold">${p.netProfit>=0?'+':''}${fmt(p.netProfit)}</td>
+                <td style="color:${rpC};font-weight:bold">${p.realProfit>=0?'+':''}${fmt(p.realProfit)}</td>
+                <td style="color:${diffC}">${diff>=0?'+':''}${fmt(diff)}</td>
+              </tr>
+              <tr id="rp-dd-${idx}" class="hidden"><td colspan="9" style="padding:0;background:var(--surface2);"><div id="rp-dd-content-${idx}" style="padding:1rem 1.4rem;"></div></td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.82rem;">真实盈亏数据加载中...</div>`;
+
+  // Insert after analysisChart's chart-card, replacing any previous instance
+  let rpContainer = document.getElementById('rpTableContainer');
+  if (!rpContainer) {
+    rpContainer = document.createElement('div');
+    rpContainer.id = 'rpTableContainer';
+    document.getElementById('analysisChart').closest('.chart-card').insertAdjacentElement('afterend', rpContainer);
+  }
+  rpContainer.innerHTML = rpTableHTML;
+}
+
+// ── Drill-down: expand a promo row into per-player, per-transaction timelines ──
+function toggleRpDrilldown(rowId, code, currency) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const wasHidden = row.classList.contains('hidden');
+  row.classList.toggle('hidden');
+  if (!wasHidden) return; // closing, nothing more to do
+
+  const contentEl = document.getElementById(rowId.replace('rp-dd-', 'rp-dd-content-'));
+  if (!realProfitData) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">真实盈亏数据未加载</div>'; return; }
+
+  const claims = realProfitData
+    .filter(r => r.code === code && r.currency === currency)
+    .sort((a,b) => a.login.localeCompare(b.login) || a.claim_date.localeCompare(b.claim_date));
+  if (!claims.length) { contentEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">无明细数据</div>'; return; }
+
+  const html = claims.map(c => {
+    const fmt = c.currency === 'SGD' ? fmtSGD : fmtRM;
+    const isOpen = c.window_open || c.real_profit === null;
+    const rpC = isOpen ? 'var(--muted)' : (c.real_profit >= 0 ? 'var(--green)' : 'var(--red)');
+    const rpLabel = isOpen ? '待结算（尚无后续存/提款）' : `真实盈亏 ${c.real_profit>=0?'+':''}${fmt(c.real_profit)}`;
+    const windowEndLabel = isOpen ? '尚未结束' : fmtDateTime(c.window_end);
+
+    // Merge deposit & withdraw details into one chronological timeline
+    const events = [
+      ...(c.deposit_details||[]).map(d => ({ type:'deposit', time:d.time, amount:d.amount })),
+      ...(c.withdraw_details||[]).map(w => ({ type:'withdraw', time:w.time, amount:w.amount })),
+    ].sort((a,b) => a.time.localeCompare(b.time));
+
+    const eventsHTML = events.length ? events.map(ev => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);font-size:0.78rem;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="tl-badge ${ev.type}" style="font-size:0.65rem;">${ev.type==='deposit'?'存款':'提款'}</span>
+          <span style="color:var(--muted2)">${fmtDateTime(ev.time)}</span>
+        </div>
+        <span style="font-weight:bold;color:${ev.type==='deposit'?'var(--blue)':'var(--red)'}">${ev.type==='withdraw'?'-':'+'}${fmt(ev.amount)}</span>
+      </div>`).join('') : '<div style="padding:8px 10px;color:var(--muted);font-size:0.78rem;">尚无后续存款/提款记录</div>';
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface3);">
+        <div style="font-size:0.82rem;font-weight:700;">👤 ${c.login} <span style="color:var(--muted);font-weight:400;font-size:0.72rem;">领取 ${c.claim_date} · 窗口至 ${windowEndLabel}</span></div>
+        <div style="display:flex;gap:14px;font-size:0.75rem;">
+          <span style="color:var(--amber)">Bonus ${fmt(c.bonus)}</span>
+          <span style="color:${rpC};font-weight:bold">${rpLabel}</span>
+        </div>
+      </div>
+      <div>${eventsHTML}</div>
+    </div>`;
+  }).join('');
+
+  contentEl.innerHTML = html;
+}
+
+// ── Player ──
+function toggleCategory(id) {
+  const table = document.getElementById('cat-table-' + id);
+  const arrow = document.getElementById('cat-arrow-' + id);
+  table.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+async function searchPlayer() {
+  const login = document.getElementById('playerInput').value.trim();
+  if (!login) return;
+  document.getElementById('playerContent').innerHTML = '<div class="loading-state"><div class="spinner"></div>搜索中...</div>';
+
+  try {
+    // Fetch promo, deposit, withdraw, real-profit in parallel
+    const [rows, depositRows, withdrawRows, realProfitRows] = await Promise.all([
+      apiFetch('/player?login=' + encodeURIComponent(login)),
+      apiFetch('/deposit?login=' + encodeURIComponent(login)).catch(() => []),
+      apiFetch('/withdraw?login=' + encodeURIComponent(login)).catch(() => []),
+      apiFetch('/real-profit?login=' + encodeURIComponent(login) + '&lookahead_days=60').catch(() => []),
+    ]);
+
+    if (!rows.length && !depositRows.length && !withdrawRows.length) {
+      document.getElementById('playerContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">找不到玩家「' + login + '」的记录</div>';
+      return;
+    }
+
+    const totalClaims  = rows.length;
+    const totalDeposit = rows.reduce((s,r) => s+r.transfer, 0);
+    const totalBonus   = rows.reduce((s,r) => s+r.bonus, 0);
+    const totalWL      = rows.reduce((s,r) => s+r.winloss, 0);
+    const totalNP      = -totalWL - totalBonus;
+    const hasMYR = rows.some(r => r.currency === 'MYR') || depositRows.some(r => r.currency === 'MYR');
+    const fmt = hasMYR ? fmtRM : fmtSGD;
+
+    // ── Build timeline ──
+    const events = [];
+    depositRows.forEach(r => events.push({
+      type: 'deposit', time: r.created_date, amount: r.amount,
+      currency: r.currency, desc: r.merchant_bank || '存款', status: r.status
+    }));
+    rows.forEach(r => events.push({
+      type: 'bonus', time: r.date + ' 00:00:00', amount: r.bonus,
+      currency: r.currency, desc: r.code, status: r.status
+    }));
+    withdrawRows.forEach(r => events.push({
+      type: 'withdraw', time: r.created_date, amount: r.amount,
+      currency: r.currency, desc: r.member_bank || '提款', status: r.status
+    }));
+    events.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    // Total actual deposit & withdraw from transaction data
+    const totalActualDep = depositRows.reduce((s,r) => s + r.amount, 0);
+    const totalActualWD  = withdrawRows.reduce((s,r) => s + r.amount, 0);
+    const netFlow = totalActualDep - totalActualWD;
+
+    // ── Promo categories ──
+    const promoMap = {};
+    rows.forEach(r => {
+      if (!promoMap[r.code]) promoMap[r.code] = { name:r.code, claims:0, deposit:0, bonus:0, winloss:0, rows:[] };
+      promoMap[r.code].claims++;
+      promoMap[r.code].deposit += r.transfer;
+      promoMap[r.code].bonus   += r.bonus;
+      promoMap[r.code].winloss += r.winloss;
+      promoMap[r.code].rows.push(r);
+    });
+    const promos = Object.values(promoMap).sort((a,b) => b.claims - a.claims).map(p => ({
+      ...p, netProfit: -p.winloss - p.bonus,
+      rows: p.rows.sort((a,b) => b.date.localeCompare(a.date))
+    }));
+
+    // Index real-profit rows by code+date for quick lookup
+    const rpByKey = {};
+    (realProfitRows||[]).forEach(rp => { rpByKey[rp.code + '||' + rp.claim_date] = rp; });
+    let totalRealProfit = (realProfitRows||[]).reduce((s,r) => s + (r.real_profit ?? 0), 0);
+    let pendingRpCount = (realProfitRows||[]).filter(r => r.window_open || r.real_profit === null).length;
+
+    const categoriesHTML = promos.map((p, i) => {
+      const np = p.netProfit;
+      const npC = np > 0 ? 'var(--green)' : np < 0 ? 'var(--red)' : 'var(--muted)';
+      const roi = p.bonus > 0 ? (np/p.bonus*100).toFixed(1)+'%' : '—';
+      const codeRpRows = (realProfitRows||[]).filter(rp => rp.code === p.name);
+      const codeRealProfit = codeRpRows.reduce((s,r) => s + (r.real_profit ?? 0), 0);
+      const codeHasPending = codeRpRows.some(r => r.window_open || r.real_profit === null);
+      const codeRpC = codeRealProfit >= 0 ? 'var(--green)' : 'var(--red)';
+      const tableRowsHTML = p.rows.map(r => {
+        const f = r.currency === 'SGD' ? fmtSGD : fmtRM;
+        const hasDeposit = r.transfer > 0;
+        const rnp = -r.winloss - r.bonus;
+        const rnpC = rnp > 0 ? 'var(--green)' : rnp < 0 ? 'var(--red)' : 'var(--muted)';
+        const rpRow = rpByKey[r.code + '||' + r.date];
+        const rpCell = (rpRow && !rpRow.window_open && rpRow.real_profit !== null)
+          ? `<span style="color:${rpRow.real_profit>=0?'var(--green)':'var(--red)'};font-weight:bold">${rpRow.real_profit>=0?'+':''}${f(rpRow.real_profit)}</span>`
+          : (rpRow ? '<span style="color:var(--muted);font-size:0.72rem;">待结算</span>' : '<span style="color:var(--muted)">—</span>');
+        return `<tr>
+          <td>${r.date}</td>
+          <td style="color:${hasDeposit?'var(--green)':'var(--muted)'};">${hasDeposit ? '✅ '+f(r.transfer) : '❌ 无存款'}</td>
+          <td style="color:var(--amber);text-align:right">${f(r.bonus)}</td>
+          <td style="color:var(--muted2);text-align:right">${f(r.winloss)}</td>
+          <td style="color:${rnpC};font-weight:bold;text-align:right">${rnp>=0?'+':''}${f(rnp)}</td>
+          <td style="text-align:right">${rpCell}</td>
+        </tr>`;
+      }).join('');
+      return `<div class="promo-category">
+        <div class="promo-category-header" onclick="toggleCategory(${i})">
+          <div class="pch-left">
+            <div class="pch-name">${p.name}${codeHasPending ? ' <span style="color:var(--muted);font-size:0.65rem;">(含待结算)</span>' : ''}</div>
+            <div class="pch-count">${p.claims} 次</div>
+          </div>
+          <div class="pch-right">
+            <div class="pch-stat"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(p.deposit)}</div></div>
+            <div class="pch-stat"><div class="lbl">Bonus</div><div class="val" style="color:var(--amber)">${fmt(p.bonus)}</div></div>
+            <div class="pch-stat"><div class="lbl">净利润</div><div class="val" style="color:${npC}">${np>=0?'+':''}${fmt(np)}</div></div>
+            <div class="pch-stat"><div class="lbl">真实盈亏</div><div class="val" style="color:${codeRpC}">${codeRealProfit>=0?'+':''}${fmt(codeRealProfit)}</div></div>
+            <div class="pch-stat"><div class="lbl">ROI</div><div class="val" style="color:${npC}">${roi}</div></div>
+            <div class="pch-arrow" id="cat-arrow-${i}">▼</div>
+          </div>
+        </div>
+        <div class="promo-category-table" id="cat-table-${i}">
+          <table><thead><tr>
+            <th>日期</th><th>存款</th><th>Bonus</th><th>Win/Loss</th><th>净利润</th><th>真实盈亏(至下次存提款)</th>
+          </tr></thead><tbody>${tableRowsHTML}</tbody></table>
+        </div>
+      </div>`;
+    }).join('');
+
+    // ── Timeline HTML ──
+    let timelineHTML = '';
+    if (events.length === 0) {
+      timelineHTML = '<div class="timeline-empty">暂无存款/Bonus/提款记录</div>';
+    } else {
+      const tlItems = events.map((ev, i) => {
+        const f = ev.currency === 'SGD' ? fmtSGD : fmtRM;
+        const prevEv = i > 0 ? events[i-1] : null;
+        const gapStr = prevEv ? timeDiffStr(prevEv.time, ev.time) : null;
+        const gapHTML = gapStr ? `<div class="tl-gap">⏱ ${gapStr}</div>` : '';
+        const typeLabel = ev.type === 'deposit' ? '存款' : ev.type === 'bonus' ? 'Bonus 领取' : '提款';
+        return `${gapHTML}
+          <div class="tl-item">
+            <div class="tl-dot ${ev.type}"></div>
+            <div class="tl-card">
+              <div class="tl-left">
+                <span class="tl-badge ${ev.type}">${typeLabel}</span>
+                <div>
+                  <div class="tl-desc">${ev.desc}</div>
+                  <div class="tl-time">${fmtDateTime(ev.time)}</div>
+                </div>
+              </div>
+              <div class="tl-amount ${ev.type}">${ev.type === 'withdraw' ? '-' : '+'}${f(ev.amount)}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      const netC = netFlow >= 0 ? 'var(--green)' : 'var(--red)';
+      timelineHTML = `
+        <div class="tl-summary">
+          <div class="tl-sum-card"><div class="lbl">存款次数</div><div class="val" style="color:var(--blue)">${depositRows.length}</div></div>
+          <div class="tl-sum-card"><div class="lbl">总存款</div><div class="val" style="color:var(--green)">${fmt(totalActualDep)}</div></div>
+          <div class="tl-sum-card"><div class="lbl">总提款</div><div class="val" style="color:var(--red)">${fmt(totalActualWD)}</div></div>
+          <div class="tl-sum-card"><div class="lbl">净流入</div><div class="val" style="color:${netC}">${netFlow>=0?'+':''}${fmt(netFlow)}</div></div>
+        </div>
+        <div class="timeline">${tlItems}</div>`;
+    }
+
+    document.getElementById('playerContent').innerHTML = `
+      <div class="player-card">
+        <div class="player-name">👤 ${login}</div>
+        <div class="player-stats" style="grid-template-columns:repeat(6,1fr);">
+          <div class="player-stat"><div class="lbl">总领取次数</div><div class="val" style="color:var(--blue)">${fmtN(totalClaims)}</div></div>
+          <div class="player-stat"><div class="lbl">总存款(Promo)</div><div class="val" style="color:var(--green)">${fmt(totalDeposit)}</div></div>
+          <div class="player-stat"><div class="lbl">总 Bonus</div><div class="val" style="color:var(--amber)">${fmt(totalBonus)}</div></div>
+          <div class="player-stat"><div class="lbl">Win/Loss</div><div class="val" style="color:var(--muted2)">${fmt(totalWL)}</div></div>
+          <div class="player-stat"><div class="lbl">净利润(Win/Loss)</div><div class="val" style="color:${totalNP>=0?'var(--green)':'var(--red)'}">${totalNP>=0?'+':''}${fmt(totalNP)}</div></div>
+          <div class="player-stat"><div class="lbl">真实盈亏(存提款)</div><div class="val" style="color:${totalRealProfit>=0?'var(--green)':'var(--red)'}">${totalRealProfit>=0?'+':''}${fmt(totalRealProfit)}</div>${pendingRpCount>0?`<div class="lbl" style="margin-top:4px;color:var(--muted);">${pendingRpCount}笔待结算</div>`:''}</div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-section">
+          <div class="timeline-title">📅 存款 → Bonus → 提款 时间线</div>
+          ${timelineHTML}
+        </div>
+
+        <hr class="divider" style="margin:1.5rem 0;">
+
+        <div style="font-size:0.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem;">按 Promo 分类 — 点击展开明细</div>
+        ${categoriesHTML}
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('playerContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--red)">搜索失败: ' + e.message + '</div>';
+  }
+}
+
+// ── Chart Builder ──
+function selectChartType(btn) {
+  document.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedChartType = btn.dataset.type;
+}
+
+function buildChart() {
+  const currency = document.getElementById('bCurrency').value;
+  const xAxis    = document.getElementById('bXAxis').value;
+  const metrics  = [...document.querySelectorAll('#bYAxis input:checked')].map(i => i.value);
+  const selPromos = [...document.querySelectorAll('#bPromoList input:checked')].map(i => i.value);
+  if (!metrics.length) { alert('请至少选一个 Y 轴'); return; }
+  let rows = currency === 'ALL' ? allData : allData.filter(r => r.currency === currency);
+  rows = rows.filter(r => selPromos.includes(r.code));
+  const dview = xAxis === 'date_day' ? 'day' : xAxis === 'date_week' ? 'week' : xAxis === 'date_month' ? 'month' : null;
+  let grouped;
+  if (dview) {
+    grouped = groupByTime(rows, dview).map(r => ({ ...r, label:r.label, netProfit:-r.winloss-r.bonus, roi:r.bonus>0?(-r.winloss-r.bonus)/r.bonus*100:0 }));
+  } else {
+    grouped = groupByPromo(rows, currency === 'SGD' ? 'SGD' : 'MYR');
+    grouped.forEach(r => r.label = currency === 'ALL' ? `${r.name} [${r.currency}]` : r.name);
+  }
+  const labels = grouped.map(r => (dview ? fmtLabel(r.label, dview) : r.label).slice(0, 20));
+  const fmt = currency === 'SGD' ? fmtSGD : fmtRM;
+  const getVal = (r, m) => {
+    if (m === 'claims') return r.claims;
+    if (m === 'deposit_ppl') return r.depPpl;
+    if (m === 'deposit') return r.deposit;
+    if (m === 'bonus') return r.bonus;
+    if (m === 'netProfit') return r.netProfit;
+    if (m === 'roi') return r.roi || 0;
+    return 0;
+  };
+  const isPie = selectedChartType === 'pie' || selectedChartType === 'doughnut';
+  const isH   = selectedChartType === 'bar_h';
+  const isArea = selectedChartType === 'area';
+  const chartType = isPie ? selectedChartType : isH ? 'bar' : isArea ? 'line' : 'bar';
+  const datasets = isPie && metrics.length === 1
+    ? [{ data:grouped.map(r=>getVal(r,metrics[0])), backgroundColor:grouped.map((_,i)=>COLORS[i%COLORS.length]), borderWidth:0 }]
+    : metrics.map((m,i) => ({
+        label:METRIC_LABELS[m], data:grouped.map(r=>getVal(r,m)),
+        backgroundColor:COLORS[i%COLORS.length]+'BB', borderColor:COLORS[i%COLORS.length],
+        borderWidth:isArea?2:0, borderRadius:!isArea&&!isH?4:0,
+        fill:isArea, tension:isArea?0.35:0, pointRadius:isArea?3:0,
+      }));
+  const isMoneyM = metrics.some(m => ['deposit','bonus','netProfit'].includes(m));
+  const opts = {
+    responsive:true, maintainAspectRatio:false, indexAxis:isH?'y':'x',
+    plugins:{ legend:{display:datasets.length>1,labels:{color:'#8A9BAA',font:{size:11,family:'Arial'}}},
+      tooltip:{callbacks:{label:ctx=>{ const v=ctx.parsed[isH?'x':'y']??ctx.parsed; const m=metrics[ctx.datasetIndex]||metrics[0]; return (ctx.dataset.label||METRIC_LABELS[m])+': '+((['deposit','bonus','netProfit'].includes(m))?fmt(v):fmtN(v)); }}} },
+  };
+  if (!isPie) {
+    opts.scales = {
+      x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',autoSkip:true,maxRotation:45},grid:{display:false},border:{color:'transparent'}},
+      y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>isMoneyM?fmt(v):fmtN(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}}
+    };
+    if (isH) { opts.scales.x.ticks.callback = v=>isMoneyM?fmt(v):fmtN(v); delete opts.scales.y.ticks.callback; }
+  }
+  const title = `${currency} · ${metrics.map(m=>METRIC_LABELS[m]).join(' & ')} · ${xAxis.replace('date_','按').replace('promo','按Promo')}`;
+  const id = 'chart_' + chartCounter++;
+  const output = document.getElementById('builderOutput');
+  const empty = output.querySelector('.empty-builder');
+  if (empty) empty.remove();
+  const card = document.createElement('div');
+  card.className = 'built-chart-card'; card.id = 'card_' + id;
+  card.innerHTML = `<div class="built-chart-hd"><div class="built-chart-title">${title}</div><button class="remove-btn" onclick="removeChart('${id}')">×</button></div><div style="position:relative;width:100%;height:320px;"><canvas id="${id}"></canvas></div>`;
+  output.insertBefore(card, output.firstChild);
+  const c = new Chart(document.getElementById(id), { type:chartType, data:{ labels, datasets }, options:opts });
+  builtCharts.push({ id, chart:c });
+}
+
+function removeChart(id) {
+  const idx = builtCharts.findIndex(c => c.id === id);
+  if (idx >= 0) { builtCharts[idx].chart.destroy(); builtCharts.splice(idx, 1); }
+  const card = document.getElementById('card_' + id);
+  if (card) card.remove();
+  if (!document.getElementById('builderOutput').querySelector('.built-chart-card')) {
+    document.getElementById('builderOutput').innerHTML = '<div class="empty-builder"><div class="empty-icon">🎨</div><div>选择数据和图表类型，点击生成图表</div></div>';
+  }
+}
+
+// ── Generate Report ──
+function generateReport() {
+  const myrRows = allData.filter(r => r.currency === 'MYR');
+  const sgdRows = allData.filter(r => r.currency === 'SGD');
+  const myrPromos = groupByPromo(myrRows, 'MYR');
+  const sgdPromos = groupByPromo(sgdRows, 'SGD');
+  function calcTotals(rows) {
+    const bonus=rows.reduce((s,r)=>s+r.bonus,0), wl=rows.reduce((s,r)=>s+r.winloss,0), np=-wl-bonus;
+    return { claims:rows.length, depPpl:rows.filter(r=>r.transfer>0).length, deposit:rows.reduce((s,r)=>s+r.transfer,0), bonus, winloss:wl, netProfit:np, roi:bonus>0?np/bonus*100:null };
+  }
+  const myrT = calcTotals(myrRows), sgdT = calcTotals(sgdRows);
+  const dates = allData.map(r => r.date).sort();
+  const monthStr = dates.length > 0 ? new Date(dates[0]).toLocaleDateString('en-GB',{month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  function fmtK(n,cur) {
+    if(!n&&n!==0)return(cur==='SGD'?'S$':'RM')+'0.00';
+    const sym=cur==='SGD'?'S$':'RM',abs=Math.abs(n),s=sym+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return n<0?'('+s+')':s;
+  }
+  function getStatus(p){if(p.netProfit>0)return'CONTINUE';if(p.netProfit<0&&p.depPpl>0)return'REVIEW';return'STOP';}
+  function kpiCards(t,cur){
+    const np=t.netProfit||0,npC=np>=0?'#059669':'#DC2626',roiStr=t.roi!=null?(t.roi>=0?'+':'')+t.roi.toFixed(1)+'%':'—',depRate=t.claims>0?Math.round(t.depPpl/t.claims*100):0;
+    return `<div class="kpi-grid">
+      <div class="kpi-card blue"><div class="kpi-icon">🎫</div><div class="kpi-val">${t.claims.toLocaleString()}</div><div class="kpi-label">Total Claims</div><div class="kpi-sub">promo redemptions</div></div>
+      <div class="kpi-card teal"><div class="kpi-icon">👤</div><div class="kpi-val">${t.depPpl.toLocaleString()}</div><div class="kpi-label">Depositors</div><div class="kpi-sub">${depRate}% of claimants</div></div>
+      <div class="kpi-card green"><div class="kpi-icon">💰</div><div class="kpi-val">${fmtK(t.deposit,cur)}</div><div class="kpi-label">Total Deposits</div><div class="kpi-sub">generated</div></div>
+      <div class="kpi-card amber"><div class="kpi-icon">🎁</div><div class="kpi-val">${fmtK(t.bonus,cur)}</div><div class="kpi-label">Bonus Paid Out</div><div class="kpi-sub">total cost</div></div>
+      <div class="kpi-card" style="border-top:4px solid ${npC}"><div class="kpi-icon">${np>=0?'📈':'📉'}</div><div class="kpi-val" style="color:${npC}">${np>=0?'+':''}${fmtK(np,cur)}</div><div class="kpi-label">Net Profit</div><div class="kpi-sub">ROI: ${roiStr}</div></div>
+    </div>`;
+  }
+  function promoTable(promos,cur){
+    return `<div class="section"><div class="section-header">Promo Performance (${cur})</div>
+      <table><thead><tr><th>Promo Name</th><th>Claims</th><th>Dep.</th><th>Total Deposit</th><th>Bonus</th><th>Win/Loss</th><th>Net Profit</th><th>ROI</th><th>Dep%</th><th>Status</th></tr></thead><tbody>
+        ${promos.map((p,i)=>{
+          const s=getStatus(p),sC=s==='CONTINUE'?'#059669':'#D97706',sBg=s==='CONTINUE'?'#D1FAE5':'#FEF3C7',npC=p.netProfit>0?'#059669':p.netProfit<0?'#DC2626':'#64748B',dr=p.claims>0?Math.round(p.depPpl/p.claims*100):0;
+          return `<tr style="background:${i%2===0?'white':'#F8FAFC'}">
+            <td>${p.name}</td><td style="text-align:center;color:#1A6BB5;font-weight:bold">${p.claims}</td><td style="text-align:center;color:#028090">${p.depPpl}</td>
+            <td style="text-align:right;color:#059669">${fmtK(p.deposit,cur)}</td><td style="text-align:right;color:#D97706">${fmtK(p.bonus,cur)}</td>
+            <td style="text-align:right;color:#64748B">${fmtK(p.winloss,cur)}</td>
+            <td style="text-align:right;color:${npC};font-weight:bold">${p.netProfit>=0?'+':''}${fmtK(p.netProfit,cur)}</td>
+            <td style="text-align:center;color:${npC};font-weight:bold">${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</td>
+            <td style="text-align:center;color:${dr>=50?'#059669':'#DC2626'};font-weight:bold">${dr}%</td>
+            <td style="background:${sBg};color:${sC};font-weight:bold;text-align:center">${s}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div>`;
+  }
+  function recSection(promos,cur){
+    const cont=promos.filter(p=>getStatus(p)==='CONTINUE'),rev=promos.filter(p=>getStatus(p)==='REVIEW');
+    return `<div class="section"><div class="section-header">Recommendations (${cur})</div>
+      <div class="rec-grid">
+        <div class="rec-box green-box"><div class="rec-title">✅ Continue</div><div class="rec-sub">High engagement & good conversion</div>
+          ${cont.map(p=>`<div class="rec-item"><b>${p.name}</b><br><span>Claims: ${p.claims} | NP: ${p.netProfit>=0?'+':''}${fmtK(p.netProfit,cur)} | ROI: ${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</span></div>`).join('')}
+        </div>
+        <div class="rec-box amber-box"><div class="rec-title">⚠️ Review</div><div class="rec-sub">Low profit — review conditions</div>
+          ${rev.map(p=>`<div class="rec-item"><b>${p.name}</b><br><span>Claims: ${p.claims} | NP: ${fmtK(p.netProfit,cur)} | ROI: ${p.roi!=null?p.roi.toFixed(1)+'%':'—'}</span></div>`).join('')}
+        </div>
+      </div></div>`;
+  }
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PROMO Report ${monthStr}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
+<style>
+@media print{.no-print{display:none!important}body{margin:0}.section{page-break-inside:avoid}}
+body{font-family:Arial,sans-serif;margin:0;background:#f1f5f9;color:#1e293b;}
+.cover{background:#0F3460;color:white;padding:80px 60px;min-height:380px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
+.cover::after{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(0,212,170,0.15);border-radius:50%;}
+.cover h1{font-size:60px;font-weight:900;margin:0 0 8px;color:white;position:relative;z-index:1;}
+.cover h2{font-size:28px;color:#00D4AA;margin:0 0 24px;position:relative;z-index:1;}
+.cover .meta{font-size:14px;color:#8899AA;position:relative;z-index:1;}
+.section{background:white;margin:20px 30px;padding:0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);overflow:hidden;}
+.section-header{background:#0F3460;color:white;padding:14px 24px;font-size:16px;font-weight:800;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:20px;}
+.kpi-card{border-radius:10px;padding:16px;text-align:center;border-top:4px solid #ccc;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.kpi-card.blue{border-color:#1A6BB5;}.kpi-card.teal{border-color:#028090;}.kpi-card.green{border-color:#059669;}.kpi-card.amber{border-color:#D97706;}
+.kpi-icon{font-size:22px;margin-bottom:6px;}.kpi-val{font-size:20px;font-weight:900;color:#0F3460;}
+.kpi-card.blue .kpi-val{color:#1A6BB5;}.kpi-card.teal .kpi-val{color:#028090;}.kpi-card.green .kpi-val{color:#059669;}.kpi-card.amber .kpi-val{color:#D97706;}
+.kpi-label{font-weight:700;font-size:11px;margin-top:4px;}.kpi-sub{font-size:10px;color:#64748B;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;}
+th{background:#0F3460;color:white;padding:9px 12px;text-align:right;font-size:11px;}th:first-child{text-align:left;}
+td{padding:8px 12px;border-bottom:1px solid #E2E8F0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
+.chart-box{background:#F8FAFC;border-radius:10px;padding:14px;}.chart-box h3{font-size:12px;color:#0F3460;margin:0 0 10px;font-weight:700;}
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px;}
+.rec-box{padding:16px;border-radius:10px;border:2px solid;}
+.green-box{background:#D1FAE5;border-color:#059669;}.amber-box{background:#FEF3C7;border-color:#D97706;}
+.rec-title{font-size:14px;font-weight:800;margin-bottom:3px;}.green-box .rec-title{color:#059669;}.amber-box .rec-title{color:#D97706;}
+.rec-sub{font-size:10px;font-style:italic;margin-bottom:10px;}.green-box .rec-sub{color:#059669;}.amber-box .rec-sub{color:#D97706;}
+.rec-item{margin-bottom:7px;font-size:11.5px;padding:7px 9px;background:rgba(255,255,255,0.65);border-radius:6px;line-height:1.5;}
+.rec-item span{color:#64748B;font-size:10.5px;}
+.print-btn{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:#0F3460;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:100;}
+.footer{background:#0F3460;color:#8899AA;padding:14px 40px;font-size:11px;margin-top:20px;text-align:center;}
+.divider{height:3px;background:linear-gradient(90deg,#0F3460,#00D4AA);margin:8px 30px;}
+</style></head><body>
+<button class="print-btn no-print" onclick="window.print()">🖨️ 打印 / 另存 PDF</button>
+<div class="cover"><h1>PROMO</h1><h2>Performance Report</h2>
+<div class="meta">${monthStr} &nbsp;|&nbsp; MYR & SGD</div>
+<div class="meta" style="margin-top:8px">Prepared by: PROMO Department &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})}</div></div>
+${myrRows.length?`<div class="divider"></div><div class="section"><div class="section-header">Monthly Overview — ${monthStr} (MYR)</div>${kpiCards(myrT,'MYR')}</div>${promoTable(myrPromos,'MYR')}<div class="section"><div class="section-header">Charts (MYR)</div><div class="chart-grid"><div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="myrC1" height="220"></canvas></div><div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="myrC2" height="220"></canvas></div><div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="myrC3" height="220"></canvas></div><div class="chart-box"><h3>Bonus Distribution</h3><canvas id="myrC4" height="220"></canvas></div></div></div>${recSection(myrPromos,'MYR')}`:''}
+${sgdRows.length?`<div class="divider"></div><div class="section"><div class="section-header">Monthly Overview — ${monthStr} (SGD)</div>${kpiCards(sgdT,'SGD')}</div>${promoTable(sgdPromos,'SGD')}<div class="section"><div class="section-header">Charts (SGD)</div><div class="chart-grid"><div class="chart-box"><h3>Claims by Promo (Top 8)</h3><canvas id="sgdC1" height="220"></canvas></div><div class="chart-box"><h3>Deposit vs Bonus</h3><canvas id="sgdC2" height="220"></canvas></div><div class="chart-box"><h3>Net Profit Ranking</h3><canvas id="sgdC3" height="220"></canvas></div><div class="chart-box"><h3>Bonus Distribution</h3><canvas id="sgdC4" height="220"></canvas></div></div></div>${recSection(sgdPromos,'SGD')}`:''}
+<div class="footer">PROMO Department &nbsp;|&nbsp; ${monthStr} &nbsp;|&nbsp; Confidential</div>
+<script>
+function mkCharts(promos,prefix,fmtFn){
+  const top8=promos.slice(0,8),labels=top8.map(p=>p.name.length>18?p.name.slice(0,18)+'…':p.name),C=['#1A6BB5','#028090','#059669','#D97706','#7C3AED','#DB2777','#EA580C','#0891B2'];
+  const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#64748B'},grid:{color:'#E2E8F0'}}}};
+  new Chart(document.getElementById(prefix+'C1'),{type:'bar',data:{labels,datasets:[{data:top8.map(p=>p.claims),backgroundColor:C,borderRadius:3}]},options:{...opts}});
+  new Chart(document.getElementById(prefix+'C2'),{type:'bar',data:{labels,datasets:[{label:'Deposit',data:top8.map(p=>p.deposit),backgroundColor:'#1A6BB5',borderRadius:2},{label:'Bonus',data:top8.map(p=>p.bonus),backgroundColor:'#D97706',borderRadius:2}]},options:{...opts,plugins:{legend:{position:'bottom',labels:{font:{size:9}}},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+fmtFn(c.parsed.y)}}},scales:{x:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#64748B',callback:v=>fmtFn(v)},grid:{color:'#E2E8F0'}}}}});
+  const sortedNP=[...promos].sort((a,b)=>b.netProfit-a.netProfit).slice(0,8);
+  new Chart(document.getElementById(prefix+'C3'),{type:'bar',data:{labels:sortedNP.map(p=>p.name.length>18?p.name.slice(0,18)+'…':p.name),datasets:[{data:sortedNP.map(p=>p.netProfit),backgroundColor:sortedNP.map(p=>p.netProfit>=0?'#059669':'#DC2626'),borderRadius:3}]},options:{...opts,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'NP: '+fmtFn(c.parsed.x)}}},scales:{x:{ticks:{font:{size:9},color:'#64748B',callback:v=>fmtFn(v)},grid:{color:'#E2E8F0'}},y:{ticks:{font:{size:9},color:'#64748B'},grid:{display:false}}}}});
+  new Chart(document.getElementById(prefix+'C4'),{type:'pie',data:{labels:top8.map(p=>p.name.length>16?p.name.slice(0,16)+'…':p.name),datasets:[{data:top8.map(p=>p.bonus),backgroundColor:C,borderWidth:1,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:8},boxWidth:10}},tooltip:{callbacks:{label:c=>c.label+': '+fmtFn(c.parsed)}}}}});
+}
+${myrPromos.length?`mkCharts(${JSON.stringify(myrPromos.slice(0,8))},'myr',n=>{const abs=Math.abs(n);const s='RM'+abs.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;});`:''}
+${sgdPromos.length?`mkCharts(${JSON.stringify(sgdPromos.slice(0,8))},'sgd',n=>{const abs=Math.abs(n);const s='S$'+abs.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+s+')':s;});`:''}
+<\/script></body></html>`;
+  const blob = new Blob([html], { type:'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`PROMO_Report_${monthStr.replace(' ','_')}.html`; a.click();
+  URL.revokeObjectURL(url);
+  setTimeout(() => alert('✅ 报告已下载！\n打开 HTML 文件后点右下角「打印」→「另存为 PDF」'), 500);
+}
+
+// ── Comparison ──
+let compCur = 'MYR';
+function setCompCur(cur, btn) {
+  compCur = cur;
+  document.querySelectorAll('#comparisonPage .cur-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderComparison();
+}
+function renderComparison() {
+  const rows = compCur === 'ALL' ? allDataFull : allDataFull.filter(r => r.currency === compCur);
+  const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
+  const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
+  if (months.length < 2) {
+    document.getElementById('comparisonContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">需要上传至少两个月的数据才能比较</div>';
+    document.getElementById('compMonthTabs').innerHTML = ''; return;
+  }
+  const recentMonths = months.slice(-6);
+  document.getElementById('compMonthTabs').innerHTML = recentMonths.map((m,i) =>
+    `<button class="month-tab ${i===recentMonths.length-1?'active':''}" onclick="selectCompMonth('${m}',this)">${m}</button>`
+  ).join('');
+  renderCompMonths(recentMonths[recentMonths.length-1], recentMonths[recentMonths.length-2], rows, fmt);
+}
+function selectCompMonth(month, btn) {
+  document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = compCur === 'ALL' ? allDataFull : allDataFull.filter(r => r.currency === compCur);
+  const fmt  = compCur === 'SGD' ? fmtSGD : fmtRM;
+  const months = [...new Set(rows.map(r => r.date.slice(0,7)))].sort();
+  const idx = months.indexOf(month);
+  renderCompMonths(month, idx > 0 ? months[idx-1] : null, rows, fmt);
+}
+function renderCompMonths(curMonth, prevMonth, rows, fmt) {
+  function calcMonth(m) {
+    const r=rows.filter(r=>r.date.slice(0,7)===m);
+    const bonus=r.reduce((s,x)=>s+x.bonus,0),wl=r.reduce((s,x)=>s+x.winloss,0),np=-wl-bonus;
+    return { claims:r.length, depPpl:r.filter(x=>x.transfer>0).length, deposit:r.reduce((s,x)=>s+x.transfer,0), bonus, winloss:wl, netProfit:np, roi:bonus>0?np/bonus*100:null };
+  }
+  const cur=calcMonth(curMonth), prev=prevMonth?calcMonth(prevMonth):null;
+  function chg(a,b) {
+    if(!b||b===0)return'';
+    const pct=((a-b)/Math.abs(b)*100).toFixed(1),up=a>=b;
+    return `<span class="comparison-change ${up?'change-up':'change-down'}">${up?'▲':'▼'} ${Math.abs(pct)}%</span>`;
+  }
+  function row(label,curVal,prevVal,fmtFn,invertColor=false) {
+    const curFmt=fmtFn(curVal),prevFmt=prevVal!==null?fmtFn(prevVal):'—',change=prevVal!==null?chg(curVal,prevVal):'';
+    const curColor=invertColor?(curVal>=0?'var(--green)':'var(--red)'):'var(--text)';
+    return `<div class="comparison-row"><div class="comparison-label">${label}</div>
+      <div class="comparison-vals"><div class="comparison-val" style="color:var(--muted2)">${prevFmt}</div><div class="comparison-val" style="color:${curColor}">${curFmt}</div>${change}</div></div>`;
+  }
+  document.getElementById('comparisonContent').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:1rem;font-size:0.75rem;">
+      <span style="color:var(--muted2);min-width:200px;">指标</span>
+      <span style="color:var(--muted);min-width:100px;text-align:right">${prevMonth||'—'}</span>
+      <span style="color:var(--blue);min-width:100px;text-align:right">${curMonth}</span>
+      <span style="color:var(--muted2)">变化</span>
+    </div>
+    <div class="comparison-card">
+      ${row('领取人次',cur.claims,prev?.claims,fmtN)}
+      ${row('存款人数',cur.depPpl,prev?.depPpl,fmtN)}
+      ${row('总存款',cur.deposit,prev?.deposit,fmt)}
+      ${row('派发 Bonus',cur.bonus,prev?.bonus,fmt)}
+      ${row('Win/Loss',cur.winloss,prev?.winloss,fmt)}
+      ${row('净利润',cur.netProfit,prev?.netProfit,fmt,true)}
+      ${row('ROI',cur.roi||0,prev?.roi||0,v=>(v>=0?'+':'')+v.toFixed(1)+'%',true)}
+    </div>`;
+}
+
+// ── Provider ──
+let providerCur = 'MYR', providerChartInst = null;
+function setProviderCur(cur, btn) {
+  providerCur = cur;
+  document.querySelectorAll('#providerPage .cur-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProvider();
+}
+function renderProvider() {
+  const rows = providerCur === 'ALL' ? allData : allData.filter(r => r.currency === providerCur);
+  const fmt  = providerCur === 'SGD' ? fmtSGD : fmtRM;
+  const map = {};
+  rows.forEach(r => {
+    const p=r.provider||'Unknown';
+    if(!map[p])map[p]={name:p,claims:0,depPpl:0,deposit:0,bonus:0,winloss:0};
+    map[p].claims++;map[p].depPpl+=r.transfer>0?1:0;map[p].deposit+=r.transfer;map[p].bonus+=r.bonus;map[p].winloss+=r.winloss;
+  });
+  const providers = Object.values(map).map(p=>({...p,netProfit:-p.winloss-p.bonus,roi:p.bonus>0?(-p.winloss-p.bonus)/p.bonus*100:null})).sort((a,b)=>b.claims-a.claims);
+  document.getElementById('providerGrid').innerHTML = providers.slice(0,9).map(p => {
+    const np=p.netProfit,npC=np>0?'var(--green)':'var(--red)';
+    return `<div class="provider-card"><div class="provider-name">${p.name}</div>
+      <div class="provider-stats">
+        <span class="provider-stat">领取 <b style="color:var(--blue)">${fmtN(p.claims)}</b></span>
+        <span class="provider-stat">净利润 <b style="color:${npC}">${np>=0?'+':''}${fmt(np)}</b></span>
+        <span class="provider-stat">ROI <b style="color:${npC}">${p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—'}</b></span>
+      </div></div>`;
+  }).join('');
+  if (providerChartInst) { providerChartInst.destroy(); providerChartInst=null; }
+  const top10=[...providers].sort((a,b)=>b.netProfit-a.netProfit).slice(0,10);
+  providerChartInst = new Chart(document.getElementById('providerChart'),{type:'bar',data:{labels:top10.map(p=>p.name),datasets:[{data:top10.map(p=>p.netProfit),backgroundColor:top10.map(p=>p.netProfit>=0?'rgba(0,229,160,0.8)':'rgba(255,61,90,0.8)'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'净利润: '+fmt(ctx.parsed.x)}}},scales:{x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},y:{ticks:{font:{size:10,family:'Arial'},color:'#8A9BAA'},grid:{display:false},border:{color:'transparent'}}}}});
+  document.getElementById('providerTableBody').innerHTML = providers.map((p,i)=>{
+    const np=p.netProfit,npC=np>0?'var(--green)':np<0?'var(--red)':'var(--muted)',roi=p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—';
+    return `<tr><td>${p.name}</td><td class="myr-v">${fmtN(p.claims)}</td><td class="myr-v">${fmtN(p.depPpl)}</td><td style="text-align:right;color:var(--green)">${fmt(p.deposit)}</td><td style="text-align:right;color:var(--amber)">${fmt(p.bonus)}</td><td style="text-align:right;color:var(--muted2)">${fmt(p.winloss)}</td><td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td><td style="text-align:right;color:${npC};font-weight:bold">${roi}</td></tr>`;
+  }).join('');
+}
+
+// ── Daily Mission CSV Parser ──
+function parseMissionFrontend(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+  const idx = h => headers.findIndex(hh => hh === h);
+  const iId=idx('id'), iMerchant=idx('merchantCode'), iLogin=idx('memberLogin'), iGroup=idx('memberGroup');
+  const iCur=idx('currency'), iCat=idx('missionCategory'), iName=idx('missionName'), iDay=idx('dayNo');
+  const iDep=idx('depositAmount'), iBet=idx('validBet'), iBonus=idx('bonus'), iPoint=idx('activityPoint');
+  const iTurnover=idx('targetTurnover'), iComplDate=idx('completedDate'), iComplAt=idx('completedDateTime');
+  const iClaimAt=idx('claimDateTime'), iExpiry=idx('expiryDateTime'), iStatus=idx('status'), iSetting=idx('missionSettingId');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const r = lines[i].split(',').map(c => c.replace(/"/g,'').trim());
+    if (!r || r.length < 5) continue;
+    const login = r[iLogin]?.trim(); if (!login) continue;
+    rows.push({
+      id: parseInt(r[iId])||null, merchant_code:r[iMerchant]||'', member_login:login,
+      member_group:r[iGroup]||'', currency:r[iCur]||'', mission_category:r[iCat]||'',
+      mission_name:r[iName]||'', day_no:parseInt(r[iDay])||1,
+      deposit_amount:parseFloat(r[iDep])||0, valid_bet:parseFloat(r[iBet])||0,
+      bonus:parseFloat(r[iBonus])||0, activity_point:parseFloat(r[iPoint])||0,
+      target_turnover:parseFloat(r[iTurnover])||0,
+      completed_date:r[iComplDate]||null, completed_at:r[iComplAt]||null,
+      claimed_at:r[iClaimAt]||null, expiry_at:r[iExpiry]||null,
+      status:r[iStatus]||'', mission_setting_id:parseInt(r[iSetting])||null,
+    });
+  }
+  return rows;
+}
+
+// ── Upload Daily Mission ──
+async function uploadMission(input) {
+  const file = input.files[0]; if (!file) return;
+  const btn = document.getElementById('btnMission');
+  btn.className = 'upload-btn uploading';
+  setStatus('', '解析中...');
+  try {
+    const text = await file.text();
+    const rows = parseMissionFrontend(text);
+    if (!rows.length) throw new Error('找不到有效数据');
+    const dates = rows.map(r=>(r.completed_date||'').slice(0,10)).filter(Boolean).sort();
+    const minDate = dates[0], maxDate = dates[dates.length-1];
+    const batchSize = 500;
+    let totalInserted = 0;
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize);
+      setStatus('', `上传中... ${i+batch.length}/${rows.length}`);
+      const res = await fetch(API + '/upload-mission', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: batch, minDate, maxDate, isFirst: i === 0 })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      totalInserted += data.inserted;
+    }
+    btn.className = 'upload-btn done';
+    btn.style.borderColor = 'var(--teal)'; btn.style.color = 'var(--teal)';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadMission(this)" /> ✅ Mission (${totalInserted})`;
+    setStatus('live', `Daily Mission 上传成功 · ${totalInserted} 条`);
+    if (minDate) document.getElementById('missionFrom').value = minDate;
+    if (maxDate) document.getElementById('missionTo').value   = maxDate;
+    if (!document.getElementById('missionPage').classList.contains('hidden')) await renderMission();
+  } catch(e) {
+    btn.className = 'upload-btn';
+    setStatus('error', '上传失败: ' + e.message);
+    alert('上传失败: ' + e.message);
+  }
+}
+
+function resetMissionDates() {
+  document.getElementById('missionFrom').value = '';
+  document.getElementById('missionTo').value   = '';
+  renderMission();
+}
+
+// ── Daily Mission Render ──
+async function renderMission() {
+  const from = document.getElementById('missionFrom').value;
+  const to   = document.getElementById('missionTo').value;
+  document.getElementById('missionContent').innerHTML = '<div class="loading-state"><div class="spinner"></div>加载中...</div>';
+  try {
+    let q = '/mission?'; if (from) q += 'from=' + from + '&'; if (to) q += 'to=' + to;
+    const { byDay, summary, byGroup } = await apiFetch(q);
+    if (!byDay || !byDay.length) {
+      document.getElementById('missionContent').innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">暂无数据，请上传 Daily Mission CSV</div>';
+      return;
+    }
+
+    const claimRate = summary.total_records > 0 ? (summary.total_claimed / summary.total_records * 100).toFixed(1) : 0;
+    const kpiHTML = `<div class="mission-kpi">
+      <div class="metric teal-card"><div class="lbl">参与玩家</div><div class="val" style="color:var(--teal)">${fmtN(summary.total_players)}</div></div>
+      <div class="metric teal-card"><div class="lbl">最高连续天数</div><div class="val" style="color:var(--teal)">${summary.max_day} 天</div></div>
+      <div class="metric teal-card"><div class="lbl">总领取次数</div><div class="val" style="color:var(--teal)">${fmtN(summary.total_claimed)}</div><div class="sub">领取率: ${claimRate}%</div></div>
+      <div class="metric teal-card"><div class="lbl">总过期次数</div><div class="val" style="color:var(--red)">${fmtN(summary.total_expired)}</div><div class="sub">完成但未领取</div></div>
+      <div class="metric teal-card"><div class="lbl">总派发 Bonus</div><div class="val" style="color:var(--teal)">${fmtRM(summary.total_bonus)}</div></div>
+      <div class="metric teal-card"><div class="lbl">总积分派发</div><div class="val" style="color:var(--teal)">${fmtN(Math.round(summary.total_points))}</div></div>
+    </div>`;
+
+    const groupOrder = ['BRONZE','SILVER','GOLD','PLATINUM','DIAMOND'];
+    const groupColors = { BRONZE:'#CD7F32', SILVER:'#C0C0C0', GOLD:'#FFD700', PLATINUM:'#E5E4E2', DIAMOND:'#B9F2FF' };
+    const sortedGroups = [...byGroup].sort((a,b) => (groupOrder.indexOf(a.group)||99) - (groupOrder.indexOf(b.group)||99));
+    const groupHTML = `<div class="mission-group-grid">${sortedGroups.map(g => {
+      const color = groupColors[g.group] || 'var(--teal)';
+      const rate = (g.claimed + g.expired) > 0 ? (g.claimed / (g.claimed + g.expired) * 100).toFixed(1) : 0;
+      return `<div class="mission-group-card" style="border-top:3px solid ${color};">
+        <div class="mission-group-name" style="color:${color};">${g.group}</div>
+        <div class="mission-group-val" style="color:${color};">${fmtN(g.unique_players)}</div>
+        <div class="mission-group-sub">领取: ${fmtN(g.claimed)} | 过期: ${fmtN(g.expired)}</div>
+        <div class="mission-group-sub">领取率: ${rate}%</div>
+        <div class="mission-group-sub">Bonus: ${fmtRM(g.bonus)}</div>
+      </div>`;
+    }).join('')}</div>`;
+
+    const chartHTML = `<div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-hd"><div class="chart-title">每日任务领取 vs 过期（前30天）</div>
+        <div class="legend"><span><span class="leg" style="background:var(--teal)"></span>已领取</span><span><span class="leg" style="background:var(--red);opacity:0.7"></span>已过期</span></div>
+      </div>
+      <div style="position:relative;width:100%;height:280px;"><canvas id="missionChart"></canvas></div>
+    </div>`;
+
+    const day1Claimed = byDay[0]?.claimed || 1;
+    const showDays = byDay.slice(0, 30);
+    const funnelRows = showDays.map(d => {
+      const total = d.claimed + d.expired;
+      const claimedPct = total > 0 ? d.claimed / total * 100 : 0;
+      const expiredPct = total > 0 ? d.expired / total * 100 : 0;
+      const dropPct = d.day_no > 1 ? ((d.claimed / day1Claimed) * 100).toFixed(1) + '%' : 'Day 1';
+      return `<div class="mission-day-row">
+        <div class="mission-day-label">Day ${d.day_no}</div>
+        <div class="mission-bar-wrap">
+          <div class="mission-bar-claimed" style="width:${claimedPct}%"></div>
+          <div class="mission-bar-expired" style="left:${claimedPct}%;width:${expiredPct}%"></div>
+        </div>
+        <div class="mission-bar-label"><span style="color:var(--teal)">✅ ${fmtN(d.claimed)}</span> &nbsp; <span style="color:var(--red)">❌ ${fmtN(d.expired)}</span></div>
+        <div class="mission-stat-cell" style="color:var(--muted2)">${dropPct}</div>
+        <div class="mission-stat-cell">${fmtRM(d.bonus)}</div>
+        <div class="mission-stat-cell">${fmtN(Math.round(d.activity_point))}</div>
+      </div>`;
+    }).join('');
+
+    const funnelHTML = `<div class="mission-funnel">
+      <div class="mission-funnel-hd">
+        <div class="mission-funnel-title">📊 每日任务漏斗（前30天）</div>
+      </div>
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 100px 110px 110px;padding:8px 1.4rem;border-bottom:1px solid var(--border);">
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;">天数</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;">比例</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;">人数</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;text-align:right;">vs Day1</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;text-align:right;">Bonus</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;text-align:right;">积分</div>
+      </div>
+      ${funnelRows}
+    </div>`;
+
+    const fullTableHTML = byDay.length > 30 ? `<div class="table-card">
+      <div class="table-hd">完整数据 — 全部 ${byDay.length} 天</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>天数</th><th>已领取</th><th>已过期</th><th>合计</th><th>Bonus</th><th>积分</th><th>要求存款</th><th>要求流水</th></tr></thead>
+        <tbody>${byDay.map(d=>`<tr>
+          <td style="color:var(--teal);font-weight:700;">Day ${d.day_no}</td>
+          <td style="color:var(--teal)">${fmtN(d.claimed)}</td>
+          <td style="color:var(--red)">${fmtN(d.expired)}</td>
+          <td>${fmtN(d.total)}</td>
+          <td>${fmtRM(d.bonus)}</td>
+          <td>${fmtN(Math.round(d.activity_point))}</td>
+          <td>${fmtRM(d.deposit_amount)}</td>
+          <td>${fmtRM(d.valid_bet)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>` : '';
+
+    document.getElementById('missionContent').innerHTML = kpiHTML + groupHTML + chartHTML + funnelHTML + fullTableHTML;
+
+    if (missionChartInst) { missionChartInst.destroy(); missionChartInst = null; }
+    missionChartInst = new Chart(document.getElementById('missionChart'), {
+      type: 'bar',
+      data: {
+        labels: showDays.map(d => 'Day '+d.day_no),
+        datasets: [
+          { label:'已领取', data:showDays.map(d=>d.claimed), backgroundColor:'rgba(0,201,255,0.75)', borderRadius:3 },
+          { label:'已过期', data:showDays.map(d=>d.expired), backgroundColor:'rgba(255,61,90,0.6)',  borderRadius:3 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+        scales:{
+          x:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78'},grid:{display:false},border:{color:'transparent'}},
+          y:{ticks:{font:{size:10,family:'Arial'},color:'#5A6A78',callback:v=>fmtN(v)},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}}
+        }
+      }
+    });
+  } catch(e) {
+    document.getElementById('missionContent').innerHTML = `<div style="text-align:center;padding:3rem;color:var(--red)">加载失败: ${e.message}</div>`;
+  }
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
