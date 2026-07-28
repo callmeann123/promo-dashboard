@@ -1957,9 +1957,9 @@ function parseMissionCSV(text) {
       activity_point:      parseFloat((r[iPoint]   ||'0').replace(/"/g,'').trim()) || 0,
       target_turnover:     parseFloat((r[iTarget]  ||'0').replace(/"/g,'').trim()) || 0,
       completed_date:      compDate,
-      completed_at:        (r[iCompAt]  ||'').replace(/"/g,'').trim() || null,
-      claimed_at:          (r[iClaimAt] ||'').replace(/"/g,'').trim() || null,
-      expiry_at:           (r[iExpiry]  ||'').replace(/"/g,'').trim() || null,
+      completed_at:        (r[iCompAt]  ||'').replace(/"/g,'').trim().replace(/^NULL$/i,'') || null,
+      claimed_at:          (r[iClaimAt] ||'').replace(/"/g,'').trim().replace(/^NULL$/i,'') || null,
+      expiry_at:           (r[iExpiry]  ||'').replace(/"/g,'').trim().replace(/^NULL$/i,'') || null,
       status:              (r[iStatus]  ||'').replace(/"/g,'').trim(),
       mission_setting_id:  parseInt((r[iSettingId]||'').replace(/"/g,'').trim()) || null,
     });
