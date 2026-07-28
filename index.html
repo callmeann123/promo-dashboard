@@ -286,6 +286,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   <button class="nav-tab" onclick="switchPage('comparison',this)">📅 月份对比</button>
   <button class="nav-tab" onclick="switchPage('provider',this)">🎮 供应商分析</button>
   <button class="nav-tab" onclick="switchPage('builder',this)">🎨 图表构建器</button>
+  <button class="nav-tab" onclick="switchPage('mission',this)">🎯 Daily Mission</button>
 </div>
 
 <!-- ── OVERVIEW PAGE ── -->
@@ -433,6 +434,18 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
   </div>
 
+  <!-- ── DAILY MISSION PAGE ── -->
+  <div id="missionPage" class="hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:0.75rem;color:var(--muted2);">上传 Daily Mission CSV 查看每日签到任务分析</div>
+    </div>
+    <div id="missionContent">
+      <div class="loading-state"><div class="spinner" style="display:none"></div>
+        <div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">请上传 Daily Mission CSV 开始分析</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 <script>
 let API = 'https://promo-api.annann5653.workers.dev';
@@ -461,6 +474,7 @@ async function loadConfig() {
           comparison: { fn: "switchPage('comparison',this)", label: '📅 月份对比' },
           provider:   { fn: "switchPage('provider',this)",   label: '🎮 供应商分析' },
           builder:    { fn: "switchPage('builder',this)",    label: '🎨 图表构建器' },
+          mission:    { fn: "switchPage('mission',this)",    label: '🎯 Daily Mission' },
         };
         const nav = document.getElementById('mainNav');
         nav.innerHTML = '';
@@ -521,6 +535,10 @@ async function loadConfig() {
         if (hasWD) { addSep(); addTitle('Withdraw'); }
         if (w.myr?.enabled) addBtn('btnWdMYR', w.myr.label, '.csv', "uploadDepositWithdraw('withdraw','MYR',this)");
         if (w.sgd?.enabled) addBtn('btnWdSGD', w.sgd.label, '.csv', "uploadDepositWithdraw('withdraw','SGD',this)");
+
+        // Daily Mission
+        const mi = CONFIG.upload.mission || {};
+        if (mi.enabled) { addSep(); addTitle('Mission'); addBtn('btnMission', mi.label || '🎯 Daily Mission', '.csv', 'uploadMission(this)'); }
       }
     }
   } catch(e) { console.warn('Config not found, using defaults'); }
@@ -933,12 +951,13 @@ function resetDates() {
 function switchPage(page, btn) {
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['overviewPage','analysisPage','playerPage','comparisonPage','providerPage','builderPage'].forEach(id => {
+  ['overviewPage','analysisPage','playerPage','comparisonPage','providerPage','builderPage','missionPage'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', !id.startsWith(page));
   });
   if (page === 'analysis')   renderAnalysis();
   if (page === 'comparison') renderComparison();
   if (page === 'provider')   renderProvider();
+  if (page === 'mission')    renderMission();
 }
 
 function setView(v, btn) {
@@ -1864,6 +1883,284 @@ function renderProvider() {
     const np=p.netProfit,npC=np>0?'var(--green)':np<0?'var(--red)':'var(--muted)',roi=p.roi!=null?(p.roi>=0?'+':'')+p.roi.toFixed(1)+'%':'—';
     return `<tr><td>${p.name}</td><td class="myr-v">${fmtN(p.claims)}</td><td class="myr-v">${fmtN(p.depPpl)}</td><td style="text-align:right;color:var(--green)">${fmt(p.deposit)}</td><td style="text-align:right;color:var(--amber)">${fmt(p.bonus)}</td><td style="text-align:right;color:var(--muted2)">${fmt(p.winloss)}</td><td style="text-align:right;color:${npC};font-weight:bold">${np>=0?'+':''}${fmt(np)}</td><td style="text-align:right;color:${npC};font-weight:bold">${roi}</td></tr>`;
   }).join('');
+}
+
+// ── Daily Mission ──
+let missionData = null, missionChartInst = null;
+
+// Parse Daily Mission CSV (frontend)
+function parseMissionCSV(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const lines = [];
+  text.trim().split('\n').forEach(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    lines.push(cols);
+  });
+
+  // Find header row
+  let hRow = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].some(c => c.replace(/"/g,'').trim().toLowerCase() === 'id')) { hRow = i; break; }
+  }
+  if (hRow < 0) return [];
+
+  const headers = lines[hRow].map(h => h.replace(/"/g,'').trim().toLowerCase());
+  const idx = h => headers.findIndex(hh => hh === h);
+
+  const iId          = idx('id');
+  const iMerchant    = idx('merchantcode');
+  const iLogin       = idx('memberlogin');
+  const iGroup       = idx('membergroup');
+  const iCurrency    = idx('currency');
+  const iCategory    = idx('missioncategory');
+  const iName        = idx('missionname');
+  const iDay         = idx('dayno');
+  const iDeposit     = idx('depositamount');
+  const iValidBet    = idx('validbet');
+  const iBonus       = idx('bonus');
+  const iPoint       = idx('activitypoint');
+  const iTarget      = idx('targetturnover');
+  const iCompDate    = idx('completeddate');
+  const iCompAt      = idx('completeddatetime');
+  const iClaimAt     = idx('claimdatetime');
+  const iExpiry      = idx('expirydatetime');
+  const iStatus      = idx('status');
+  const iSettingId   = idx('missionsettingid');
+
+  const rows = [];
+  for (let i = hRow + 1; i < lines.length; i++) {
+    const r = lines[i];
+    if (!r || r.length < 5) continue;
+    const login = (r[iLogin] || '').replace(/^="?(.*?)"?$/, '$1').trim();
+    const compDate = (r[iCompDate] || '').replace(/"/g,'').trim();
+    if (!login || !compDate) continue;
+
+    rows.push({
+      id:                  parseInt((r[iId]       ||'').replace(/"/g,'').trim()) || null,
+      merchant_code:       (r[iMerchant]  ||'').replace(/"/g,'').trim(),
+      member_login:        login,
+      member_group:        (r[iGroup]     ||'').replace(/"/g,'').trim(),
+      currency:            (r[iCurrency]  ||'').replace(/"/g,'').trim(),
+      mission_category:    (r[iCategory]  ||'').replace(/"/g,'').trim(),
+      mission_name:        (r[iName]      ||'').replace(/"/g,'').trim(),
+      day_no:              parseInt((r[iDay]  ||'0').replace(/"/g,'').trim()) || 0,
+      deposit_amount:      parseFloat((r[iDeposit] ||'0').replace(/"/g,'').trim()) || 0,
+      valid_bet:           parseFloat((r[iValidBet]||'0').replace(/"/g,'').trim()) || 0,
+      bonus:               parseFloat((r[iBonus]   ||'0').replace(/"/g,'').trim()) || 0,
+      activity_point:      parseFloat((r[iPoint]   ||'0').replace(/"/g,'').trim()) || 0,
+      target_turnover:     parseFloat((r[iTarget]  ||'0').replace(/"/g,'').trim()) || 0,
+      completed_date:      compDate,
+      completed_at:        (r[iCompAt]  ||'').replace(/"/g,'').trim() || null,
+      claimed_at:          (r[iClaimAt] ||'').replace(/"/g,'').trim() || null,
+      expiry_at:           (r[iExpiry]  ||'').replace(/"/g,'').trim() || null,
+      status:              (r[iStatus]  ||'').replace(/"/g,'').trim(),
+      mission_setting_id:  parseInt((r[iSettingId]||'').replace(/"/g,'').trim()) || null,
+    });
+  }
+  return rows;
+}
+
+// Upload Daily Mission CSV
+async function uploadMission(input) {
+  const file = input.files[0]; if (!file) return;
+  const btn = document.getElementById('btnMission');
+  btn.className = 'upload-btn uploading';
+  setStatus('', '解析 Mission 数据中...');
+  try {
+    const text = await file.text();
+    const rows = parseMissionCSV(text);
+    if (!rows.length) throw new Error('找不到有效 Mission 数据');
+
+    const dates = rows.map(r => r.completed_date.slice(0,10)).filter(Boolean).sort();
+    const minDate = dates[0], maxDate = dates[dates.length-1];
+    let totalInserted = 0;
+
+    for (let i = 0; i < rows.length; i += 500) {
+      const batch = rows.slice(i, i + 500);
+      const isFirst = i === 0;
+      setStatus('', `上传 Mission... ${Math.min(i+500, rows.length)}/${rows.length}`);
+      const res = await fetch(API + '/upload-mission', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: batch, minDate, maxDate, isFirst })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      totalInserted += data.inserted;
+    }
+
+    btn.className = 'upload-btn done';
+    btn.innerHTML = `<input type="file" accept=".csv" onchange="uploadMission(this)" /> ✅ Mission (${totalInserted})`;
+    setStatus('live', `Daily Mission 上传成功 · ${totalInserted} 条`);
+    missionData = null; // clear cache so renderMission refetches
+    if (!document.getElementById('missionPage').classList.contains('hidden')) renderMission();
+  } catch(e) {
+    btn.className = 'upload-btn';
+    setStatus('error', '上传失败: ' + e.message);
+    alert('上传失败: ' + e.message);
+  }
+}
+
+// Render Daily Mission page
+async function renderMission() {
+  const el = document.getElementById('missionContent');
+  if (!missionData) {
+    el.innerHTML = '<div class="loading-state"><div class="spinner"></div>加载 Mission 数据...</div>';
+    try {
+      missionData = await apiFetch('/mission');
+    } catch(e) {
+      el.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--red)">加载失败: ${e.message}</div>`;
+      return;
+    }
+  }
+
+  const { byDay, summary, byGroup } = missionData;
+
+  if (!byDay || byDay.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem;">暂无 Daily Mission 数据，请先上传 CSV</div>';
+    return;
+  }
+
+  // KPI cards
+  const claimRate = summary.total_records > 0 ? (summary.total_claimed / summary.total_records * 100).toFixed(1) : 0;
+  const kpiHTML = `
+    <div class="metrics" style="grid-template-columns:repeat(5,1fr);margin-bottom:1.5rem;">
+      <div class="metric"><div class="lbl">参与玩家数</div><div class="val" style="color:var(--blue)">${fmtN(summary.total_players)}</div><div class="sub">unique 玩家</div></div>
+      <div class="metric"><div class="lbl">总领取次数</div><div class="val" style="color:var(--green)">${fmtN(summary.total_claimed)}</div><div class="sub">领取率 ${claimRate}%</div></div>
+      <div class="metric"><div class="lbl">总过期次数</div><div class="val" style="color:var(--red)">${fmtN(summary.total_expired)}</div><div class="sub">完成但未领取</div></div>
+      <div class="metric"><div class="lbl">总派发 Bonus</div><div class="val" style="color:var(--amber)">${fmtRM(summary.total_bonus)}</div></div>
+      <div class="metric"><div class="lbl">总积分派发</div><div class="val" style="color:var(--purple)">${summary.total_points ? summary.total_points.toLocaleString() : '—'}</div><div class="sub">最高连续 ${summary.max_day} 天</div></div>
+    </div>`;
+
+  // Funnel chart data
+  const days = byDay.slice(0, 30); // show up to Day 30
+  const chartId = 'missionFunnelChart';
+
+  // Day table
+  const tableRows = byDay.map(d => {
+    const total = d.claimed + d.expired;
+    const claimPct = total > 0 ? (d.claimed/total*100).toFixed(1) : 0;
+    const expPct   = total > 0 ? (d.expired/total*100).toFixed(1) : 0;
+    return `<tr>
+      <td><b>Day ${d.day_no}</b></td>
+      <td style="color:var(--green);text-align:right">${fmtN(d.claimed)}</td>
+      <td style="color:var(--red);text-align:right">${fmtN(d.expired)}</td>
+      <td style="text-align:right">${fmtN(d.claimed + d.expired)}</td>
+      <td style="color:var(--green);text-align:right">${claimPct}%</td>
+      <td style="color:var(--red);text-align:right">${expPct}%</td>
+      <td style="color:var(--amber);text-align:right">${fmtRM(d.bonus)}</td>
+      <td style="color:var(--purple);text-align:right">${d.activity_point ? d.activity_point.toLocaleString() : '—'}</td>
+      <td style="color:var(--muted2);text-align:right">${fmtRM(d.deposit_amount)}</td>
+    </tr>`;
+  }).join('');
+
+  // Member group table
+  const groupRows = byGroup.map(g => {
+    const total = g.claimed + g.expired;
+    const rate = total > 0 ? (g.claimed/total*100).toFixed(1) : 0;
+    return `<tr>
+      <td><b>${g.group}</b></td>
+      <td style="color:var(--blue);text-align:right">${fmtN(g.unique_players)}</td>
+      <td style="color:var(--green);text-align:right">${fmtN(g.claimed)}</td>
+      <td style="color:var(--red);text-align:right">${fmtN(g.expired)}</td>
+      <td style="color:var(--green);text-align:right">${rate}%</td>
+      <td style="color:var(--amber);text-align:right">${fmtRM(g.bonus)}</td>
+      <td style="color:var(--purple);text-align:right">${g.points ? g.points.toLocaleString() : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    ${kpiHTML}
+
+    <!-- Funnel Chart -->
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-hd">
+        <div class="chart-title">每日任务领取漏斗（✅ 已领取 vs ❌ 过期）</div>
+        <div class="legend">
+          <span><span class="leg" style="background:var(--green)"></span>已领取</span>
+          <span><span class="leg" style="background:var(--red)"></span>过期未领</span>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;height:320px;"><canvas id="${chartId}"></canvas></div>
+    </div>
+
+    <!-- Daily detail table -->
+    <div class="table-card" style="margin-bottom:14px;">
+      <div class="table-hd">每天明细</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>天数</th><th>已领取</th><th>过期未领</th><th>总完成</th><th>领取率</th><th>过期率</th><th>派发 Bonus</th><th>积分</th><th>要求存款</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Member group table -->
+    <div class="table-card">
+      <div class="table-hd">会员等级分析</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>会员等级</th><th>参与玩家</th><th>已领取</th><th>过期未领</th><th>领取率</th><th>派发 Bonus</th><th>积分</th>
+          </tr></thead>
+          <tbody>${groupRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Render funnel chart
+  if (missionChartInst) { missionChartInst.destroy(); missionChartInst = null; }
+  const canvas = document.getElementById(chartId);
+  if (canvas) {
+    missionChartInst = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: days.map(d => `Day ${d.day_no}`),
+        datasets: [
+          {
+            label: '已领取',
+            data: days.map(d => d.claimed),
+            backgroundColor: 'rgba(0,229,160,0.75)',
+            borderRadius: 3,
+          },
+          {
+            label: '过期未领',
+            data: days.map(d => d.expired),
+            backgroundColor: 'rgba(255,61,90,0.65)',
+            borderRadius: 3,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              afterBody: (items) => {
+                const total = items.reduce((s,i) => s + i.parsed.y, 0);
+                return [`总计: ${fmtN(total)}`];
+              }
+            }
+          }
+        },
+        scales: {
+          x: { stacked: false, ticks: { font:{size:10,family:'Arial'}, color:'#5A6A78' }, grid:{display:false}, border:{color:'transparent'} },
+          y: { ticks: { font:{size:10,family:'Arial'}, color:'#5A6A78', callback: v => fmtN(v) }, grid:{color:'rgba(255,255,255,0.04)'}, border:{color:'transparent'} }
+        }
+      }
+    });
+  }
 }
 
 // Start
